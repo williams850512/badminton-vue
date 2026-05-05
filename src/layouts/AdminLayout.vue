@@ -32,16 +32,19 @@ import AdminHeader from '@/components/admin/AdminHeader.vue'
 .admin-layout {
   display: flex;
   min-height: 100vh;
+  background-color: var(--brand-bg);
 }
 
 .admin-main {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .admin-content {
   flex: 1;
-  padding: 20px;
+  padding: 1.5rem;
+  overflow-y: auto;
 }
 </style>

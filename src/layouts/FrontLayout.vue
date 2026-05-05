@@ -4,15 +4,15 @@
  * 包含：上方 Navbar + 中間內容區（RouterView）+ 下方 Footer
  *
  * 結構：
- * ┌─────────────────────────────┐
- * │         Navbar              │
- * ├─────────────────────────────┤
- * │                             │
- * │        <RouterView />       │
- * │                             │
- * ├─────────────────────────────┤
- * │         Footer              │
- * └─────────────────────────────┘
+ * ┌─────────────────────────────────┐
+ * │         Navbar                  │
+ * ├─────────────────────────────────┤
+ * │                                 │
+ * │        <RouterView />           │
+ * │                                 │
+ * ├─────────────────────────────────┤
+ * │         Footer                  │
+ * └─────────────────────────────────┘
  */
 import FrontNavbar from '@/components/frontend/FrontNavbar.vue'
 import FrontFooter from '@/components/frontend/FrontFooter.vue'
@@ -33,10 +33,10 @@ import FrontFooter from '@/components/frontend/FrontFooter.vue'
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background-color: var(--brand-bg);
 }
 
 .front-content {
   flex: 1;
-  padding: 20px;
 }
 </style>

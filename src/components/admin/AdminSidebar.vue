@@ -1,61 +1,262 @@
 <script setup>
-// TODO: 實作後台側邊欄導覽選單
-// 包含：會員管理、場館管理、場地管理、預約管理、商品管理、訂單管理、公告管理、揪團管理
+/**
+ * 後台側邊欄
+ * 分為 6 個區塊：
+ * 1. 會員管理
+ * 2. 場館 + 場地管理
+ * 3. 預約 + 揪團管理
+ * 4. 商品 + 訂單管理
+ * 5. 公告管理
+ * 6. 統計數據（儀表板）
+ */
+import { ref } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const isCollapsed = ref(false)
+
+const menuGroups = [
+  {
+    label: '會員管理',
+    items: [
+      { icon: 'bi-people', label: '會員管理', to: '/admin/members' },
+    ],
+  },
+  {
+    label: '場館與場地',
+    items: [
+      { icon: 'bi-building', label: '場館管理', to: '/admin/venues' },
+      { icon: 'bi-columns-gap', label: '場地管理', to: '/admin/courts' },
+    ],
+  },
+  {
+    label: '預約與揪團',
+    items: [
+      { icon: 'bi-calendar-check', label: '預約管理', to: '/admin/bookings' },
+      { icon: 'bi-person-arms-up', label: '揪團管理', to: '/admin/pickup-games' },
+    ],
+  },
+  {
+    label: '商品與訂單',
+    items: [
+      { icon: 'bi-box-seam', label: '商品管理', to: '/admin/products' },
+      { icon: 'bi-receipt', label: '訂單管理', to: '/admin/orders' },
+    ],
+  },
+  {
+    label: '內容管理',
+    items: [
+      { icon: 'bi-megaphone', label: '公告管理', to: '/admin/announcements' },
+    ],
+  },
+  {
+    label: '統計數據',
+    items: [
+      { icon: 'bi-bar-chart-line', label: '數據儀表板', to: '/admin/dashboard' },
+    ],
+  },
+]
 </script>
 
 <template>
-  <aside class="admin-sidebar">
+  <aside class="admin-sidebar" :class="{ collapsed: isCollapsed }">
+    <!-- 品牌區 -->
     <div class="sidebar-brand">
-      <h2>🏸 後台管理</h2>
+      <RouterLink to="/admin/dashboard" class="d-flex align-items-center gap-2 text-decoration-none">
+        <div class="brand-icon">
+          <i class="bi bi-feather"></i>
+        </div>
+        <span v-if="!isCollapsed" class="brand-text">羽過天晴</span>
+      </RouterLink>
     </div>
+
+    <!-- 選單區 -->
     <nav class="sidebar-nav">
-      <RouterLink to="/admin/dashboard">📊 儀表板</RouterLink>
-      <RouterLink to="/admin/members">👥 會員管理</RouterLink>
-      <RouterLink to="/admin/venues">🏟️ 場館管理</RouterLink>
-      <RouterLink to="/admin/courts">🏸 場地管理</RouterLink>
-      <RouterLink to="/admin/bookings">📅 預約管理</RouterLink>
-      <RouterLink to="/admin/products">📦 商品管理</RouterLink>
-      <RouterLink to="/admin/orders">🧾 訂單管理</RouterLink>
-      <RouterLink to="/admin/announcements">📢 公告管理</RouterLink>
-      <RouterLink to="/admin/pickup-games">🤝 揪團管理</RouterLink>
+      <div v-for="group in menuGroups" :key="group.label" class="nav-group">
+        <div v-if="!isCollapsed" class="nav-group-label">{{ group.label }}</div>
+
+        <RouterLink
+          v-for="item in group.items"
+          :key="item.to"
+          :to="item.to"
+          class="nav-item"
+          :class="{ active: route.path === item.to }"
+        >
+          <i :class="['bi', item.icon]"></i>
+          <span v-if="!isCollapsed">{{ item.label }}</span>
+        </RouterLink>
+      </div>
     </nav>
+
+    <!-- 底部：收合按鈕 -->
+    <div class="sidebar-footer">
+      <button class="collapse-btn" @click="isCollapsed = !isCollapsed">
+        <i :class="isCollapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left'"></i>
+        <span v-if="!isCollapsed">收合選單</span>
+      </button>
+
+      <RouterLink to="/" class="nav-item mt-2" v-if="!isCollapsed">
+        <i class="bi bi-box-arrow-left"></i>
+        <span>回到前台</span>
+      </RouterLink>
+    </div>
   </aside>
 </template>
 
 <style scoped>
 .admin-sidebar {
-  width: 220px;
-  background-color: #2c3e50;
-  color: white;
-  padding: 20px 0;
+  width: 280px;
+  min-height: 100vh;
+  background: white;
+  border-right: 1px solid #F1F5F9;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  overflow-y: auto;
 }
 
+.admin-sidebar.collapsed {
+  width: 72px;
+}
+
+/* ----- 品牌區 ----- */
 .sidebar-brand {
-  padding: 0 20px 20px;
-  border-bottom: 1px solid #3d566e;
+  padding: 1.25rem;
+  border-bottom: 1px solid #F1F5F9;
 }
 
-.sidebar-brand h2 {
-  margin: 0;
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.brand-text {
+  font-weight: 800;
+  font-size: 1.25rem;
+  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ----- 選單區 ----- */
+.sidebar-nav {
+  flex: 1;
+  padding: 0.5rem 0;
+  overflow-y: auto;
+}
+
+.nav-group {
+  padding: 0.25rem 0;
+}
+
+.nav-group + .nav-group {
+  border-top: 1px solid #F1F5F9;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+}
+
+.nav-group-label {
+  padding: 0.6rem 1.5rem 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748B;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1.5rem;
+  margin: 0.15rem 0.6rem;
+  border-radius: 0.75rem;
+  color: #334155;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.nav-item i {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-item:hover {
+  background-color: #F0F9FF;
+  color: var(--brand-sky);
+}
+
+.nav-item.active {
+  background-color: var(--brand-sky);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+}
+
+/* ----- 收合狀態 ----- */
+.collapsed .nav-item {
+  justify-content: center;
+  padding: 0.7rem;
+  margin: 0.15rem 0.35rem;
+}
+
+.collapsed .nav-item i {
   font-size: 1.2rem;
 }
 
-.sidebar-nav {
+.collapsed .nav-group-label {
+  display: none;
+}
+
+.collapsed .sidebar-brand {
+  padding: 1.25rem 0.75rem;
   display: flex;
-  flex-direction: column;
-  padding: 10px 0;
+  justify-content: center;
 }
 
-.sidebar-nav a {
-  color: #bdc3c7;
-  text-decoration: none;
-  padding: 12px 20px;
-  transition: background-color 0.2s;
+/* ----- 底部 ----- */
+.sidebar-footer {
+  padding: 0.75rem 0.5rem;
+  border-top: 1px solid #F1F5F9;
+  margin-top: auto;
 }
 
-.sidebar-nav a:hover,
-.sidebar-nav a.router-link-active {
-  background-color: #34495e;
-  color: white;
+.collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  background: none;
+  border-radius: 0.75rem;
+  color: #94A3B8;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.collapse-btn:hover {
+  background-color: #F1F5F9;
+  color: #64748B;
+}
+
+.collapsed .collapse-btn {
+  justify-content: center;
+  padding: 0.7rem;
 }
 </style>

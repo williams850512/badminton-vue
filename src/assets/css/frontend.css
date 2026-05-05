@@ -1,0 +1,327 @@
+/* =============================================
+   羽過天晴 — 前台自訂樣式
+   Bootstrap 補充：品牌色彩、圓角卡片、動畫等
+   ============================================= */
+
+/* ----- CSS 變數（品牌色彩） ----- */
+:root {
+  --brand-teal: #00B4B4;
+  --brand-teal-dark: #0D9488;
+  --brand-sky: #0EA5E9;
+  --brand-sky-dark: #0284C7;
+  --brand-dark: #1E293B;
+  --brand-bg: #F8FAFC;
+  --brand-border: #F0F9FF;
+  --brand-card-radius: 1.5rem;
+  --brand-card-radius-lg: 2rem;
+}
+
+/* ----- 全域基礎 ----- */
+body {
+  background-color: var(--brand-bg) !important;
+  color: #334155;
+}
+
+/* ----- 漸層文字 ----- */
+.text-gradient {
+  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ----- 圓角卡片 ----- */
+.card-rounded {
+  border-radius: var(--brand-card-radius) !important;
+  border: 1px solid var(--brand-border);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.card-rounded-lg {
+  border-radius: var(--brand-card-radius-lg) !important;
+  border: 1px solid var(--brand-border);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* ----- Hover 上浮效果 ----- */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(14, 165, 233, 0.12);
+}
+
+/* ----- 圖片 Hover 放大 ----- */
+.img-zoom {
+  overflow: hidden;
+}
+
+.img-zoom img {
+  transition: transform 0.6s ease;
+}
+
+.img-zoom:hover img {
+  transform: scale(1.08);
+}
+
+/* ----- 品牌按鈕 ----- */
+.btn-brand {
+  background-color: var(--brand-teal);
+  color: white;
+  border: none;
+  border-radius: 1rem;
+  padding: 0.75rem 2rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.btn-brand:hover {
+  background-color: var(--brand-teal-dark);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 180, 180, 0.3);
+}
+
+.btn-brand:active {
+  transform: scale(0.97);
+}
+
+.btn-brand-outline {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: var(--brand-sky);
+  border: none;
+  border-radius: 1rem;
+  padding: 0.75rem 2rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.btn-brand-outline:hover {
+  background-color: white;
+  color: var(--brand-sky-dark);
+}
+
+/* ----- Section 標題裝飾線 ----- */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 1.5rem;
+  background-color: var(--brand-sky);
+  border-radius: 2px;
+}
+
+/* ----- Hero 區塊 ----- */
+.hero-section {
+  position: relative;
+  border-radius: var(--brand-card-radius-lg);
+  overflow: hidden;
+  min-height: 360px;
+}
+
+.hero-section .hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s ease;
+}
+
+.hero-section:hover .hero-bg {
+  transform: scale(1.05);
+}
+
+.hero-section .hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.2), transparent);
+}
+
+.hero-section .hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 3rem;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 360px;
+}
+
+/* ----- 漸層卡片 ----- */
+.card-gradient {
+  background: linear-gradient(135deg, var(--brand-teal-dark), var(--brand-sky-dark));
+  border-radius: var(--brand-card-radius-lg);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-gradient .card-gradient-icon {
+  position: absolute;
+  bottom: -1.5rem;
+  right: -1.5rem;
+  font-size: 8rem;
+  opacity: 0.08;
+  transition: transform 0.4s ease;
+}
+
+.card-gradient:hover .card-gradient-icon {
+  transform: scale(1.15);
+}
+
+/* ----- 導覽列 ----- */
+.front-navbar {
+  background-color: white !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 0.75rem 2rem;
+}
+
+.front-navbar .navbar-brand {
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+
+.front-navbar .nav-link {
+  color: #64748B !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem !important;
+  transition: color 0.2s ease;
+}
+
+.front-navbar .nav-link:hover,
+.front-navbar .nav-link.router-link-active {
+  color: var(--brand-dark) !important;
+}
+
+/* ----- Badge 狀態標籤 ----- */
+.badge-teal {
+  background-color: #F0FDFA;
+  color: var(--brand-teal);
+  border: 1px solid #CCFBF1;
+  font-weight: 700;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+}
+
+/* ----- 快速操作按鈕 ----- */
+.quick-action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 1rem;
+  background-color: #F0F9FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-sky);
+  font-size: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover .quick-action-icon {
+  background-color: var(--brand-sky);
+  color: white;
+}
+
+/* ----- 頁尾 ----- */
+.front-footer {
+  background-color: white;
+  border-top: 1px solid #F1F5F9;
+  padding: 3rem 0;
+}
+
+.front-footer a {
+  color: #94A3B8;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.front-footer a:hover {
+  color: var(--brand-sky);
+}
+
+/* ----- Letter Spacing 工具類 ----- */
+.tracking-wide {
+  letter-spacing: 0.05em;
+}
+
+.tracking-wider {
+  letter-spacing: 0.1em;
+}
+
+.tracking-widest {
+  letter-spacing: 0.15em;
+}
+
+/* ----- Line Clamp ----- */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ----- 會員頭像 ----- */
+.avatar-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-md {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ----- Carousel 自訂 ----- */
+.carousel-indicators [data-bs-target] {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--brand-teal);
+}
+
+/* ----- 響應式調整 ----- */
+@media (max-width: 991.98px) {
+  .hero-section .hero-content {
+    padding: 2rem;
+    min-height: 280px;
+  }
+
+  .hero-section .hero-content h1 {
+    font-size: 2rem !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .section-title {
+    font-size: 1.25rem;
+  }
+}

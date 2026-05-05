@@ -31,7 +31,7 @@ const router = createRouter({
       path: '/admin',
       component: () => import('@/layouts/AdminLayout.vue'),
       children: [
-        { path: '', redirect: '/admin/dashboard' },
+        { path: '', redirect: '/admin/members' },
         { path: 'dashboard', name: 'dashboard', component: () => import('@/views/admin/Dashboard.vue') },
         { path: 'members', name: 'memberManage', component: () => import('@/views/admin/MemberManage.vue') },
         { path: 'venues', name: 'venueManage', component: () => import('@/views/admin/VenueManage.vue') },
