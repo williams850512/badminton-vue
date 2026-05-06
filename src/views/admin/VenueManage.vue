@@ -71,12 +71,51 @@ const editId = ref(null)
 
 // 表單欄位
 const form = ref({
-  venueName:'',
-  address:'',
-  phone:'',
-
+  venueName: '',
+  address: '',
+  phone: '',
 })
 
+// 打開新增 Modal
+function openCreateModal() {
+  modalTitle.value = '新增場館'
+  editId.value = null
+  form.value = { venueName: '', address: '', phone: '' }
+  showModal.value = true
+}
+
+// 打開編輯 Modal（帶入舊資料）
+function openEditModal(venue) {
+  modalTitle.value = '編輯場館'
+  editId.value = venue.venueId
+  form.value = {
+    venueName: venue.venueName,
+    address: venue.address || '',
+    phone: venue.phone || '',
+  }
+  showModal.value = true
+}
+
+// 儲存（根據有無 editId 判斷新增或更新）
+async function saveVenue() {
+  if (!form.value.venueName.trim()) {
+    alert('請輸入場館名稱!')
+    return
+  }
+
+  try {
+    if (editId.value) {
+      await venueApi.update(editId.value, form.value)
+    } else {
+      await venueApi.create(form.value)
+    }
+    showModal.value = false
+    alert(editId.value ? '更新成功!' : '新增成功!')
+    loadData()
+  } catch (error) {
+    alert('操作失敗：' + error.message)
+  }
+}
 </script>
 
 <template>
@@ -193,6 +232,53 @@ const form = ref({
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+  <!-- 新增/編輯 Modal -->
+  <div v-if="showModal" class="modal-backdrop fade show" @click="showModal = false"></div>
+  <div v-if="showModal" class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ modalTitle }}</h5>
+          <button type="button" class="btn-close" @click="showModal = false"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">場館名稱<span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              v-model="form.venueName"
+              placeholder="例：大安運動中心"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">地址</label>
+            <input
+              type="text"
+              class="form-control"
+              v-model="form.address"
+              placeholder="例：台北市大安區辛亥路三段382號"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">電話</label>
+            <input
+              type="text"
+              class="form-control"
+              v-model="form.phone"
+              placeholder="例：02-2733-1369"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="showModal = false">取消</button>
+          <button type="button" class="btn btn-primary" @click="saveVenue">
+            <i class="bi bi-check-lg me-1"></i>儲存
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
