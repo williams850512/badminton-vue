@@ -8,7 +8,7 @@
  * OrderStatus: UNPAID | PAID | SHIPPED | COMPLETED | CANCELLED
  * PaymentType: CASH | CREDIT_CARD | TRANSFER | LINE_PAY
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { orderApi } from '@/api/order'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
@@ -26,6 +26,17 @@ const pageSize = 10
 const expandedOrderId = ref(null)
 const orderItems = ref([])
 const loadingItems = ref(false)
+
+// ===================== 狀態下拉選單 =====================
+const statusDropdownId = ref(null)
+
+function toggleStatusDropdown(orderId) {
+  statusDropdownId.value = statusDropdownId.value === orderId ? null : orderId
+}
+
+function closeStatusDropdown() {
+  statusDropdownId.value = null
+}
 
 // ===================== 刪除 =====================
 const showConfirm = ref(false)
@@ -204,7 +215,20 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
 }
 
-onMounted(loadOrders)
+// 點擊外部關閉狀態下拉選單
+function handleClickOutside(e) {
+  if (!e.target.closest('.status-dropdown-wrap')) {
+    closeStatusDropdown()
+  }
+}
+
+onMounted(() => {
+  loadOrders()
+  document.addEventListener('click', handleClickOutside)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <template>
@@ -291,13 +315,13 @@ onMounted(loadOrders)
           <thead>
             <tr style="background: #F8FAFC">
               <th style="width: 40px"></th>
-              <th>訂單編號</th>
-              <th>會員</th>
-              <th>訂單日期</th>
-              <th>付款方式</th>
-              <th class="text-end">金額</th>
-              <th class="text-center">狀態</th>
-              <th class="text-center" style="width: 180px">操作</th>
+              <th style="width: 10%">訂單編號</th>
+              <th style="width: 15%">會員</th>
+              <th style="width: 18%">訂單日期</th>
+              <th style="width: 10%">付款方式</th>
+              <th style="width: 12%" class="text-end">金額</th>
+              <th style="width: 12%" class="text-center">狀態</th>
+              <th style="width: 18%" class="text-center">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -342,28 +366,40 @@ onMounted(loadOrders)
                   </span>
                 </td>
                 <td class="text-center" @click.stop>
-                  <!-- 快速狀態變更 -->
-                  <div class="d-flex gap-1 justify-content-center">
-                    <template v-for="next in statusFlow[order.status]" :key="next">
+                  <div class="d-flex gap-2 justify-content-center">
+                    <!-- 更新狀態（下拉選單） -->
+                    <div class="status-dropdown-wrap">
                       <button
-                        class="btn btn-sm"
-                        :style="{
-                          backgroundColor: statusMap[next]?.bg,
-                          color: statusMap[next]?.color,
-                          border: '1px solid ' + statusMap[next]?.color + '33',
-                          fontSize: '0.7rem', fontWeight: 600
-                        }"
-                        :title="'變更為' + statusMap[next]?.label"
-                        @click="changeStatus(order, next)"
+                        class="btn btn-sm action-btn action-btn-status"
+                        :disabled="statusFlow[order.status]?.length === 0"
+                        @click="toggleStatusDropdown(order.orderId)"
                       >
-                        {{ statusMap[next]?.label }}
+                        <i class="bi bi-arrow-repeat me-1"></i>狀態
                       </button>
-                    </template>
-                    <button class="btn btn-sm btn-outline-primary" style="font-size: 0.7rem" @click="openEdit(order)">
-                      <i class="bi bi-pencil"></i>
+                      <!-- 下拉選單 -->
+                      <div
+                        v-if="statusDropdownId === order.orderId && statusFlow[order.status]?.length > 0"
+                        class="status-dropdown-menu"
+                      >
+                        <button
+                          v-for="next in statusFlow[order.status]"
+                          :key="next"
+                          class="status-dropdown-item"
+                          :style="{ color: statusMap[next]?.color }"
+                          @click="changeStatus(order, next); closeStatusDropdown()"
+                        >
+                          <i :class="['bi', statusMap[next]?.icon]" class="me-1"></i>
+                          {{ statusMap[next]?.label }}
+                        </button>
+                      </div>
+                    </div>
+                    <!-- 修改 -->
+                    <button class="btn btn-sm action-btn action-btn-edit" @click="openEdit(order)">
+                      <i class="bi bi-pencil me-1"></i>修改
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" style="font-size: 0.7rem" @click="confirmDelete(order)">
-                      <i class="bi bi-trash3"></i>
+                    <!-- 刪除 -->
+                    <button class="btn btn-sm action-btn action-btn-delete" @click="confirmDelete(order)">
+                      <i class="bi bi-trash3 me-1"></i>刪除
                     </button>
                   </div>
                 </td>
@@ -690,5 +726,88 @@ table td {
 @keyframes slideDown {
   from { opacity: 0; max-height: 0; }
   to { opacity: 1; max-height: 500px; }
+}
+
+/* ===== 操作按鈕 ===== */
+.action-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.action-btn-status {
+  background: #F0F9FF;
+  color: var(--brand-sky, #0EA5E9);
+  border: 1px solid #BAE6FD;
+}
+.action-btn-status:hover:not(:disabled) {
+  background: var(--brand-sky, #0EA5E9);
+  color: white;
+  border-color: var(--brand-sky, #0EA5E9);
+}
+.action-btn-status:disabled {
+  background: #F1F5F9;
+  color: #CBD5E1;
+  border-color: #E2E8F0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.action-btn-edit {
+  background: #EEF2FF;
+  color: #6366F1;
+  border: 1px solid #C7D2FE;
+}
+.action-btn-edit:hover {
+  background: #6366F1;
+  color: white;
+  border-color: #6366F1;
+}
+.action-btn-delete {
+  background: #FEF2F2;
+  color: #EF4444;
+  border: 1px solid #FECACA;
+}
+.action-btn-delete:hover {
+  background: #EF4444;
+  color: white;
+  border-color: #EF4444;
+}
+
+/* ===== 狀態下拉選單 ===== */
+.status-dropdown-wrap {
+  position: relative;
+}
+.status-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid #F1F5F9;
+  padding: 0.35rem;
+  z-index: 100;
+  min-width: 120px;
+  animation: fadeIn 0.15s ease;
+}
+.status-dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  border: none;
+  background: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.status-dropdown-item:hover {
+  background: #F8FAFC;
 }
 </style>
