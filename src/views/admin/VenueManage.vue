@@ -1,5 +1,4 @@
 <script setup>
-// TODO: 場館管理 — 串接 venueApi CRUD
 import { ref, onMounted } from 'vue'
 import { venueApi } from '@/api/venue'
 
