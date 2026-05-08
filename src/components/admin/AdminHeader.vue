@@ -5,7 +5,7 @@
  * - 右側：通知 + 管理員名字 + 登出按鈕
  */
 import { useRouter, useRoute } from 'vue-router'
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -14,6 +14,7 @@ const route = useRoute()
 const pageTitles = {
   '/admin/dashboard': '數據儀表板',
   '/admin/members': '會員管理',
+  '/admin/admins': '職員管理',
   '/admin/venues': '場館管理',
   '/admin/courts': '場地管理',
   '/admin/bookings': '預約管理',
@@ -25,8 +26,23 @@ const pageTitles = {
 
 const currentTitle = computed(() => pageTitles[route.path] || '管理後台')
 
+const adminName = ref('管理員')
+
+onMounted(() => {
+  try {
+    const adminInfo = JSON.parse(localStorage.getItem('adminInfo'))
+    if (adminInfo) {
+      adminName.value = adminInfo.fullName || adminInfo.username || '管理員'
+    }
+  } catch (e) {
+    console.error('Failed to parse adminInfo from localStorage', e)
+  }
+})
+
 function handleLogout() {
   // TODO: 呼叫登出 API，清除登入狀態
+  localStorage.removeItem('adminToken')
+  localStorage.removeItem('adminInfo')
   router.push('/admin/login')
 }
 </script>
@@ -49,7 +65,7 @@ function handleLogout() {
         <div class="admin-avatar">
           <i class="bi bi-person-gear"></i>
         </div>
-        <span class="admin-name d-none d-md-inline">管理員您好</span>
+        <span class="admin-name d-none d-md-inline">{{ adminName }} 您好</span>
       </div>
 
       <!-- 登出 -->
