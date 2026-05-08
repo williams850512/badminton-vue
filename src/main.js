@@ -1,6 +1,10 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
+// 1. 引入 VCalendar
+import VCalendar from 'v-calendar'
+import 'v-calendar/style.css'
+
 import App from './App.vue'
 import router from './router'
 
@@ -12,9 +16,13 @@ import 'bootstrap-icons/font/bootstrap-icons.css'
 // 自訂前台樣式
 import './assets/css/frontend.css'
 
+// 2. 先建立 app 執行體
 const app = createApp(App)
 
+// 3. 接著才是一系列的 .use() 插件
 app.use(createPinia())
 app.use(router)
+app.use(VCalendar, {})
 
+// 4. 最後才 mount
 app.mount('#app')
