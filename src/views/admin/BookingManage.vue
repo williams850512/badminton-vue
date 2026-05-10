@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { bookingApi } from '@/api/booking'
 import { venueApi } from '@/api/venue'
 import { courtApi } from '@/api/court'
+import { memberApi } from '@/api/member'
 
 // ========== 資料狀態 ==========
 const bookings = ref([]) // 預約列表
@@ -30,6 +31,8 @@ async function loadData() {
 
   try {
     bookings.value = await bookingApi.findAll()
+    // 依日期降冪排序（新的在上面）
+    bookings.value.sort((a, b) => b.bookingDate.localeCompare(a.bookingDate))
     venues.value = await venueApi.findAll()
     allCourts.value = await courtApi.findAll()
   } catch (error) {
@@ -47,6 +50,8 @@ async function searchBookings() {
   try {
     if (searchKeyword.value.trim()) {
       bookings.value = await bookingApi.search(searchKeyword.value)
+      // 依日期降冪排序
+      bookings.value.sort((a, b) => b.bookingDate.localeCompare(a.bookingDate))
     } else {
       bookings.value = await bookingApi.findAll()
     }
@@ -193,6 +198,89 @@ function onEndTimeChange() {
     form.value.totalAmount = hours * 300
   }
 }
+
+// ========== 會員模糊搜尋 ==========
+
+async function searchMember() {
+  const keyword = form.value.memberSearch.trim()
+  if (!keyword) {
+    memberResults.value = []
+    return
+  }
+  try {
+    memberResults.value = await memberApi.search(keyword)
+  } catch (error) {
+    console.error('搜尋會員失敗:', error)
+  }
+}
+
+// 選擇會員
+function selectMember(member) {
+  form.value.memberId = member.memberId
+  selectedMemberText.value = `${member.fullName} (${member.phone || 'N/A'})`
+  memberResults.value = [] // 清空搜尋結果
+  form.value.memberSearch = '' // 清空搜尋框
+}
+
+// ========== 打開新增 Modal ==========
+function openCreateModal() {
+  modalTitle.value = '新增預約'
+  form.value = {
+    venueId: '',
+    courtId: '',
+    memberId: '',
+    memberSearch: '',
+    bookingDate: '',
+    startTime: '',
+    endTime: '',
+    totalAmount: '',
+    note: '',
+  }
+  selectedMemberText.value = ''
+  memberResults.value = []
+  showModal.value = true
+}
+
+// ========== 儲存預約 ==========
+async function saveBooking() {
+  // 表單驗證
+  if (!form.value.memberId) {
+    alert('請選擇會員!')
+    return
+  }
+  if (!form.value.courtId) {
+    alert('請選擇球場!')
+    return
+  }
+  if (!form.value.bookingDate) {
+    alert('請選擇預約日期!')
+    return
+  }
+
+  try {
+    // 組裝要送給後端的資料（不送 venueId 和 memberSearch）
+    const payload = {
+      court: { courtId: Number(form.value.courtId) },
+      member: { memberId: Number(form.value.memberId) },
+      bookingDate: form.value.bookingDate,
+      startTime: form.value.startTime,
+      endTime: form.value.endTime,
+      totalAmount: form.value.totalAmount,
+      note: form.value.note,
+    }
+    await bookingApi.create(payload)
+    showModal.value = false
+    alert('新增成功!')
+    loadData()
+  } catch (error) {
+    alert('新增失敗：' + error.message)
+  }
+}
+
+// 今天的日期（用於限制日期選擇器）
+const today = computed(() => {
+  return new Date().toISOString().slice(0, 10)
+})
 </script>
 
 <template>
@@ -262,7 +350,7 @@ function onEndTimeChange() {
           <!-- 正常渲染資料 -->
           <tr v-for="b in pagedBookings" :key="b.bookingId" v-else>
             <td class="ps-4">{{ b.bookingId }}</td>
-            <td>{{ b.member?.name || '-' }}</td>
+            <td>{{ b.member?.fullName || '-' }}</td>
             <td>{{ b.court?.courtName || '-' }}</td>
             <td>{{ b.bookingDate }}</td>
             <td>{{ b.startTime }} ~ {{ b.endTime }}</td>
@@ -333,7 +421,7 @@ function onEndTimeChange() {
     <ul class="pagination">
       <!-- 上一頁 -->
       <li class="page-item" :class="{ disabled: currentPage === 1 }">
-        <a class="page-link" href="#" @click.prevent="goToPage(currentPage - 1)"><</a>
+        <a class="page-link" href="#" @click.prevent="goToPage(currentPage - 1)">‹</a>
       </li>
       <!-- 頁碼 -->
       <li class="page-item" v-for="p in totalPages" :key="p" :class="{ active: p === currentPage }">
@@ -341,8 +429,128 @@ function onEndTimeChange() {
       </li>
       <!-- 下一頁 -->
       <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-        <a class="page-link" href="#" @click.prevent="goToPage(currentPage + 1)">></a>
+        <a class="page-link" href="#" @click.prevent="goToPage(currentPage + 1)">›</a>
       </li>
     </ul>
   </nav>
+
+  <!-- 新增預約 Modal -->
+  <div v-if="showModal" class="modal-backdrop fade show" @click="showModal = false"></div>
+  <div v-if="showModal" class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ modalTitle }}</h5>
+          <button type="button" class="btn-close" @click="showModal = false"></button>
+        </div>
+        <div class="modal-body">
+          <!-- 會員 ID -->
+          <div class="mb-3">
+            <label class="form-label">會員ID<span class="text-danger">*</span></label>
+            <!-- 已選中的會員 -->
+            <div
+              v-if="selectedMemberText"
+              class="alert alert-success py-2 d-flex justify-content-between align-items-center"
+            >
+              <span>✅{{ selectedMemberText }}(ID:{{ form.memberId }})</span>
+              <button
+                type="button"
+                class="btn-close btn-sm"
+                @click="((selectedMemberText = ''), (form.memberId = ''))"
+              ></button>
+            </div>
+            <!-- 搜尋框（未選中時顯示） -->
+            <div v-else>
+              <input
+                type="text"
+                class="form-control"
+                v-model="form.memberSearch"
+                placeholder="輸入姓名或電話搜尋..."
+                @input="searchMember"
+              />
+              <!-- 搜尋結果列表 -->
+              <ul
+                v-if="memberResults.length"
+                class="list-group mt-1"
+                style="max-height: 200px; overflow-y: auto"
+              >
+                <li
+                  v-for="m in memberResults"
+                  :key="m.memberId"
+                  class="list-group-item list-group-item-action"
+                  style="cursor: pointer"
+                  @click="selectMember(m)"
+                >
+                  {{ m.fullName }} ({{ m.phone || '無電話' }})
+                </li>
+              </ul>
+            </div>
+          </div>
+          <!-- 場館選擇（連動用，不送後端） -->
+          <div class="mb-3">
+            <label class="form-label">場館<span class="text-danger">*</span></label>
+            <select class="form-select" v-model="form.venueId" @change="onVenueChange">
+              <option value="" disabled="">請選擇場館</option>
+              <option v-for="v in venues" :key="v.venueId" :value="v.venueId">
+                {{ v.venueName }}
+              </option>
+            </select>
+          </div>
+          <!-- 球場選擇（根據場館篩選） -->
+          <div class="mb-3">
+            <label class="form-label">球場<span class="text-danger">*</span></label>
+            <select class="form-select" v-model="form.courtId" :disabled="!form.venueId">
+              <option value="" disabled>請先選擇場館</option>
+              <option v-for="c in filteredCourts" :key="c.courtId" :value="c.courtId">
+                {{ c.courtName }}
+              </option>
+            </select>
+          </div>
+          <!-- 預約日期 -->
+          <div class="mb-3">
+            <label class="form-label">預約日期<span class="text-danger">*</span></label>
+            <input type="date" class="form-control" v-model="form.bookingDate" :min="today" />
+          </div>
+          <!-- 開始時間 -->
+          <div class="mb-3">
+            <label class="form-label">開始時間<span class="text-danger">*</span></label>
+            <select class="form-select" v-model="form.startTime" @change="onStartTimeChange">
+              <option value="" disabled>請選擇</option>
+              <option v-for="t in startTimeOptions" :key="t" :value="t">{{ t }}</option>
+            </select>
+          </div>
+          <!-- 結束時間 -->
+          <div class="mb-3">
+            <label class="form-label">結束時間<span class="text-danger">*</span></label>
+            <select
+              class="form-select"
+              v-model="form.endTime"
+              :disabled="!form.startTime"
+              @change="onEndTimeChange"
+            >
+              <option value="" disabled>請選擇</option>
+              <option v-for="t in endTimeOptions" :key="t" :value="t">{{ t }}</option>
+            </select>
+          </div>
+          <!-- 金額（自動計算） -->
+          <div class="mb-3">
+            <label class="form-label">金額</label>
+            <input type="number" class="form-control" v-model="form.totalAmount" readonly />
+          </div>
+          <!-- 備註 -->
+          <div class="mb-3">
+            <label class="form-label">備註</label>
+            <textarea class="form-control" v-model="form.note" rows="2" placeholder="選填">
+            </textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="showModal = false">取消</button>
+          <button type="button" class="btn btn-primary" @click="saveBooking">
+            <i class="bi bi-check-lg me-1"></i>儲存
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
