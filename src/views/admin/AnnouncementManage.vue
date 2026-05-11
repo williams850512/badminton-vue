@@ -348,7 +348,7 @@ async function saveAnnouncement() {
   </nav>
   <!-- 新增/編輯 Modal -->
   <div v-if="showModal" class="modal-backdrop fade show" @click="showModal = false"></div>
-  <div div v-if="showModal" class="modal fade show d-block" tabindex="-1">
+  <div v-if="showModal" class="modal fade show d-block" tabindex="-1">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
@@ -375,6 +375,38 @@ async function saveAnnouncement() {
             >
             </textarea>
           </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">分類</label>
+              <select class="form-select" v-model="form.category">
+                <option value="">--請選擇--</option>
+                <option value="緊急">緊急</option>
+                <option value="活動">活動</option>
+                <option value="一般">一般</option>
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">狀態</label>
+              <select class="form-select" v-model="form.status">
+                <option value="DRAFT">草稿</option>
+                <option value="PUBLISHED">已發布</option>
+                <option value="ARCHIVED">已封存</option>
+              </select>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">置頂</label>
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" v-model="form.isPinned" />
+                <label class="form-check-label">設為置頂公告</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="showModal = false">取消</button>
+          <button type="button" class="btn btn-primary" @click="saveAnnouncement">
+            <i class="bi bi-check-lg me-1"></i>儲存
+          </button>
         </div>
       </div>
     </div>
