@@ -1,32 +1,14 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import axios from 'axios'
-// 引入 SweetAlert2：取代原生醜醜的 alert()，變成漂亮的彈跳視窗
-import Swal from 'sweetalert2'
+import { computed, onMounted, watch } from 'vue'
+// 👇 引入所有 Composable（邏輯都拆到外面了，這裡只負責「組裝」）
+import { useExport } from '@/composables/useExport'
+import { useDateFilter } from '@/composables/useDateFilter'
+import { usePickupGameApi } from '@/composables/usePickupGameApi'
+import { useGameFilter } from '@/composables/useGameFilter'
 
 // ============================
-// ✏️ 即時編輯（Inline Edit）
+// 📦 狀態對照表（純 UI 顯示用，不涉及 API）
 // ============================
-// 記錄「正在編輯的是哪一格」，格式：{ gameId: 4, field: 'maxPlayers' }
-const inlineEdit = ref(null)
-// 點擊格子 → 進入編輯模式
-const startInlineEdit = (gameId, field) => {
-  inlineEdit.value = { gameId, field }
-}
-// 按 Enter 或失去焦點 → 儲存並退出編輯模式
-const saveInlineEdit = async (game) => {
-  try {
-    await axios.put(`/api/pickup-games/${game.gameId}`, game)
-    inlineEdit.value = null
-    fetchGames()
-  } catch (err) {
-    Swal.fire({ icon: 'error', title: '更新失敗' })
-  }
-}
-// ============================
-// 📋 表格列表用的資料
-// ============================
-const pickupGames = ref([])
 const statusMap = {
   OPEN: '開放中',
   FULL: '已額滿',
@@ -39,35 +21,21 @@ const skillMap = {
   INTERMEDIATE: '中級',
   ADVANCED: '高級',
 }
+
 // ============================
-// 📝 新增揪團表單用的資料
+// 🔌 Step 1: 初始化 API 層（所有跟後端溝通的邏輯）
 // ============================
-const courts = ref([])
-const memberKeyword = ref('')
-const memberResults = ref([])
-const selectedMember = ref(null)
-const today = new Date().toISOString().split('T')[0]
-const newGame = ref({
-  host: { memberId: null },
-  court: { courtId: null },
-  gameDate: '',
-  startTime: '',
-  endTime: '',
-  maxPlayers: 4,
-  skillLevel: 'ALL',
-})
-// ============================
-// 👥 查看報名相關的資料
-// ============================
-// 記錄「目前展開的是哪一場揪團」，null 代表全部收合
-const expandedGameId = ref(null)
-// 用物件來儲存每場揪團的報名名單，key 是 gameId，value 是報名陣列
-// 例如：{ 4: [{signupId:1, member:{...}, ...}, ...], 3: [...] }
-const signupsMap = ref({})
-// 報名區的會員搜尋（跟上面新增揪團的搜尋是分開的）
-const signupKeyword = ref('')
-const signupSearchResults = ref([])
-const selectedSignupMember = ref(null)
+const {
+  pickupGames, courts, signupsMap,
+  memberKeyword, memberResults, selectedMember,
+  signupKeyword, signupSearchResults, selectedSignupMember,
+  editGame, editMemberKeyword, newGame, today, inlineEdit,
+  fetchGames, fetchCourts, searchMembers, selectMember,
+  createPickupGame, openEditModal, updatePickupGame,
+  cancelPickupGame, batchCancel: doBatchCancel,
+  fetchSignups, searchSignupMembers, selectSignupMember,
+  addSignup, removeSignup, startInlineEdit, saveInlineEdit,
+} = usePickupGameApi()
 // ============================
 // ⏰ 時間下拉選單的邏輯
 // 🔧 加上判斷：如果選的日期是「今天」，就過濾掉已經過去的時間
@@ -105,371 +73,63 @@ watch(
 // 搜尋 + 狀態篩選 + 分頁 邏輯
 // ============================================================
 
-// 搜尋關鍵字
-const searchQuery = ref('')
-// 狀態篩選
-const statusFilter = ref('ALL')
-// 日期區間篩選
-const dateFrom = ref('') // 開始日期
-const dateTo = ref('') // 結束日期
-// 分頁相關
-const currentPage = ref(1)
-const pageSize = ref(10)
 // ============================
-// ☑️ 批次操作
+// 📅 Step 2: 初始化日期篩選層
 // ============================
-// 儲存被勾選的 gameId 陣列
-const selectedIds = ref([])
-// 全選/取消全選（只針對目前這一頁的資料）
-const toggleSelectAll = (event) => {
-  if (event.target.checked) {
-    selectedIds.value = paginatedGames.value.map((g) => g.gameId)
-  } else {
-    selectedIds.value = []
-  }
-}
-// 批次取消揪團
+const {
+  dateFrom, dateTo, showDatePanel, datePresetLabel,
+  tempDateFrom, tempDateTo,
+  setDateRange, openDatePanel, applyDateRange, cancelDatePanel
+} = useDateFilter()
+
+// ============================
+// 🔍 Step 3: 初始化篩選 + 排序 + 分頁層
+// ============================
+const {
+  searchQuery, statusFilter, sortBy,
+  currentPage, pageSize, selectedIds, expandedGameId,
+  isRefreshing,
+  toggleSelectAll, toggleSignups: doToggleSignups,
+  refreshGames: doRefreshGames,
+  dateFilteredGames, filteredGames, totalPages, paginatedGames,
+} = useGameFilter(pickupGames, getDisplayStatus, dateFrom, dateTo)
+
+// 包裝一層，讓 template 呼叫更簡潔
+const toggleSignups = (gameId) => doToggleSignups(gameId, fetchSignups)
+const refreshGames = () => doRefreshGames(fetchGames, datePresetLabel)
 const batchCancel = async () => {
-  if (!selectedIds.value.length) return
-  const result = await Swal.fire({
-    icon: 'warning',
-    title: `確定要批次取消 ${selectedIds.value.length} 場揪團嗎？`,
-    showCancelButton: true,
-    confirmButtonText: '確定取消',
-    cancelButtonText: '返回',
-    confirmButtonColor: '#dc3545',
-  })
-  if (result.isConfirmed) {
-    try {
-      // 用 Promise.all 同時送出多個 PUT 請求
-      await Promise.all(
-        selectedIds.value.map((id) => {
-          const game = pickupGames.value.find((g) => g.gameId === id)
-          return axios.put(`/api/pickup-games/${id}`, { ...game, status: 'CANCELLED' })
-        }),
-      )
-      Swal.fire({ icon: 'success', title: `已取消 ${selectedIds.value.length} 場揪團` })
-      selectedIds.value = []
-      fetchGames()
-    } catch (err) {
-      Swal.fire({ icon: 'error', title: '批次取消失敗' })
-    }
-  }
+  const success = await doBatchCancel(selectedIds.value)
+  if (success) selectedIds.value = []
 }
-
-// 第一層過濾：篩選狀態與關鍵字
-const filteredGames = computed(() => {
-  let result = pickupGames.value
-  if (statusFilter.value !== 'ALL') {
-    // 🔧 改用 getDisplayStatus 判斷，這樣過期的揪團也會被歸到「已結束」
-    result = result.filter((game) => getDisplayStatus(game) === statusFilter.value)
-  }
-  // 日期區間篩選
-  if (dateFrom.value) {
-    result = result.filter((game) => game.gameDate >= dateFrom.value)
-  }
-  if (dateTo.value) {
-    result = result.filter((game) => game.gameDate <= dateTo.value)
-  }
-  const q = searchQuery.value.trim().toLowerCase()
-  if (q) {
-    result = result.filter((game) => {
-      const searchable = [
-        game.host?.fullName,
-        game.venue?.venueName,
-        game.court?.courtName,
-        game.gameDate,
-        String(game.gameId),
-      ]
-        .join(' ')
-        .toLowerCase()
-      return searchable.includes(q)
-    })
-  }
-  return result
-})
-
-// 總頁數
-const totalPages = computed(() => {
-  return Math.ceil(filteredGames.value.length / pageSize.value) || 1
-})
-
-// 第二層切割：取出當前頁面資料
-const paginatedGames = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredGames.value.slice(start, start + pageSize.value)
-})
-
-// 監聽變數改變，自動回第一頁
-watch([searchQuery, statusFilter, pageSize, dateFrom, dateTo], () => {
-  currentPage.value = 1
-})
 // ============================
-// 🔌 API 呼叫
+// 📤 Step 4: 初始化導出功能
 // ============================
-const fetchGames = async () => {
-  try {
-    const response = await axios.get('/api/pickupgames')
-    pickupGames.value = response.data
-  } catch (error) {
-    console.log('抓取資料失敗', error)
-  }
+const { exportData: doExport } = useExport()
+
+const exportData = (format) => {
+  const dataToExport = filteredGames.value.map((game) => ({
+    ID: game.gameId,
+    主揪: game.host?.fullName || '未提供',
+    電話: game.host?.phone || '未提供',
+    場館: game.venue?.venueName || '未指定',
+    場地: game.court?.courtName || '未指定',
+    日期: game.gameDate,
+    時間: `${game.startTime} ~ ${game.endTime}`,
+    人數: `${game.currentPlayers}/${game.maxPlayers}`,
+    程度: game.level || '不限',
+    狀態: getDisplayStatus(game),
+  }))
+  doExport(dataToExport, format)
 }
-const fetchCourts = async () => {
-  try {
-    const res = await axios.get('/api/courts')
-    courts.value = res.data
-  } catch (err) {
-    console.error('抓取場地失敗', err)
-  }
-}
-// ---------- 新增揪團相關 ----------
-const searchMembers = async () => {
-  if (!memberKeyword.value.trim()) {
-    memberResults.value = []
-    return
-  }
-  try {
-    const res = await axios.get('/api/members/search', {
-      params: { keyword: memberKeyword.value },
-    })
-    memberResults.value = res.data
-  } catch (err) {
-    console.error('搜尋會員失敗', err)
-  }
-}
-const selectMember = (member) => {
-  selectedMember.value = member
-  newGame.value.host.memberId = member.memberId
-  memberKeyword.value = member.fullName
-  memberResults.value = []
-}
-const createPickupGame = async () => {
-  try {
-    await axios.post('/api/pickup-games', newGame.value)
-    // 🔧 用 SweetAlert2 取代原本的 alert()
-    Swal.fire({
-      icon: 'success', // 顯示綠色打勾圖示
-      title: '建立成功！',
-      text: '揪團已成功建立',
-      confirmButtonText: '太好了',
-      confirmButtonColor: '#0d6efd', // Bootstrap 藍色
-    })
-    fetchGames()
-    newGame.value = {
-      host: { memberId: null },
-      court: { courtId: null },
-      gameDate: '',
-      startTime: '',
-      endTime: '',
-      maxPlayers: 4,
-      skillLevel: 'ALL',
-    }
-    selectedMember.value = null
-    memberKeyword.value = ''
-  } catch (error) {
-    console.error('新增失敗：', error)
-    Swal.fire({
-      icon: 'error',
-      title: '新增失敗',
-      text: '請檢查資料是否正確',
-      confirmButtonText: '我知道了',
-    })
-  }
-}
-// ---------- 查看報名相關 ----------
-// 展開/收合報名名單
-const toggleSignups = async (gameId) => {
-  // 如果點的是已經展開的那場 → 收合
-  if (expandedGameId.value === gameId) {
-    expandedGameId.value = null
-    return
-  }
-  // 否則 → 展開並去後端抓這場的報名資料
-  expandedGameId.value = gameId
-  await fetchSignups(gameId)
-}
-// 抓取某場揪團的報名名單
-const fetchSignups = async (gameId) => {
-  try {
-    // 呼叫後端 API：GET /api/pickup-games/{gameId}/signups
-    const res = await axios.get(`/api/pickup-games/${gameId}/signups`)
-    // 把結果存進 signupsMap，用 gameId 當 key
-    signupsMap.value[gameId] = res.data
-  } catch (err) {
-    console.error('抓取報名名單失敗', err)
-  }
-}
-// 報名區搜尋會員（跟新增揪團的搜尋邏輯一樣，但用不同的變數）
-const searchSignupMembers = async () => {
-  if (!signupKeyword.value.trim()) {
-    signupSearchResults.value = []
-    return
-  }
-  try {
-    const res = await axios.get('/api/members/search', {
-      params: { keyword: signupKeyword.value },
-    })
-    signupSearchResults.value = res.data
-  } catch (err) {
-    console.error('搜尋會員失敗', err)
-  }
-}
-// 在報名區選中會員
-const selectSignupMember = (member) => {
-  selectedSignupMember.value = member
-  signupKeyword.value = member.fullName
-  signupSearchResults.value = []
-}
-// 新增報名
-const addSignup = async (gameId) => {
-  if (!selectedSignupMember.value) {
-    Swal.fire({ icon: 'warning', title: '請先搜尋並選擇一位會員', confirmButtonText: '好的' })
-    return
-  }
-  try {
-    // POST /api/pickup-game-signups
-    // 後端需要 game 物件（帶 gameId）和 member 物件（帶 memberId）
-    await axios.post('/api/pickup-game-signups', {
-      game: { gameId: gameId },
-      member: { memberId: selectedSignupMember.value.memberId },
-    })
-    Swal.fire({
-      icon: 'success',
-      title: '報名成功！',
-      text: `${selectedSignupMember.value.fullName} 已加入揪團`,
-      confirmButtonText: '太好了',
-      confirmButtonColor: '#0d6efd',
-    })
-    // 重新抓取報名名單和揪團列表（人數會更新）
-    await fetchSignups(gameId)
-    fetchGames()
-    // 清空搜尋
-    signupKeyword.value = ''
-    selectedSignupMember.value = null
-  } catch (error) {
-    console.error('報名失敗', error)
-    Swal.fire({
-      icon: 'error',
-      title: '報名失敗',
-      text: '該會員可能已經報名過了',
-      confirmButtonText: '我知道了',
-    })
-  }
-}
-// 移除報名（使用 SweetAlert2 確認視窗）
-const removeSignup = async (signupId, gameId, memberName) => {
-  // Swal.fire 搭配 showCancelButton 就能做出「確定/取消」的雙按鈕確認框
-  const result = await Swal.fire({
-    icon: 'warning', // 黃色警告三角形
-    title: '確定移除報名嗎？',
-    text: `即將移除「${memberName}」的報名`,
-    showCancelButton: true, // 顯示取消按鈕
-    confirmButtonText: '確定移除',
-    cancelButtonText: '取消',
-    confirmButtonColor: '#dc3545', // 紅色（代表危險操作）
-    cancelButtonColor: '#6c757d', // 灰色
-  })
-  // result.isConfirmed 只有在使用者按下「確定移除」時才是 true
-  if (result.isConfirmed) {
-    try {
-      // DELETE /api/pickup-game-signups/{signupId}
-      await axios.delete(`/api/pickup-game-signups/${signupId}`)
-      Swal.fire({
-        icon: 'success',
-        title: '已移除',
-        text: `${memberName} 的報名已被移除`,
-        confirmButtonText: '好的',
-        confirmButtonColor: '#0d6efd',
-      })
-      // 重新抓取
-      await fetchSignups(gameId)
-      fetchGames()
-    } catch (err) {
-      console.error('移除失敗', err)
-      Swal.fire({ icon: 'error', title: '移除失敗', confirmButtonText: '我知道了' })
-    }
-  }
-}
-// ✏️ 編輯揪團相關
-// 儲存正在編輯的揪團資料（點鉛筆時會把該場資料複製進來）
-const editGame = ref(null)
-// 編輯表單裡「主揪」的顯示文字
-const editMemberKeyword = ref('')
-// 點擊鉛筆按鈕時：把該場揪團的資料複製一份放進 editGame，然後打開 Modal
-const openEditModal = (game) => {
-  // JSON.parse + JSON.stringify 是「深拷貝」技巧
-  // 避免直接修改原始資料（還沒按儲存就改到表格上的值）
-  editGame.value = JSON.parse(JSON.stringify(game))
-  // 把主揪名字顯示在輸入框上
-  editMemberKeyword.value = game.host?.fullName || ''
-}
-// 按下「儲存」時：送出 PUT 請求更新資料庫
-const updatePickupGame = async () => {
-  try {
-    // PUT /api/pickup-games/{gameId}
-    await axios.put(`/api/pickup-games/${editGame.value.gameId}`, editGame.value)
-    Swal.fire({
-      icon: 'success',
-      title: '修改成功！',
-      confirmButtonText: '太好了',
-      confirmButtonColor: '#0d6efd',
-    })
-    fetchGames() // 重新抓列表更新畫面
-  } catch (error) {
-    console.error('修改失敗', error)
-    Swal.fire({
-      icon: 'error',
-      title: '修改失敗',
-      text: '請檢查資料',
-      confirmButtonText: '我知道了',
-    })
-  }
-}
-// 🗑️ 取消揪團（軟刪除：不是真的刪，只是把狀態改成 CANCELLED）
-const cancelPickupGame = async (game) => {
-  const result = await Swal.fire({
-    icon: 'warning',
-    title: '確定要取消這場揪團嗎？',
-    text: `${game.host?.fullName} 在 ${game.gameDate} 的揪團將被標記為「已取消」`,
-    showCancelButton: true,
-    confirmButtonText: '確定取消',
-    cancelButtonText: '返回',
-    confirmButtonColor: '#dc3545',
-    cancelButtonColor: '#6c757d',
-  })
-  if (result.isConfirmed) {
-    try {
-      // 用 PUT 更新狀態，而不是 DELETE 刪除資料
-      // 把整個 game 物件複製一份，只改 status 欄位
-      await axios.put(`/api/pickup-games/${game.gameId}`, {
-        ...game,
-        status: 'CANCELLED',
-      })
-      Swal.fire({
-        icon: 'success',
-        title: '已取消',
-        text: '該揪團已標記為已取消',
-        confirmButtonText: '好的',
-        confirmButtonColor: '#0d6efd',
-      })
-      fetchGames()
-    } catch (err) {
-      console.error('取消失敗', err)
-      Swal.fire({ icon: 'error', title: '取消失敗', confirmButtonText: '我知道了' })
-    }
-  }
-}
-// 判斷揪團是否已過期（日期+結束時間已經過了）
-const getDisplayStatus = (game) => {
-  // 如果後端已經標記取消了，就直接用取消
+
+// ============================
+// 🏷️ 判斷揪團是否已過期（純 UI 判斷，不涉及 API）
+// ============================
+function getDisplayStatus(game) {
   if (game.status === 'CANCELLED') return 'CANCELLED'
-  // 把 gameDate + endTime 組成完整的時間來比較
   const endDateTime = new Date(`${game.gameDate}T${game.endTime}`)
   const now = new Date()
-  // 如果結束時間已經過了 → 強制顯示「已結束」
   if (endDateTime < now) return 'CLOSED'
-  // 否則就用後端回傳的原始狀態
   return game.status
 }
 
@@ -595,90 +255,168 @@ onMounted(() => {
   </div>
   <div class="pickup-games-container p-4 bg-white rounded shadow-sm">
     <!-- ============ 頂部工具列 ============ -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h4 class="mb-0"><i class="bi bi-people-fill me-2"></i>臨打揪團管理</h4>
-      <div class="d-flex gap-2">
-        <div class="input-group">
-          <input
-            type="text"
-            class="form-control"
-            placeholder="搜尋主揪、場地、日期..."
-            v-model="searchQuery"
-          />
-          <!-- ✕ 按鈕：清空搜尋 -->
-          <button class="btn btn-outline-danger" type="button" @click="searchQuery = ''">✕</button>
-        </div>
-        <button
-          class="btn btn-primary text-nowrap"
-          data-bs-toggle="modal"
-          data-bs-target="#addGameModal"
-        >
-          <i class="bi bi-plus-circle-fill me-1"></i> 新增揪團
-        </button>
-      </div>
-    </div>
-    <!-- 狀態快速篩選按鈕列 -->
-    <!-- 日期區間篩選（用原生 date input，不裝套件） -->
-    <div class="d-flex gap-2 mb-3 align-items-center">
-      <label class="form-label mb-0 small text-muted">日期範圍</label>
-      <input
-        type="date"
-        class="form-control form-control-sm"
-        style="width: 160px"
-        v-model="dateFrom"
-      />
-      <span class="text-muted">~</span>
-      <input
-        type="date"
-        class="form-control form-control-sm"
-        style="width: 160px"
-        v-model="dateTo"
-      />
+    <!-- 第一行：標題 + 新增按鈕 -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0"><i class="bi bi-people-fill me-2"></i>揪團管理</h4>
       <button
-        class="btn btn-outline-secondary btn-sm"
-        @click="dateFrom = ''; dateTo = ''"
+        class="btn btn-primary text-nowrap"
+        data-bs-toggle="modal"
+        data-bs-target="#addGameModal"
       >
-        清除
+        <i class="bi bi-plus-circle-fill me-1"></i> 新增揪團
       </button>
     </div>
-    <div class="d-flex gap-2 mb-3 flex-wrap">
-      <!-- 每個按鈕用 @click 設定 statusFilter 的值
-       :class 根據目前選中的狀態切換「實心/空心」樣式 -->
+    <!-- 第二行：搜尋框（加寬，內嵌搜尋圖示和清除按鈕） -->
+    <div class="search-wrapper mb-3">
+      <i class="bi bi-search search-icon"></i>
+      <input
+        type="text"
+        class="form-control search-input"
+        placeholder="搜尋主揪姓名、電話、場地、日期..."
+        v-model="searchQuery"
+      />
+      <button v-if="searchQuery" class="search-clear-btn" @click="searchQuery = ''" type="button">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <!-- 📅 日期選擇 + 排序（左右分區） -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <!-- ← 左側：日期篩選（輸入區） -->
+      <div style="position: relative">
+        <button
+          class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
+          @click="openDatePanel"
+        >
+          <i class="bi bi-calendar3"></i>
+          {{ datePresetLabel }}
+          <i class="bi bi-chevron-down" style="font-size: 0.7em"></i>
+        </button>
+        <!-- 彈出面板 -->
+        <div v-if="showDatePanel" class="date-panel shadow-lg">
+          <div class="d-flex">
+            <!-- 左側：快捷選項 -->
+            <div class="date-panel-presets">
+              <button class="date-preset-btn" @click="setDateRange('today')">今天</button>
+              <button class="date-preset-btn" @click="setDateRange('yesterday')">昨天</button>
+              <button class="date-preset-btn" @click="setDateRange('thisWeek')">本週</button>
+              <button class="date-preset-btn" @click="setDateRange('lastWeek')">上週</button>
+              <button class="date-preset-btn" @click="setDateRange('thisMonth')">本月</button>
+              <button class="date-preset-btn" @click="setDateRange('lastMonth')">上月</button>
+              <button class="date-preset-btn" @click="setDateRange('all')">全部</button>
+            </div>
+            <!-- 右側：手動日期輸入 -->
+            <div class="date-panel-inputs">
+              <label class="form-label small text-muted mb-1">開始日期</label>
+              <input type="date" class="form-control form-control-sm mb-3" v-model="tempDateFrom" />
+              <label class="form-label small text-muted mb-1">結束日期</label>
+              <input type="date" class="form-control form-control-sm" v-model="tempDateTo" />
+            </div>
+          </div>
+          <!-- 底部按鈕 -->
+          <div class="d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
+            <button class="btn btn-sm btn-outline-secondary" @click="cancelDatePanel">取消</button>
+            <button class="btn btn-sm btn-primary" @click="applyDateRange">套用</button>
+          </div>
+        </div>
+        <!-- 遮罩層 -->
+        <div v-if="showDatePanel" class="date-panel-backdrop" @click="cancelDatePanel"></div>
+      </div>
 
+      <!-- → 右側：排序 + 重新整理（操作區） -->
+      <div class="d-flex align-items-center gap-2">
+        <!-- 🔃 排序下拉選單 -->
+        <div class="d-flex align-items-center gap-1">
+          <i class="bi bi-sort-down text-muted"></i>
+          <select class="form-select form-select-sm" style="width: 150px" v-model="sortBy">
+            <option value="default">預設排序</option>
+            <option value="dateNewest">日期：最新</option>
+            <option value="dateOldest">日期：最舊</option>
+            <option value="playersMost">人數：最多</option>
+            <option value="playersLeast">人數：最少</option>
+          </select>
+        </div>
+        <!-- 🔄 重新整理按鈕 -->
+        <button
+          class="btn btn-outline-secondary btn-sm"
+          @click="refreshGames"
+          title="重新整理"
+          :disabled="isRefreshing"
+        >
+          <i class="bi bi-arrow-clockwise" :class="{ spin: isRefreshing }"></i>
+        </button>
+        <!-- 📤 導出下拉選單按鈕 (改為藍色實心按鈕) -->
+        <div class="dropdown">
+          <button
+            class="btn btn-primary btn-sm dropdown-toggle d-flex align-items-center gap-1"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            <i class="bi bi-download"></i>
+            <span class="d-none d-md-inline"></span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <li>
+              <button class="dropdown-item" @click="exportData('EXCEL')">
+                <!-- Excel 綠色 -->
+                <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>導出 Excel (.xlsx)
+              </button>
+            </li>
+            <li>
+              <button class="dropdown-item" @click="exportData('PDF')">
+                <!-- PDF 藍色 -->
+                <i class="bi bi-file-earmark-pdf text-primary me-2"></i>導出 PDF (.pdf)
+              </button>
+            </li>
+            <li><hr class="dropdown-divider" /></li>
+            <li>
+              <button class="dropdown-item" @click="exportData('JSON')">
+                <!-- JSON 黃色 (利用 warning) -->
+                <i class="bi bi-filetype-json text-warning me-2"></i>導出 JSON (.json)
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- 狀態快速篩選按鈕列（計數跟日期篩選連動） -->
+    <div class="d-flex gap-2 mb-3 flex-wrap">
       <button
         class="btn btn-sm"
         :class="statusFilter === 'ALL' ? 'btn-dark' : 'btn-outline-dark'"
         @click="statusFilter = 'ALL'"
       >
-        全部 ({{ pickupGames.length }})
+        全部 ({{ dateFilteredGames.length }})
       </button>
       <button
         class="btn btn-sm"
         :class="statusFilter === 'OPEN' ? 'btn-success' : 'btn-outline-success'"
         @click="statusFilter = 'OPEN'"
       >
-        🟢 開放中 ({{ pickupGames.filter((g) => getDisplayStatus(g) === 'OPEN').length }})
+        🟢 開放中 ({{ dateFilteredGames.filter((g) => getDisplayStatus(g) === 'OPEN').length }})
       </button>
       <button
         class="btn btn-sm"
         :class="statusFilter === 'FULL' ? 'btn-full' : 'btn-outline-full'"
         @click="statusFilter = 'FULL'"
       >
-        🟡 已額滿 ({{ pickupGames.filter((g) => getDisplayStatus(g) === 'FULL').length }})
+        🟡 已額滿 ({{ dateFilteredGames.filter((g) => getDisplayStatus(g) === 'FULL').length }})
       </button>
       <button
         class="btn btn-sm"
         :class="statusFilter === 'CLOSED' ? 'btn-secondary' : 'btn-outline-secondary'"
         @click="statusFilter = 'CLOSED'"
       >
-        ⚫ 已結束 ({{ pickupGames.filter((g) => getDisplayStatus(g) === 'CLOSED').length }})
+        ⚫ 已結束 ({{ dateFilteredGames.filter((g) => getDisplayStatus(g) === 'CLOSED').length }})
       </button>
       <button
         class="btn btn-sm"
         :class="statusFilter === 'CANCELLED' ? 'btn-secondary' : 'btn-outline-secondary'"
         @click="statusFilter = 'CANCELLED'"
       >
-        ⚪ 已取消 ({{ pickupGames.filter((g) => getDisplayStatus(g) === 'CANCELLED').length }})
+        ⚪ 已取消 ({{
+          dateFilteredGames.filter((g) => getDisplayStatus(g) === 'CANCELLED').length
+        }})
       </button>
     </div>
     <!-- 批次操作列：只有勾選了至少一個時才顯示 -->
@@ -720,8 +458,10 @@ onMounted(() => {
               <td>{{ game.gameId }}</td>
               <td>
                 <div class="fw-bold">{{ game.host?.fullName }}</div>
-                <div class="text-muted" style="font-size: 0.85em">
-                  (ID: {{ game.host?.memberId }})
+                <!-- 把 ID 換成電話 -->
+                <div class="text-muted small">
+                  <i class="bi bi-telephone me-1"></i>
+                  {{ game.host?.phone || '未提供電話' }}
                 </div>
               </td>
               <td>
@@ -1150,5 +890,127 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* 📅 日期選擇面板 */
+.date-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1060;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 8px;
+  min-width: 420px;
+  animation: fadeIn 0.15s ease-out;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.date-panel-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 16px;
+  border-right: 1px solid #eee;
+  min-width: 90px;
+}
+.date-preset-btn {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  text-align: left;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #495057;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.date-preset-btn:hover {
+  background-color: #f0f4ff;
+  color: #0d6efd;
+}
+.date-panel-inputs {
+  padding-left: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.date-panel-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1059;
+}
+/* 🔍 搜尋框樣式 */
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: #adb5bd;
+  font-size: 0.9rem;
+  pointer-events: none;
+  z-index: 2;
+}
+.search-input {
+  padding-left: 38px !important;
+  padding-right: 38px !important;
+  border-radius: 8px !important;
+  border: 1px solid #dee2e6;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.search-input:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  background: #e9ecef;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6c757d;
+  font-size: 0.7rem;
+  transition: background 0.15s;
+  z-index: 2;
+}
+.search-clear-btn:hover {
+  background: #ced4da;
+  color: #343a40;
+}
+/* 🔄 重新整理旋轉動畫 */
+.spin {
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
