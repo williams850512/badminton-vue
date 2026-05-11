@@ -37,6 +37,7 @@ const router = createRouter({
         { path: 'dashboard', name: 'dashboard', component: () => import('@/views/admin/Dashboard.vue') },
         { path: 'members', name: 'memberManage', component: () => import('@/views/admin/MemberManage.vue') },
         { path: 'admins', name: 'adminManage', component: () => import('@/views/admin/AdminManage.vue') },
+        { path: 'profile', name: 'adminProfile', component: () => import('@/views/admin/AdminProfile.vue') },
         { path: 'venues', name: 'venueManage', component: () => import('@/views/admin/VenueManage.vue') },
         { path: 'courts', name: 'courtManage', component: () => import('@/views/admin/CourtManage.vue') },
         { path: 'bookings', name: 'bookingManage', component: () => import('@/views/admin/BookingManage.vue') },

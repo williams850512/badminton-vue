@@ -23,6 +23,9 @@ const isLoading = ref(false)
 const errorMsg = ref('')
 const showPassword = ref(false)
 
+// 取得今天的日期字串 (YYYY-MM-DD)，用於限制 HTML 日期選擇器最大值
+const todayDate = new Date().toISOString().split('T')[0]
+
 // 電話格式化
 function formatPhone() {
   let v = form.value.phone.replace(/\D/g, '')
@@ -41,6 +44,11 @@ async function handleRegister() {
     errorMsg.value = '請填寫所有欄位'
     return
   }
+  
+  if (!/^[A-Za-z0-9]{8,12}$/.test(d.username)) {
+    errorMsg.value = '帳號必須為 8-12 碼英數字 (不可包含特殊字元)'
+    return
+  }
   if (d.password.length < 6) {
     errorMsg.value = '密碼至少需要 6 個字元'
     return
@@ -52,6 +60,12 @@ async function handleRegister() {
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) {
     errorMsg.value = 'Email 格式錯誤'
+    return
+  }
+
+  // 驗證生日不可為未來日期
+  if (d.birthday > todayDate) {
+    errorMsg.value = '生日不可為未來的日期'
     return
   }
 
@@ -103,7 +117,7 @@ async function handleRegister() {
                   <i class="bi bi-person me-1"></i>設定帳號
                 </label>
                 <input v-model="form.username" type="text" class="form-control rounded-3"
-                       placeholder="請輸入登入帳號" autocomplete="off" autofocus />
+                       placeholder="請輸入 8-12 碼英數字" maxlength="12" autocomplete="off" autofocus />
               </div>
 
               <div class="mb-3">
@@ -149,7 +163,7 @@ async function handleRegister() {
                 <label class="form-label fw-semibold small text-secondary">
                   <i class="bi bi-calendar-event me-1"></i>生日
                 </label>
-                <input v-model="form.birthday" type="date" class="form-control rounded-3" />
+                <input v-model="form.birthday" type="date" class="form-control rounded-3" :max="todayDate" />
               </div>
 
               <div class="mb-3">

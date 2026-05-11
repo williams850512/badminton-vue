@@ -5,17 +5,27 @@
  * - 串接 memberApi.login() (JWT)
  * - 登入成功後儲存 token 到 localStorage
  */
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { memberApi } from '@/api/member'
 
 const router = useRouter()
+const route = useRoute()
 
 const username = ref('')
 const password = ref('')
 const isLoading = ref(false)
 const errorMsg = ref('')
+const successMsg = ref('')
 const showPassword = ref(false)
+
+onMounted(() => {
+  if (route.query.registered) {
+    successMsg.value = '🎉 註冊成功！請使用新帳號登入'
+    // 清除 URL 參數以免重整一直出現
+    router.replace('/login')
+  }
+})
 
 // 進入登入頁時清除舊的 Token（等同於登出）
 localStorage.removeItem('memberToken')
@@ -68,6 +78,12 @@ async function handleLogin() {
             <div v-if="errorMsg" class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 rounded-3" role="alert">
               <i class="bi bi-exclamation-triangle-fill"></i>
               <span class="small">{{ errorMsg }}</span>
+            </div>
+
+            <!-- Success Message -->
+            <div v-if="successMsg" class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 rounded-3" role="alert" style="background-color: #ECFDF5; border-color: #A7F3D0; color: #059669;">
+              <i class="bi bi-check-circle-fill"></i>
+              <span class="small fw-bold">{{ successMsg }}</span>
             </div>
 
             <!-- Login Form -->

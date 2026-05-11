@@ -30,6 +30,9 @@ const form = ref({ username: '', password: '', fullName: '', gender: '男', memb
 const showNoteModal = ref(false)
 const noteTarget = ref({ id: null, name: '', note: '' })
 
+// 取得今天的日期字串 (YYYY-MM-DD)，用於限制 HTML 日期選擇器最大值
+const todayDate = new Date().toISOString().split('T')[0]
+
 // ===== 載入資料 =====
 async function loadData() {
   isLoading.value = true
@@ -102,6 +105,12 @@ async function saveMember() {
   }
   if (!editId.value && !d.password) {
     alert('新增會員時請設定密碼！'); return
+  }
+  if (!/^[A-Za-z0-9]{8,12}$/.test(d.username)) {
+    alert('帳號必須為 8-12 碼英數字 (不可包含特殊字元)'); return
+  }
+  if (d.birthday > todayDate) {
+    alert('生日不可為未來的日期'); return
   }
   const phoneDigits = d.phone.replace(/\D/g, '')
   if (phoneDigits.length !== 10 || !phoneDigits.startsWith('09')) {
@@ -300,7 +309,7 @@ function getLevelLabel(l) {
             <div class="form-row">
               <div class="form-col">
                 <label>帳號 <span class="req">*</span></label>
-                <input v-model="form.username" type="text" placeholder="登入帳號" :disabled="!!editId" />
+                <input v-model="form.username" type="text" placeholder="8-12 碼英數字" maxlength="12" :disabled="!!editId" />
               </div>
               <div class="form-col">
                 <label>密碼 <span v-if="!editId" class="req">*</span></label>
@@ -330,7 +339,7 @@ function getLevelLabel(l) {
             <div class="form-row">
               <div class="form-col-third">
                 <label>生日 <span class="req">*</span></label>
-                <input v-model="form.birthday" type="date" :disabled="!!editId && !isManager" />
+                <input v-model="form.birthday" type="date" :max="todayDate" :disabled="!!editId && !isManager" />
               </div>
               <div class="form-col-third">
                 <label>電話 <span class="req">*</span></label>

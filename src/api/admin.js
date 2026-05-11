@@ -11,6 +11,10 @@ function authHeader() {
 }
 
 export const adminApi = {
+  // ===== 管理員個人中心 =====
+  getProfile: () => api.get('/admins/profile', { headers: authHeader() }),
+  updateProfile: (admin) => api.put('/admins/profile', admin, { headers: authHeader() }),
+
   // ===== 管理員帳號 =====
   login: (username, password) => api.post('/admins/login', { username, password }),
   logout: () => api.post('/admins/logout', null, { headers: authHeader() }),
