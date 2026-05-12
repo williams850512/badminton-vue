@@ -37,38 +37,74 @@ const {
   addSignup, removeSignup, startInlineEdit, saveInlineEdit,
 } = usePickupGameApi()
 // ============================
-// ⏰ 時間下拉選單的邏輯
-// 🔧 加上判斷：如果選的日期是「今天」，就過濾掉已經過去的時間
-const startTimeOptions = computed(() => {
-  const options = []
-  for (let hour = 10; hour <= 21; hour++) {
-    options.push(`${String(hour).padStart(2, '0')}:00`)
+// ⏰ 時間下拉選單的邏輯 (與前台同步的嚴謹連動防呆邏輯)
+// ============================
+const generateTimeList = (start, end) => {
+  const list = []
+  for (let i = start; i <= end; i++) {
+    list.push(`${i.toString().padStart(2, '0')}:00`)
   }
-  // 如果選的日期是今天，只保留「現在這個小時之後」的時段
-  if (newGame.value.gameDate === today) {
+  return list
+}
+
+const getStartTimeOptions = (dateStr) => {
+  if (!dateStr) return []
+  let startHour = 10
+  if (dateStr === today) {
     const currentHour = new Date().getHours()
-    // filter：只留下「小時數 > 目前小時數」的選項
-    // 例如現在 14:35，currentHour=14，只保留 15:00 之後的
-    return options.filter((t) => parseInt(t.split(':')[0]) > currentHour)
+    if (currentHour + 1 > startHour) {
+      startHour = currentHour + 1
+    }
   }
-  return options
+  if (startHour > 21) return []
+  return generateTimeList(startHour, 21)
+}
+
+const getEndTimeOptions = (startTimeStr) => {
+  if (!startTimeStr) return []
+  const startHour = parseInt(startTimeStr.split(':')[0])
+  return generateTimeList(startHour + 1, 22)
+}
+
+// 新增揪團的選項
+const startTimeOptions = computed(() => getStartTimeOptions(newGame.value.gameDate))
+const endTimeOptions = computed(() => getEndTimeOptions(newGame.value.startTime))
+
+// 編輯揪團的選項
+const editStartTimeOptions = computed(() => {
+  if (!editGame.value) return []
+  return getStartTimeOptions(editGame.value.gameDate)
 })
-// 結束時間選項：根據開始時間動態計算
-const endTimeOptions = computed(() => {
-  if (!newGame.value.startTime) return []
-  const options = []
-  const startHour = parseInt(newGame.value.startTime.split(':')[0])
-  for (let hour = startHour + 1; hour <= 22; hour++) {
-    options.push(`${String(hour).padStart(2, '0')}:00`)
-  }
-  return options
+const editEndTimeOptions = computed(() => {
+  if (!editGame.value) return []
+  return getEndTimeOptions(editGame.value.startTime)
 })
-watch(
-  () => newGame.value.startTime,
-  () => {
+
+// 狀態重置 Watchers (新增)
+watch(() => newGame.value.gameDate, (newVal, oldVal) => {
+  if (newVal && oldVal && newVal !== oldVal) {
+    newGame.value.startTime = ''
     newGame.value.endTime = ''
-  },
-)
+  }
+})
+watch(() => newGame.value.startTime, (newVal, oldVal) => {
+  if (newVal && oldVal && newVal !== oldVal) {
+    newGame.value.endTime = ''
+  }
+})
+
+// 狀態重置 Watchers (編輯)
+watch(() => editGame.value?.gameDate, (newVal, oldVal) => {
+  if (newVal && oldVal && newVal !== oldVal && editGame.value) {
+    editGame.value.startTime = ''
+    editGame.value.endTime = ''
+  }
+})
+watch(() => editGame.value?.startTime, (newVal, oldVal) => {
+  if (newVal && oldVal && newVal !== oldVal && editGame.value) {
+    editGame.value.endTime = ''
+  }
+})
 // ============================================================
 // 搜尋 + 狀態篩選 + 分頁 邏輯
 // ============================================================
@@ -183,8 +219,9 @@ onMounted(() => {
                 <label class="form-label fw-bold"
                   >開始時間 <span class="text-danger">*</span></label
                 >
-                <select class="form-select" v-model="editGame.startTime">
-                  <option v-for="t in startTimeOptions" :key="t" :value="t">{{ t }}</option>
+                <select class="form-select" v-model="editGame.startTime" :disabled="!editGame.gameDate || editStartTimeOptions.length === 0">
+                  <option value="" disabled>{{ editStartTimeOptions.length === 0 ? '今日已無時段' : '請選擇...' }}</option>
+                  <option v-for="t in editStartTimeOptions" :key="t" :value="t">{{ t }}</option>
                 </select>
               </div>
               <!-- 結束時間 -->
@@ -192,21 +229,9 @@ onMounted(() => {
                 <label class="form-label fw-bold"
                   >結束時間 <span class="text-danger">*</span></label
                 >
-                <select class="form-select" v-model="editGame.endTime">
-                  <!-- 編輯時根據編輯中的開始時間動態產生選項 -->
-                  <option
-                    v-for="hour in (() => {
-                      const s = parseInt(editGame.startTime?.split(':')[0] || 10)
-                      return Array.from(
-                        { length: 22 - s },
-                        (_, i) => `${String(s + i + 1).padStart(2, '0')}:00`,
-                      )
-                    })()"
-                    :key="hour"
-                    :value="hour"
-                  >
-                    {{ hour }}
-                  </option>
+                <select class="form-select" v-model="editGame.endTime" :disabled="!editGame.startTime">
+                  <option value="" disabled>請先選擇開始時間</option>
+                  <option v-for="t in editEndTimeOptions" :key="t" :value="t">{{ t }}</option>
                 </select>
               </div>
               <!-- 最大人數 -->
@@ -768,8 +793,8 @@ onMounted(() => {
                     >開始時間 <span class="text-danger">*</span></label
                   >
                 </div>
-                <select class="form-select" v-model="newGame.startTime">
-                  <option value="" disabled>請選擇</option>
+                <select class="form-select" v-model="newGame.startTime" :disabled="!newGame.gameDate || startTimeOptions.length === 0">
+                  <option value="" disabled>{{ startTimeOptions.length === 0 ? '今日已無時段' : '請選擇...' }}</option>
                   <option v-for="t in startTimeOptions" :key="t" :value="t">{{ t }}</option>
                 </select>
               </div>
@@ -783,13 +808,8 @@ onMounted(() => {
                     >結束時間 <span class="text-danger">*</span></label
                   >
                 </div>
-                <select
-                  class="form-select"
-                  v-model="newGame.endTime"
-                  :disabled="!newGame.startTime"
-                >
-                  <option value="" disabled v-if="!newGame.startTime">請先選擇開始時間</option>
-                  <option value="" disabled v-else>請選擇結束時間</option>
+                <select class="form-select" v-model="newGame.endTime" :disabled="!newGame.startTime">
+                  <option value="" disabled>請先選擇開始時間</option>
                   <option v-for="t in endTimeOptions" :key="t" :value="t">{{ t }}</option>
                 </select>
               </div>

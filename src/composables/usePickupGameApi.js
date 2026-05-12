@@ -305,6 +305,38 @@ export function usePickupGameApi() {
       })
     }
   }
+  // ============================
+  // 🚀 前台專用：加入臨打報名
+  // ============================
+  const joinPickupGame = async (gameId, currentMemberId) => {
+    try {
+      // 呼叫你的後端 API，傳入場次 ID 跟 當前登入的會員 ID
+      await axios.post('/api/pickup-game-signups', {
+        game: { gameId: gameId },
+        member: { memberId: currentMemberId },
+      })
+
+      Swal.fire({
+        icon: 'success',
+        title: '報名成功！',
+        text: '請準時前往場館報到！',
+        confirmButtonColor: '#0ea5e9',
+        confirmButtonText: '太棒了'
+      })
+
+      // 報名成功後，重新去後端抓最新資料，讓畫面上的人數進度條馬上加一！
+      fetchGames()
+
+    } catch (error) {
+      console.error('前台報名失敗', error)
+      Swal.fire({
+        icon: 'error',
+        title: '報名失敗',
+        text: '您可能已經報名過了，或是名額剛剛被搶光囉！',
+        confirmButtonText: '我知道了'
+      })
+    }
+  }
 
   // 移除報名
   const removeSignup = async (signupId, gameId, memberName) => {
@@ -375,6 +407,7 @@ export function usePickupGameApi() {
     newGame,
     today,
     inlineEdit,
+    joinPickupGame,
 
     // API 方法
     fetchGames,

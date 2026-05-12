@@ -14,6 +14,7 @@ const router = createRouter({
         { path: 'products', name: 'products', component: () => import('@/views/frontend/ProductBrowse.vue') },
         { path: 'booking', name: 'booking', component: () => import('@/views/frontend/BookingPage.vue') },
         { path: 'pickup', name: 'pickup', component: () => import('@/views/frontend/PickupGamePage.vue') },
+        { path: 'pickup/:id', name: 'pickupDetail', component: () => import('@/views/frontend/PickupGameDetail.vue') },
         { path: 'login', name: 'memberLogin', component: () => import('@/views/frontend/MemberLogin.vue') },
         { path: 'profile', name: 'profile', component: () => import('@/views/frontend/MemberProfile.vue') },
       ],

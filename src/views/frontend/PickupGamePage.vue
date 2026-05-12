@@ -1,57 +1,146 @@
 <script setup>
-import { onMounted, computed } from 'vue'
-// 引入剛剛建好的卡片元件
-import PickupGameCard from '@/components/frontend/PickupGameCard.vue'
-// 💡 直接拿後台寫好的 API 邏輯來用！
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import PickupGameRow from '@/components/frontend/PickupGameRow.vue'
+import CreateGameModal from '@/components/frontend/CreateGameModal.vue'
 import { usePickupGameApi } from '@/composables/usePickupGameApi'
-// 如果你想加篩選，也可以把 useGameFilter 拿進來
+const router = useRouter()
 const { pickupGames, fetchGames } = usePickupGameApi()
-// 前台只要顯示「開放中」和「已額滿」的場次（過濾掉已取消或已結束的）
-const availableGames = computed(() => {
-  return pickupGames.value.filter(game => game.status !== 'CANCELLED' && game.status !== 'CLOSED')
-})
-// 點擊卡片報名按鈕時觸發
-const handleJoinGame = (game) => {
-  // 這裡之後可以串接「我要報名」的邏輯（檢查登入、呼叫 addSignup 等）
-  console.log('準備報名這場：', game)
-  alert(`即將報名 ${game.gameDate} 的場次！功能開發中...`)
+// 搜尋與篩選變數
+const searchQuery = ref('')
+const activeDateFilter = ref('全部') // 記錄目前點了哪個日期按鈕
+const createModalRef = ref(null)
+// --- 日期計算小幫手 ---
+const getTodayStr = () => new Date().toISOString().split('T')[0]
+const getTomorrowStr = () => {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
 }
-// 進來頁面就去撈資料
+const isWeekend = (dateStr) => {
+  const day = new Date(dateStr).getDay()
+  return day === 0 || day === 6 // 0是週日，6是週六
+}
+// --------------------
+const availableGames = computed(() => {
+  let result = pickupGames.value.filter(game => game.status !== 'CANCELLED' && game.status !== 'CLOSED')
+
+  // 🌟 1. 快速日期篩選
+  if (activeDateFilter.value === '今天') {
+    result = result.filter(g => g.gameDate === getTodayStr())
+  } else if (activeDateFilter.value === '明天') {
+    result = result.filter(g => g.gameDate === getTomorrowStr())
+  } else if (activeDateFilter.value === '本週末') {
+    result = result.filter(g => isWeekend(g.gameDate))
+  }
+  // 🌟 2. 關鍵字篩選
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase()
+    result = result.filter(game => {
+      const searchText = `${game.venue?.venueName} ${game.court?.courtName} ${game.host?.fullName}`.toLowerCase()
+      return searchText.includes(q)
+    })
+  }
+
+  return result
+})
+// 🌟 點擊查看詳情：不再直接報名，而是把使用者帶到新的專屬頁面
+const handleViewDetails = (game) => {
+  // 將網址導向 /pickup/123 (我們下一步會去建立這個頁面)
+  router.push(`/pickup/${game.gameId}`)
+}
 onMounted(() => {
   fetchGames()
 })
 </script>
 <template>
   <div class="container py-5 mt-5">
+
     <!-- 標題區 -->
-    <div class="text-center mb-5">
-      <h2 class="fw-bold" style="color: var(--brand-sky);">尋找你的羽球好夥伴</h2>
-      <p class="text-muted">瀏覽所有揪團活動，隨時加入一場熱血的比賽！</p>
+    <div class="mb-5">
+      <h2 class="fw-bold text-dark">羽球臨打活動</h2>
+      <p class="text-secondary">尋找適合你的場次，隨時加入熱血對決</p>
     </div>
-    <!-- 篩選列（你可以留給自己練習加上日期跟關鍵字篩選） -->
-    <div class="row mb-4">
-      <div class="col-md-4">
-        <input type="text" class="form-control" placeholder="搜尋場館、程度...">
+    <!-- 頂部膠囊型搜尋列 -->
+    <div class="d-flex align-items-center gap-3 mb-5 mt-3">
+
+      <!-- 1. 快速日期選擇 -->
+      <div class="bg-light rounded-pill p-1 d-flex align-items-center" style="border: 1px solid #e2e8f0;">
+        <button
+          class="btn btn-sm rounded-pill px-4 border-0 transition-all"
+          :class="activeDateFilter === '全部' ? 'bg-white shadow-sm fw-bold text-dark' : 'text-secondary'"
+          @click="activeDateFilter = '全部'"
+        >全部</button>
+        <button
+          class="btn btn-sm rounded-pill px-4 border-0 transition-all"
+          :class="activeDateFilter === '今天' ? 'bg-white shadow-sm fw-bold text-dark' : 'text-secondary'"
+          @click="activeDateFilter = '今天'"
+        >今天</button>
+        <button
+          class="btn btn-sm rounded-pill px-4 border-0 transition-all"
+          :class="activeDateFilter === '明天' ? 'bg-white shadow-sm fw-bold text-dark' : 'text-secondary'"
+          @click="activeDateFilter = '明天'"
+        >明天</button>
+        <button
+          class="btn btn-sm rounded-pill px-4 border-0 transition-all"
+          :class="activeDateFilter === '本週末' ? 'bg-white shadow-sm fw-bold text-dark' : 'text-secondary'"
+          @click="activeDateFilter = '本週末'"
+        >本週末</button>
       </div>
+      <div class="text-secondary opacity-25">|</div>
+      <!-- 2. 選擇日期 -->
+      <button class="btn rounded-pill px-4 bg-white hover-bg-light" style="border: 1px solid #e2e8f0;">
+        <i class="bi bi-calendar3 me-2" style="color: #65a30d;"></i>
+        <span class="text-dark fw-medium">選擇日期</span>
+      </button>
+      <!-- 3. 主搜尋框 -->
+      <div class="flex-grow-1 bg-light rounded-pill d-flex align-items-center px-4 py-2" style="border: 1px solid #e2e8f0;">
+        <i class="bi bi-geo-alt fs-5 text-secondary me-3"></i>
+        <input type="text" v-model="searchQuery" class="form-control bg-transparent border-0 shadow-none p-0 text-dark" placeholder="搜尋場館、城市或球場...">
+      </div>
+      <!-- 🌟 發起揪團按鈕 -->
+      <button 
+        class="btn rounded-pill px-4 text-white fw-bold shadow-sm" 
+        style="background-color: #0ea5e9;"
+        @click="createModalRef.showModal()"
+      >
+        <i class="bi bi-plus-lg me-1"></i> 發起揪團
+      </button>
+      <!-- 4. 進階篩選 -->
+      <button class="btn rounded-pill px-4 bg-white hover-bg-light" style="border: 1px solid #e2e8f0;">
+        <i class="bi bi-sliders me-2 text-dark"></i>
+        <span class="text-dark fw-medium">進階篩選</span>
+      </button>
     </div>
-    <!-- 揪團卡片列表 (網格) -->
-    <div class="row g-4">
-      <div
+
+    <!-- 列表資料區 (List Container) -->
+    <div class="mt-4">
+
+
+      <!-- 🌟 自動印出所有真實資料 -->
+      <PickupGameRow
         v-for="game in availableGames"
         :key="game.gameId"
-        class="col-md-6 col-lg-4"
-      >
-        <!-- 呼叫元件，傳入資料，並監聽事件 -->
-        <PickupGameCard
-          :game="game"
-          @join-game="handleJoinGame"
-        />
+        :game="game"
+        @view-details="handleViewDetails"
+      />
+      <!-- 如果沒有場次的時候顯示 -->
+      <div v-if="availableGames.length === 0" class="text-center py-5 text-secondary">
+        目前沒有符合條件的臨打場次喔！
       </div>
-      <!-- 如果沒有資料時的顯示 -->
-      <div v-if="availableGames.length === 0" class="col-12 text-center text-muted py-5">
-        <i class="bi bi-emoji-frown fs-1 mb-3 d-block"></i>
-        目前還沒有人開團，要不要自己發起一場？
-      </div>
+
     </div>
+
+    <!-- 🌟 掛載發起揪團 Modal -->
+    <CreateGameModal ref="createModalRef" @refresh-list="fetchGames" />
   </div>
 </template>
+<style scoped>
+.hover-bg-light:hover {
+  background-color: #f8fafc !important;
+}
+input:focus {
+  outline: none;
+  box-shadow: none;
+}
+</style>
