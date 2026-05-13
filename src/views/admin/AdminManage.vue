@@ -6,6 +6,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { adminApi } from '@/api/admin'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 
@@ -141,12 +142,50 @@ async function saveAdmin() {
 
 // ===== 刪除 =====
 async function deleteAdmin(id, name) {
-  if (!confirm(`確定要刪除職員「${name}」嗎？`)) return
-  try {
-    await adminApi.delete(id)
-    loadData()
-  } catch (e) {
-    alert('刪除失敗')
+  const result = await Swal.fire({
+    title: '確定要刪除職員嗎？',
+    text: `您即將刪除職員「${name}」`,
+    icon: 'warning',
+    iconColor: '#0ea5e9',
+    showCancelButton: true,
+    confirmButtonText: '確定刪除',
+    cancelButtonText: '取消',
+    reverseButtons: true,
+    background: '#ffffff',
+    color: '#334155',
+    borderRadius: '1.25rem',
+    confirmButtonColor: '#0ea5e9',
+    cancelButtonColor: '#94a3b8',
+    width: '400px',
+    customClass: {
+      popup: 'swal2-custom-popup',
+      title: 'swal2-custom-title',
+      confirmButton: 'swal2-custom-confirm',
+      cancelButton: 'swal2-custom-cancel'
+    }
+  })
+
+  if (result.isConfirmed) {
+    try {
+      await adminApi.delete(id)
+      loadData()
+      Swal.fire({
+        title: '已刪除！',
+        icon: 'success',
+        iconColor: '#0ea5e9',
+        timer: 1000,
+        showConfirmButton: false,
+        borderRadius: '1.25rem',
+        width: '300px'
+      })
+    } catch (e) {
+      Swal.fire({
+        title: '出錯了！',
+        text: '刪除失敗：' + e.message,
+        icon: 'error',
+        borderRadius: '1.25rem'
+      })
+    }
   }
 }
 
@@ -198,7 +237,7 @@ function getRoleLabel(r) {
       <h2><i class="bi bi-person-badge"></i> 職員管理</h2>
       <div class="header-actions">
         <div class="search-box">
-          <input v-model="keyword" type="text" placeholder="搜尋帳號、姓名..."
+          <input v-model="keyword" type="text" placeholder="搜尋 ID、帳號、姓名..."
                  @keydown.enter="searchAdmins" />
           <button class="btn-search" @click="searchAdmins">
             <i class="bi bi-search"></i>
@@ -260,15 +299,26 @@ function getRoleLabel(r) {
             <td><span class="badge" :class="getStatusClass(a.status)">{{ getStatusLabel(a.status) }}</span></td>
             <td>
               <div class="action-btns">
-                <button class="btn-icon btn-edit" title="編輯" @click="openEditModal(a.adminId)">
-                  <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn-icon btn-note" title="備註" @click="openNoteModal(a.adminId, a.fullName || a.username, a.note)">
-                  <i class="bi bi-sticky"></i>
-                </button>
-                <button class="btn-icon btn-delete" :class="{ 'btn-disabled': isSelf(a.adminId) }" title="刪除" :disabled="isSelf(a.adminId)" @click="!isSelf(a.adminId) && deleteAdmin(a.adminId, a.username)">
-                  <i class="bi bi-trash"></i>
-                </button>
+                <div class="tooltip-container">
+                  <button class="btn-icon btn-edit" @click="openEditModal(a.adminId)">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <div class="custom-tooltip">編輯職員</div>
+                </div>
+                <div class="tooltip-container">
+                  <button class="btn-icon btn-note" @click="openNoteModal(a.adminId, a.fullName || a.username, a.note)">
+                    <i class="bi bi-sticky"></i>
+                  </button>
+                  <div v-if="a.note && a.note !== 'null'" class="custom-tooltip">
+                    {{ a.note }}
+                  </div>
+                </div>
+                <div class="tooltip-container">
+                  <button class="btn-icon btn-delete" :class="{ 'btn-disabled': isSelf(a.adminId) }" :disabled="isSelf(a.adminId)" @click="!isSelf(a.adminId) && deleteAdmin(a.adminId, a.username)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                  <div class="custom-tooltip">{{ isSelf(a.adminId) ? '不能刪除自己' : '刪除職員' }}</div>
+                </div>
                 <div class="status-dropdown" :class="{ 'disabled-dropdown': isSelf(a.adminId) }">
                   <button class="btn-icon btn-status" :class="{ 'btn-disabled': isSelf(a.adminId) }" title="變更狀態" :disabled="isSelf(a.adminId)">
                     <i class="bi bi-arrow-repeat"></i>
@@ -464,6 +514,49 @@ function getRoleLabel(r) {
 .btn-note:hover { background: #F0F9FF; color: #0EA5E9; border-color: #BAE6FD; }
 .btn-delete:hover { background: #FEF2F2; color: #EF4444; border-color: #FECACA; }
 .btn-status:hover { background: #F8FAFC; color: #64748B; }
+
+/* Tooltip 樣式 */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+.custom-tooltip {
+  visibility: hidden;
+  position: absolute;
+  top: 50%;
+  right: 125%; /* 向左側顯示 */
+  transform: translateY(-50%) translateX(10px);
+  background-color: rgba(15, 23, 42, 0.95);
+  color: white;
+  text-align: left;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  width: max-content;
+  max-width: 260px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+.custom-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  margin-top: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent transparent transparent rgba(15, 23, 42, 0.95);
+}
+.tooltip-container:hover .custom-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
 .btn-disabled {
   opacity: 0.3; cursor: not-allowed !important; pointer-events: none;
 }
@@ -537,6 +630,31 @@ function getRoleLabel(r) {
 .text-success { color: #16A34A; }
 .text-warning { color: #D97706; }
 .text-danger { color: #EF4444; }
+
+/* SweetAlert2 客製化樣式補丁 */
+:deep(.swal2-custom-popup) {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+  padding: 1.5rem !important;
+  width: 400px !important;
+}
+:deep(.swal2-custom-title) {
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  margin-bottom: 0.5rem !important;
+}
+:deep(.swal2-custom-confirm) {
+  padding: 8px 20px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  background-color: #0ea5e9 !important;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2) !important;
+}
+:deep(.swal2-custom-cancel) {
+  padding: 8px 20px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
 
 @media (max-width: 768px) {
   .page-header { flex-direction: column; align-items: flex-start; }

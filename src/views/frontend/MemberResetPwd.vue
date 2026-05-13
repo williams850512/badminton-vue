@@ -1,45 +1,97 @@
 <script setup>
 /**
  * 前台會員忘記密碼 / 重設密碼頁
- * 流程：輸入帳號 + Email + 生日 → 驗證通過 → 設定新密碼 → 完成
+ * 流程：輸入帳號 + Email → 發送驗證碼 → 輸入驗證碼 + 新密碼 → 完成
  */
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { memberApi } from '@/api/member'
 
 const router = useRouter()
 
-// 步驟：1=身份驗證, 2=設定新密碼, 3=完成
+// 步驟：1=輸入帳號+Email, 2=輸入驗證碼+新密碼, 3=完成
 const step = ref(1)
 const isLoading = ref(false)
 const errorMsg = ref('')
+const successMsg = ref('')
 
 const username = ref('')
 const email = ref('')
-const birthday = ref('')
+const verificationCode = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 const showPassword = ref(false)
 
-// Step 1 → Step 2：驗證完成後直接跳到設定密碼
-// 由於後端 API 是一次完成（驗證 + 改密碼），前端分兩步做 UX 會更好
-// 但為了安全性，我們在 Step 2 提交時才一次打 API
+// 倒數計時（防止重複寄送）
+const countdown = ref(0)
+let countdownTimer = null
 
+function startCountdown() {
+  countdown.value = 60
+  countdownTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+  }, 1000)
+}
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
+})
+
+// Step 1：發送驗證碼
+async function sendCode() {
+  errorMsg.value = ''
+  successMsg.value = ''
+
+  if (!username.value.trim()) { errorMsg.value = '請輸入帳號'; return }
+  if (!email.value.trim()) { errorMsg.value = '請輸入 Email'; return }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { errorMsg.value = 'Email 格式錯誤'; return }
+
+  isLoading.value = true
+
+  try {
+    await memberApi.sendVerificationCode(username.value.trim(), email.value.trim())
+    successMsg.value = '驗證碼已寄送至您的信箱，請查收！'
+    step.value = 2
+    startCountdown()
+  } catch (err) {
+    const msg = err.response?.data?.message
+    errorMsg.value = msg || '發送失敗，請稍後再試'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 重新發送驗證碼
+async function resendCode() {
+  if (countdown.value > 0) return
+  errorMsg.value = ''
+  successMsg.value = ''
+  isLoading.value = true
+
+  try {
+    await memberApi.sendVerificationCode(username.value.trim(), email.value.trim())
+    successMsg.value = '新的驗證碼已寄出！'
+    startCountdown()
+  } catch (err) {
+    errorMsg.value = err.response?.data?.message || '發送失敗，請稍後再試'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Step 2：驗證碼 + 新密碼提交
 async function handleSubmit() {
   errorMsg.value = ''
+  successMsg.value = ''
 
-  if (!newPassword.value || !confirmPassword.value) {
-    errorMsg.value = '請輸入新密碼'
-    return
-  }
-  if (newPassword.value.length < 6) {
-    errorMsg.value = '新密碼至少需要 6 個字元'
-    return
-  }
-  if (newPassword.value !== confirmPassword.value) {
-    errorMsg.value = '兩次密碼輸入不一致'
-    return
-  }
+  if (!verificationCode.value.trim()) { errorMsg.value = '請輸入驗證碼'; return }
+  if (!newPassword.value) { errorMsg.value = '請輸入新密碼'; return }
+  if (newPassword.value.length < 6) { errorMsg.value = '新密碼至少需要 6 個字元'; return }
+  if (newPassword.value !== confirmPassword.value) { errorMsg.value = '兩次密碼輸入不一致'; return }
 
   isLoading.value = true
 
@@ -47,7 +99,7 @@ async function handleSubmit() {
     await memberApi.resetPassword({
       username: username.value.trim(),
       email: email.value.trim(),
-      birthday: birthday.value,
+      code: verificationCode.value.trim(),
       newPassword: newPassword.value,
     })
     step.value = 3
@@ -57,15 +109,6 @@ async function handleSubmit() {
   } finally {
     isLoading.value = false
   }
-}
-
-function goToStep2() {
-  errorMsg.value = ''
-  if (!username.value.trim()) { errorMsg.value = '請輸入帳號'; return }
-  if (!email.value.trim()) { errorMsg.value = '請輸入 Email'; return }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) { errorMsg.value = 'Email 格式錯誤'; return }
-  if (!birthday.value) { errorMsg.value = '請選擇生日'; return }
-  step.value = 2
 }
 </script>
 
@@ -81,19 +124,19 @@ function goToStep2() {
               <div class="brand-icon-circle mx-auto mb-3">
                 <i class="bi" :class="step === 3 ? 'bi-check-lg' : 'bi-key'"></i>
               </div>
-              <h2 class="fw-bold text-gradient mb-1">
+              <h2 class="fw-bold text-gradient mb-1 fs-4">
                 {{ step === 3 ? '重設成功' : '忘記密碼' }}
               </h2>
               <p class="text-muted small tracking-wider mb-0">
-                {{ step === 1 ? '請驗證您的身份' : step === 2 ? '請設定新密碼' : '密碼已更新' }}
+                {{ step === 1 ? '請輸入帳號與信箱以接收驗證碼' : step === 2 ? '請輸入驗證碼並設定新密碼' : '密碼已更新' }}
               </p>
             </div>
 
             <!-- 步驟指示 -->
             <div v-if="step !== 3" class="step-bar mb-4">
-              <div class="step-item" :class="{ active: step >= 1 }">1. 驗證身份</div>
+              <div class="step-item" :class="{ active: step >= 1 }">1. 發送驗證碼</div>
               <div class="step-divider"></div>
-              <div class="step-item" :class="{ active: step >= 2 }">2. 設定密碼</div>
+              <div class="step-item" :class="{ active: step >= 2 }">2. 重設密碼</div>
             </div>
 
             <!-- Error -->
@@ -102,8 +145,14 @@ function goToStep2() {
               <span class="small">{{ errorMsg }}</span>
             </div>
 
-            <!-- Step 1: 身份驗證 -->
-            <form v-if="step === 1" @submit.prevent="goToStep2">
+            <!-- Success -->
+            <div v-if="successMsg && step !== 3" class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 rounded-3" style="background-color: #ECFDF5; border-color: #A7F3D0; color: #059669;">
+              <i class="bi bi-check-circle-fill"></i>
+              <span class="small">{{ successMsg }}</span>
+            </div>
+
+            <!-- Step 1: 輸入帳號 + Email -->
+            <form v-if="step === 1" @submit.prevent="sendCode">
               <div class="mb-3">
                 <label class="form-label fw-semibold small text-secondary">
                   <i class="bi bi-person me-1"></i>帳號
@@ -111,26 +160,35 @@ function goToStep2() {
                 <input v-model="username" type="text" class="form-control rounded-3"
                        placeholder="請輸入您的帳號" autocomplete="off" autofocus />
               </div>
-              <div class="mb-3">
+              <div class="mb-4">
                 <label class="form-label fw-semibold small text-secondary">
                   <i class="bi bi-envelope me-1"></i>電子信箱
                 </label>
                 <input v-model="email" type="email" class="form-control rounded-3"
                        placeholder="請輸入註冊時的 Email" />
               </div>
-              <div class="mb-4">
-                <label class="form-label fw-semibold small text-secondary">
-                  <i class="bi bi-calendar-event me-1"></i>生日
-                </label>
-                <input v-model="birthday" type="date" class="form-control rounded-3" />
-              </div>
-              <button type="submit" class="btn btn-brand w-100 py-3 fw-bold">
-                <i class="bi bi-arrow-right me-2"></i>下一步
+              <button type="submit" class="btn btn-brand w-100 py-3 fw-bold" :disabled="isLoading">
+                <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+                <span v-if="isLoading">寄送中...</span>
+                <span v-else><i class="bi bi-send me-2"></i>發送驗證碼</span>
               </button>
             </form>
 
-            <!-- Step 2: 設定新密碼 -->
+            <!-- Step 2: 輸入驗證碼 + 設定新密碼 -->
             <form v-if="step === 2" @submit.prevent="handleSubmit">
+              <div class="mb-3">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-shield-lock me-1"></i>驗證碼
+                </label>
+                <div class="d-flex gap-2">
+                  <input v-model="verificationCode" type="text" class="form-control rounded-3 verification-input"
+                         placeholder="請輸入 6 位數驗證碼" maxlength="6" autofocus />
+                  <button type="button" class="btn btn-outline-secondary rounded-3 text-nowrap"
+                          :disabled="countdown > 0" @click="resendCode">
+                    {{ countdown > 0 ? `${countdown}s` : '重寄' }}
+                  </button>
+                </div>
+              </div>
               <div class="mb-3">
                 <label class="form-label fw-semibold small text-secondary">
                   <i class="bi bi-lock me-1"></i>新密碼
@@ -138,7 +196,7 @@ function goToStep2() {
                 <div class="position-relative">
                   <input v-model="newPassword" :type="showPassword ? 'text' : 'password'"
                          class="form-control rounded-3" placeholder="請輸入新密碼（至少 6 位）"
-                         style="padding-right: 48px;" autofocus />
+                         style="padding-right: 48px;" />
                   <button type="button"
                           class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary pe-3"
                           @click="showPassword = !showPassword" tabindex="-1">
@@ -160,7 +218,7 @@ function goToStep2() {
                   <span v-else><i class="bi bi-check-lg me-2"></i>確認重設</span>
                 </button>
                 <button type="button" class="btn btn-outline-secondary flex-fill py-3 fw-bold rounded-3"
-                        @click="step = 1; errorMsg = ''">
+                        @click="step = 1; errorMsg = ''; successMsg = ''">
                   <i class="bi bi-arrow-left me-2"></i>上一步
                 </button>
               </div>
@@ -267,5 +325,10 @@ function goToStep2() {
 .success-icon {
   font-size: 3rem;
   color: #22C55E;
+}
+
+.verification-input::placeholder {
+  font-weight: 400;
+  opacity: 0.5;
 }
 </style>

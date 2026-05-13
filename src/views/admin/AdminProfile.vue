@@ -94,7 +94,6 @@ async function handleSave() {
     const info = JSON.parse(localStorage.getItem('adminInfo') || '{}')
     info.fullName = d.fullName
     localStorage.setItem('adminInfo', JSON.stringify(info))
-    
     form.value.password = '' // 清空密碼欄位
   } catch (e) {
     errorMsg.value = '更新失敗：' + (e.response?.data || e.message)
@@ -105,166 +104,215 @@ async function handleSave() {
 </script>
 
 <template>
-  <div class="admin-profile">
-    <div class="page-header">
-      <h2><i class="bi bi-person-circle"></i> 個人中心</h2>
-    </div>
-
-    <div class="profile-card">
-      <div v-if="isLoading && !form.username" class="loading-state">
-        <div class="spinner"></div>
-        <span>載入中...</span>
-      </div>
-
-      <div v-else class="form-container">
-        <!-- 狀態訊息 -->
-        <div v-if="errorMsg" class="alert alert-danger d-flex align-items-center gap-2 mb-4">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          <span class="small">{{ errorMsg }}</span>
-        </div>
-        <div v-if="successMsg" class="alert alert-success d-flex align-items-center gap-2 mb-4">
-          <i class="bi bi-check-circle-fill"></i>
-          <span class="small">{{ successMsg }}</span>
-        </div>
-
-        <form @submit.prevent="handleSave">
-          <div class="row mb-4">
-            <div class="col-md-6 mb-3 mb-md-0">
-              <label class="form-label fw-bold text-secondary small">
-                <i class="bi bi-person me-1"></i>登入帳號 <span class="text-muted fw-normal">(不可修改)</span>
-              </label>
-              <input type="text" class="form-control form-control-lg bg-light" :value="form.username" disabled />
+  <div class="admin-profile pt-0 pb-4">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+          
+          <!-- 外部大標題 -->
+          <div class="d-flex align-items-center mb-3 gap-3">
+            <div class="icon-circle-gradient">
+              <i class="bi bi-person-fill"></i>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold text-secondary small">
-                <i class="bi bi-lock me-1"></i>變更密碼 <span class="text-muted fw-normal">(若不修改請留空)</span>
-              </label>
-              <input v-model="form.password" type="password" class="form-control form-control-lg" placeholder="請輸入新密碼" autocomplete="new-password" />
-            </div>
+            <h4 class="fw-bold mb-0 text-dark">個人中心</h4>
           </div>
 
-          <div class="row mb-4">
-            <div class="col-md-6 mb-3 mb-md-0">
-              <label class="form-label fw-bold text-secondary small">
-                <i class="bi bi-person-vcard me-1"></i>真實姓名 <span class="text-danger">*</span>
-              </label>
-              <input v-model="form.fullName" type="text" class="form-control form-control-lg" placeholder="請輸入姓名" required />
+          <div class="profile-card shadow-sm border p-4 p-md-5 bg-white">
+            <div v-if="isLoading && !form.username" class="loading-state">
+              <div class="spinner"></div>
+              <span>載入中...</span>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold text-secondary small">
-                <i class="bi bi-gender-ambiguous me-1"></i>性別 <span class="text-danger">*</span>
-              </label>
-              <div class="d-flex gap-4 pt-2">
-                <label class="form-check-label d-flex align-items-center gap-2">
-                  <input v-model="form.gender" type="radio" value="男" class="form-check-input" /> 男
-                </label>
-                <label class="form-check-label d-flex align-items-center gap-2">
-                  <input v-model="form.gender" type="radio" value="女" class="form-check-input" /> 女
-                </label>
+
+            <div v-else>
+              <!-- 狀態訊息 -->
+              <div v-if="errorMsg" class="alert alert-danger d-flex align-items-center gap-2 mb-3 border-0 small">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ errorMsg }}</span>
               </div>
+              <div v-if="successMsg" class="alert alert-success d-flex align-items-center gap-2 mb-3 border-0 small">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>{{ successMsg }}</span>
+              </div>
+
+              <form @submit.prevent="handleSave">
+                <!-- 1. 帳號資訊 -->
+                <div class="section-group mb-4">
+                  <h5 class="section-title-bar mb-4">帳號資訊</h5>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label-gray">登入帳號 <span class="desc">(不可改)</span></label>
+                      <input type="text" class="form-control-styled" :value="form.username" disabled />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label-gray">變更密碼 <span class="desc">(不改請留空)</span></label>
+                      <input v-model="form.password" type="password" class="form-control-styled" placeholder="請輸入新密碼" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. 個人資料 -->
+                <div class="section-group mb-4">
+                  <h5 class="section-title-bar mb-4">個人資料</h5>
+                  <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                      <label class="form-label-gray">真實姓名 <span class="text-danger">*</span></label>
+                      <input v-model="form.fullName" type="text" class="form-control-styled" placeholder="請輸入姓名" required />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label-gray">性別 <span class="text-danger">*</span></label>
+                      <div class="d-flex gap-4 pt-2">
+                        <label class="radio-label">
+                          <input v-model="form.gender" type="radio" value="男" /> 男
+                        </label>
+                        <label class="radio-label">
+                          <input v-model="form.gender" type="radio" value="女" /> 女
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                      <label class="form-label-gray">生日 <span class="text-danger">*</span></label>
+                      <input v-model="form.birthday" type="date" class="form-control-styled" :max="todayDate" required @click="$event.target.showPicker()" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label-gray">聯絡電話 <span class="text-danger">*</span></label>
+                      <input v-model="form.phone" type="text" class="form-control-styled" placeholder="09xx-xxx-xxx" maxlength="12" @input="formatPhone" required />
+                    </div>
+                  </div>
+
+                  <div class="row g-4">
+                    <div class="col-12">
+                      <label class="form-label-gray">電子信箱 <span class="text-danger">*</span></label>
+                      <input v-model="form.email" type="email" class="form-control-styled" placeholder="example@mail.com" required />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-3 mt-4 pt-4 border-top">
+                  <button type="submit" class="btn-save-styled" :disabled="isLoading">
+                    <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+                    <i v-else class="bi bi-download me-2"></i>
+                    儲存變更
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-
-          <div class="row mb-4">
-            <div class="col-md-4 mb-3 mb-md-0">
-              <label class="form-label fw-bold text-secondary small">
-                <i class="bi bi-calendar-event me-1"></i>生日 <span class="text-danger">*</span>
-              </label>
-              <input v-model="form.birthday" type="date" class="form-control form-control-lg" :max="todayDate" required />
-            </div>
-            <div class="col-md-4 mb-3 mb-md-0">
-              <label class="form-label fw-bold text-secondary small">
-                <i class="bi bi-telephone me-1"></i>聯絡電話 <span class="text-danger">*</span>
-              </label>
-              <input v-model="form.phone" type="text" class="form-control form-control-lg" placeholder="09xx-xxx-xxx" maxlength="12" @input="formatPhone" required />
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-bold text-secondary small">
-                <i class="bi bi-envelope me-1"></i>電子信箱 <span class="text-danger">*</span>
-              </label>
-              <input v-model="form.email" type="email" class="form-control form-control-lg" placeholder="example@mail.com" required />
-            </div>
-          </div>
-
-          <hr class="my-4 text-muted" />
-
-          <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-brand px-5 py-2 fw-bold" :disabled="isLoading">
-              <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
-              <span v-if="isLoading">儲存中...</span>
-              <span v-else><i class="bi bi-save me-2"></i>儲存變更</span>
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.page-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 1.5rem;
+.admin-profile {
+  background-color: #f4f7f9;
+  min-height: calc(100vh - 120px);
 }
-.page-header h2 {
-  margin: 0; font-size: 1.4rem; font-weight: 700; color: var(--brand-dark);
-}
-.page-header h2 i { margin-right: 0.4rem; }
 
 .profile-card {
-  background: white; border-radius: 1rem; padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #F1F5F9;
-  max-width: 900px;
+  background: white;
+  border-radius: 1rem;
 }
 
-.loading-state {
-  text-align: center; padding: 3rem; color: #94A3B8;
+/* 標題圖示藍綠色漸層圓圈 */
+.icon-circle-gradient {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #12b7d9, #1c7ed6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 8px rgba(18, 183, 217, 0.2);
 }
+
+/* 區塊標題條 */
+.section-title-bar {
+  display: flex;
+  align-items: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #18a0da;
+}
+.section-title-bar::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 1.1rem;
+  background-color: #0e87bf;
+  margin-right: 10px;
+  border-radius: 2px;
+}
+
+/* 文字與標籤 */
+.form-label-gray {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #495057;
+  margin-bottom: 6px;
+}
+.form-label-gray .desc {
+  font-size: 0.75rem;
+  color: #adb5bd;
+  font-weight: 400;
+}
+
+/* 輸入框 */
+.form-control-styled {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #dee2e8;
+  border-radius: 8px;
+  background-color: #f8f9fb;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+.form-control-styled:focus {
+  outline: none;
+  border-color: #1d8ad2;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(18, 183, 217, 0.1);
+}
+.form-control-styled:disabled {
+  background-color: #f1f3f5;
+  color: #868e96;
+}
+
+.radio-label {
+  cursor: pointer;
+  font-weight: 500;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+/* 按鈕 */
+.btn-save-styled {
+  background: linear-gradient(135deg, #12b7d9, #1c7ed6);
+  color: white;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+.btn-save-styled:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.loading-state { text-align: center; padding: 3rem; color: #94A3B8; }
 .spinner {
-  display: inline-block; width: 24px; height: 24px;
-  border: 3px solid #E2E8F0; border-top-color: var(--brand-sky);
+  display: inline-block; width: 20px; height: 20px;
+  border: 2px solid #E2E8F0; border-top-color: #12b7d9;
   border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 0.5rem;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-.form-control {
-  border: 2px solid #E2E8F0;
-  border-radius: 0.75rem;
-  transition: all 0.2s;
-  background-color: #F8FAFC;
-}
-.form-control:focus {
-  border-color: var(--brand-sky);
-  background-color: white;
-  box-shadow: none;
-}
-.form-control:disabled {
-  opacity: 0.7;
-}
-
-.btn-brand {
-  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
-  color: white;
-  border: none;
-  border-radius: 0.75rem;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.btn-brand:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(14,165,233,0.3);
-  color: white;
-}
-
-.alert {
-  border: none;
-  border-radius: 0.75rem;
-}
-.alert-danger {
-  background-color: #FEF2F2;
-  color: #DC2626;
-}
-.alert-success {
-  background-color: #ECFDF5;
-  color: #059669;
-}
 </style>

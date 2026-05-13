@@ -85,18 +85,18 @@ async function handleGoogleLogin(response) {
 
 <template>
   <div class="login-page">
-    <div class="container py-5">
+    <div class="container py-4"> <!-- 上下間距設為相同 -->
       <div class="row justify-content-center">
-        <div class="col-md-5 col-lg-4">
+        <div class="col-md-6 col-lg-4">
 
           <!-- 登入卡片 -->
-          <div class="login-card card-rounded shadow-sm p-4">
+          <div class="login-card card-rounded shadow-sm py-5 px-4">
             <!-- Header -->
-            <div class="text-center mb-4">
-              <div class="brand-icon-circle mx-auto mb-3">
+            <div class="text-center mb-2">
+              <div class="brand-icon-circle mx-auto mb-2">
                 <i class="bi bi-feather"></i>
               </div>
-              <h2 class="fw-bold text-gradient mb-1 fs-4">會員登入</h2>
+              <h2 class="fw-bold text-gradient mb-1">會員登入</h2>
               <p class="text-muted small tracking-wider mb-0">BADMINTON MEMBER LOGIN</p>
             </div>
 
@@ -114,29 +114,29 @@ async function handleGoogleLogin(response) {
 
             <!-- Login Form -->
             <form @submit.prevent="handleLogin">
-              <div class="mb-3">
+              <div class="mb-2">
                 <label class="form-label fw-semibold small text-secondary">
-                  <i class="bi bi-person me-1"></i>帳號
+                  帳號
                 </label>
                 <input
                   v-model="username"
                   type="text"
-                  class="form-control form-control-lg rounded-3"
+                  class="form-control rounded-3"
                   placeholder="請輸入您的帳號"
                   autocomplete="off"
                   autofocus
                 />
               </div>
 
-              <div class="mb-4">
+              <div class="mb-3">
                 <label class="form-label fw-semibold small text-secondary">
-                  <i class="bi bi-lock me-1"></i>密碼
+                  密碼
                 </label>
                 <div class="position-relative">
                   <input
                     v-model="password"
                     :type="showPassword ? 'text' : 'password'"
-                    class="form-control form-control-lg rounded-3"
+                    class="form-control rounded-3"
                     placeholder="請輸入您的密碼"
                     autocomplete="current-password"
                     style="padding-right: 48px;"
@@ -152,18 +152,18 @@ async function handleGoogleLogin(response) {
                 </div>
               </div>
 
-              <button type="submit" class="btn btn-brand w-100 py-3 fw-bold" :disabled="isLoading">
+              <button type="submit" class="btn btn-brand w-100 py-2 fw-bold" :disabled="isLoading">
                 <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
                 <span v-if="isLoading">登入中...</span>
                 <span v-else><i class="bi bi-box-arrow-in-right me-2"></i>登入</span>
               </button>
 
-              <button type="button" class="btn btn-outline-secondary w-100 mt-3 py-2 fw-semibold border-dashed" @click="quickFill">
+              <button type="button" class="btn btn-outline-secondary w-100 mt-2 py-1 fw-semibold border-dashed" @click="quickFill">
                 <i class="bi bi-lightning-fill text-warning me-1"></i>測試帳號
               </button>
             </form>
 
-            <div class="d-flex align-items-center my-3">
+            <div class="d-flex align-items-center my-2">
               <hr class="flex-grow-1 text-muted">
               <span class="mx-2 text-muted small">或</span>
               <hr class="flex-grow-1 text-muted">
@@ -176,15 +176,15 @@ async function handleGoogleLogin(response) {
 
             <!-- 忘記密碼 -->
             <div class="text-center mt-3">
-              <RouterLink to="/reset-password" class="text-muted small text-decoration-none">
+              <RouterLink to="/reset-password" class="forgot-link small text-decoration-none">
                 忘記密碼？
               </RouterLink>
             </div>
 
             <!-- Footer -->
-            <div class="text-center mt-3 pt-3 border-top">
+            <div class="text-center mt-2 pt-2 border-top">
               <span class="text-muted small">還不是會員？</span>
-              <RouterLink to="/register" class="fw-bold small text-decoration-none ms-1" style="color: var(--brand-teal);">
+              <RouterLink to="/register" class="register-link fw-bold small text-decoration-none ms-1">
                 立即註冊
               </RouterLink>
             </div>
@@ -198,7 +198,7 @@ async function handleGoogleLogin(response) {
 
 <style scoped>
 .login-page {
-  min-height: calc(100vh - 160px);
+  min-height: auto;
   display: flex;
   align-items: center;
 }
@@ -250,5 +250,20 @@ async function handleGoogleLogin(response) {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-6px); }
   75% { transform: translateX(6px); }
+}
+
+.forgot-link, .register-link {
+  color: #14b8a6; /* 帶有一點藍色調的活力湖水綠 */
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.forgot-link {
+  font-weight: 600;
+}
+
+.forgot-link:hover, .register-link:hover {
+  opacity: 0.7;
+  color: var(--brand-teal);
+  text-decoration: none !important;
 }
 </style>
