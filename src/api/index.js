@@ -38,11 +38,11 @@ api.interceptors.request.use(
   (config) => {
     // ✅ 成功的情況：請求正常送出前
 
-    // --- 未來加 JWT Token 可以在這裡加 ---
-    // const token = localStorage.getItem('token')
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
+    // 自動附加 JWT Token（會員或管理員）
+    const token = localStorage.getItem('memberToken') || localStorage.getItem('adminToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
 
     return config // 一定要 return config，否則請求不會送出
   },

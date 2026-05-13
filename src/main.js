@@ -1,9 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
-// 1. 引入 VCalendar
-import VCalendar from 'v-calendar'
-import 'v-calendar/style.css'
+
 
 import App from './App.vue'
 import router from './router'
@@ -24,7 +22,6 @@ const app = createApp(App)
 // 3. 接著才是一系列的 .use() 插件
 app.use(createPinia())
 app.use(router)
-app.use(VCalendar, {})
 
 // 註冊 Google Login
 app.use(vue3GoogleLogin, {

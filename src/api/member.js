@@ -40,4 +40,13 @@ export const memberApi = {
 
   // POST /api/members/google-login — Google 第三方登入
   googleLogin: (credential) => api.post('/members/google-login', { credential }),
+
+  // POST /api/members/upload-avatar — 上傳會員頭像
+  uploadAvatar: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/members/upload-avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
 }

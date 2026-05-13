@@ -1,14 +1,18 @@
 <script setup>
-/**
- * 前台頁尾
- * 左側：品牌名（漸層）+ 版權聲明
- * 右側：Privacy Policy / Terms / Contact Us / Membership Rules
- */
+import { ref } from 'vue'
+
+const copied = ref(false)
+
+function copyEmail() {
+  navigator.clipboard.writeText('ygtq.badminton@gmail.com')
+  copied.value = true
+  setTimeout(() => copied.value = false, 2000)
+}
 </script>
 
 <template>
   <footer class="front-footer">
-    <div class="container">
+    <div class="container-fluid px-lg-4">
       <div class="row align-items-center gy-4">
         <!-- 左側：品牌 + 版權 -->
         <div class="col-md-6">
@@ -20,13 +24,13 @@
           </p>
         </div>
 
-        <!-- 右側：連結 -->
+        <!-- 右側：客服信箱 -->
         <div class="col-md-6">
-          <div class="d-flex flex-wrap gap-4 justify-content-md-end" style="font-size: 0.85rem;">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Contact Us</a>
-            <a href="#">Membership Rules</a>
+          <div class="d-flex justify-content-md-end align-items-center">
+            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" @click="copyEmail">
+              <i class="bi me-1" :class="copied ? 'bi-check-lg text-success' : 'bi-envelope'"></i>
+              {{ copied ? '已複製！' : '客服信箱' }}
+            </button>
           </div>
         </div>
       </div>

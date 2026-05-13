@@ -57,7 +57,7 @@ export function usePickupGameApi() {
   // ============================
   const fetchGames = async () => {
     try {
-      const response = await axios.get('/api/pickupgames')
+      const response = await axios.get('/api/pickup-games')
       pickupGames.value = response.data
     } catch (error) {
       console.log('抓取資料失敗', error)

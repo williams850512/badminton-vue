@@ -15,6 +15,8 @@ const member = ref(null)
 const isLoading = ref(true)
 const isSaving = ref(false)
 const successMsg = ref('')
+const avatarUrl = ref(null)
+const isUploadingAvatar = ref(false)
 const errorMsg = ref('')
 
 const form = ref({
@@ -67,6 +69,7 @@ onMounted(async () => {
   try {
     const data = await memberApi.getProfile()
     member.value = data
+    avatarUrl.value = data.profilePicture || null
     form.value = {
       fullName: data.fullName || '',
       gender: data.gender || '',
@@ -163,6 +166,45 @@ function getLevelBadge(level) {
     ? { label: 'VIP 會員', cls: 'badge-vip' }
     : { label: '一般會員', cls: 'badge-normal' }
 }
+
+// 點擊頭像觸發檔案選擇
+function triggerAvatarUpload() {
+  document.getElementById('avatarFileInput').click()
+}
+
+// 上傳頭像
+async function handleAvatarUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  // 檢查檔案類型
+  if (!file.type.startsWith('image/')) {
+    alert('請選擇圖片檔案（JPG、PNG 等）')
+    return
+  }
+  // 檢查檔案大小（最大 2MB）
+  if (file.size > 2 * 1024 * 1024) {
+    alert('圖片大小不能超過 2MB')
+    return
+  }
+
+  isUploadingAvatar.value = true
+  try {
+    const res = await memberApi.uploadAvatar(file)
+    avatarUrl.value = res.imageUrl
+    // 同步更新 localStorage 中的會員資料
+    const info = JSON.parse(localStorage.getItem('memberInfo') || '{}')
+    info.profilePicture = res.imageUrl
+    localStorage.setItem('memberInfo', JSON.stringify(info))
+    successMsg.value = '頭像更新成功！'
+    setTimeout(() => successMsg.value = '', 3000)
+  } catch (err) {
+    alert('頭像上傳失敗，請重試')
+  } finally {
+    isUploadingAvatar.value = false
+    event.target.value = '' // 清空 input 讓同一張圖也能重選
+  }
+}
 </script>
 
 <template>
@@ -176,9 +218,19 @@ function getLevelBadge(level) {
             <div class="col-lg-4 col-xl-3">
               <div class="member-sidebar shadow-sm border bg-white p-3">
                 <div class="sidebar-user-info text-center py-3 mb-3 border-bottom">
-                  <div class="sidebar-avatar mx-auto mb-2">
-                    <i class="bi bi-person-fill"></i>
+                  <!-- 可點擊上傳的頭像 -->
+                  <div class="sidebar-avatar mx-auto mb-2" @click="triggerAvatarUpload" title="點擊更換頭像">
+                    <img v-if="avatarUrl" :src="'http://localhost:8080' + avatarUrl" alt="頭像" class="avatar-img" />
+                    <i v-else class="bi bi-person-fill"></i>
+                    <div class="avatar-overlay">
+                      <i class="bi bi-camera-fill"></i>
+                      <span>編輯</span>
+                    </div>
+                    <div v-if="isUploadingAvatar" class="avatar-loading">
+                      <div class="spinner-border spinner-border-sm text-white" role="status"></div>
+                    </div>
                   </div>
+                  <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" @change="handleAvatarUpload" />
                   <h6 class="fw-bold mb-1 text-dark">{{ member?.fullName || member?.username }}</h6>
                   <span class="badge" :class="getLevelBadge(member?.membershipLevel).cls">
                     {{ getLevelBadge(member?.membershipLevel).label }}
@@ -508,8 +560,8 @@ function getLevelBadge(level) {
   flex-direction: column;
 }
 .sidebar-avatar {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   background: linear-gradient(135deg, #12d9d6, #1c7ed6);
   border-radius: 50%;
   display: flex;
@@ -517,6 +569,52 @@ function getLevelBadge(level) {
   justify-content: center;
   color: white;
   font-size: 2rem;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+.sidebar-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.avatar-overlay i {
+  font-size: 1.1rem;
+}
+.sidebar-avatar:hover .avatar-overlay {
+  opacity: 1;
+}
+.avatar-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .sidebar-item {
   border: none;
