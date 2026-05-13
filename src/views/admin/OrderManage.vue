@@ -227,11 +227,11 @@ async function handleCreateOrder() {
 
 // ===================== 常數 =====================
 const statusMap = {
-  UNPAID:    { label: '未付款', color: '#F59E0B', bg: '#FFFBEB', icon: 'bi-clock' },
-  PAID:      { label: '已付款', color: '#10B981', bg: '#ECFDF5', icon: 'bi-check-circle' },
-  SHIPPED:   { label: '已出貨', color: '#0EA5E9', bg: '#F0F9FF', icon: 'bi-truck' },
-  COMPLETED: { label: '已完成', color: '#8B5CF6', bg: '#F5F3FF', icon: 'bi-trophy' },
-  CANCELLED: { label: '已取消', color: '#EF4444', bg: '#FEF2F2', icon: 'bi-x-circle' },
+  UNPAID:    { label: '訂單成立', color: '#F59E0B', bg: '#FEF3C7', icon: 'bi-clipboard-check' },
+  PAID:      { label: '備貨中', color: '#3B82F6', bg: '#DBEAFE', icon: 'bi-box-seam' },
+  SHIPPED:   { label: '待取貨', color: '#8B5CF6', bg: '#EDE9FE', icon: 'bi-shop' },
+  COMPLETED: { label: '已取貨', color: '#10B981', bg: '#D1FAE5', icon: 'bi-check2-circle' },
+  CANCELLED: { label: '已取消', color: '#F43F5E', bg: '#FFE4E6', icon: 'bi-x-circle' },
 }
 const statusOptions = Object.entries(statusMap)
 
@@ -251,10 +251,10 @@ const statusFlow = {
 // ===================== 狀態分頁 Tabs =====================
 const statusTabs = [
   { key: '', label: '全部' },
-  { key: 'UNPAID', label: '未付款' },
-  { key: 'PAID', label: '已付款' },
-  { key: 'SHIPPED', label: '已出貨' },
-  { key: 'COMPLETED', label: '已完成' },
+  { key: 'UNPAID', label: '訂單成立' },
+  { key: 'PAID', label: '備貨中' },
+  { key: 'SHIPPED', label: '待取貨' },
+  { key: 'COMPLETED', label: '已取貨' },
   { key: 'CANCELLED', label: '已取消' },
 ]
 
@@ -338,7 +338,7 @@ function getProgressWidth(currentStatus) {
   if (currentStatus === 'CANCELLED') return '0%'
   const index = progressSteps.indexOf(currentStatus)
   if (index === -1) return '0%'
-  return (index / (progressSteps.length - 1)) * 75 + '%'
+  return (index / (progressSteps.length - 1)) * 100 + '%'
 }
 
 // ===================== 方法 =====================
@@ -624,18 +624,20 @@ onUnmounted(() => {
                 <div class="info-card mt-3 pt-4 pb-3 px-3">
                   <div class="info-label mb-4"><i class="bi bi-flag me-1"></i>訂單處理進度</div>
                   <div class="progress-tracker">
-                    <div class="progress-line"></div>
-                    <div class="progress-line-fill" 
-                         :style="{ width: getProgressWidth(selectedOrder.status), backgroundColor: statusMap[selectedOrder.status]?.color || 'var(--brand-sky)' }"></div>
+                    <div class="progress-lines-wrap">
+                      <div class="progress-line"></div>
+                      <div class="progress-line-fill" 
+                           :style="{ width: getProgressWidth(selectedOrder.status), backgroundColor: 'var(--brand-sky)' }"></div>
+                    </div>
                     
                     <div v-for="(step, index) in ['UNPAID', 'PAID', 'SHIPPED', 'COMPLETED']" :key="step" 
                          class="progress-step" :class="{ 'active': isStepActive(selectedOrder.status, step), 'current': selectedOrder.status === step }">
                       <div class="step-circle" 
-                           :style="isStepActive(selectedOrder.status, step) ? { borderColor: statusMap[step]?.color, backgroundColor: selectedOrder.status === step ? 'white' : statusMap[step]?.color } : {}">
-                        <i v-if="selectedOrder.status === step" :class="['bi', statusMap[step]?.icon]" :style="{ color: statusMap[step]?.color, fontSize: '0.95rem' }"></i>
+                           :style="isStepActive(selectedOrder.status, step) ? { borderColor: 'var(--brand-sky)', backgroundColor: selectedOrder.status === step ? 'white' : 'var(--brand-sky)' } : {}">
+                        <i v-if="selectedOrder.status === step" :class="['bi', statusMap[step]?.icon]" :style="{ color: 'var(--brand-sky)', fontSize: '0.95rem' }"></i>
                         <i v-else-if="isStepActive(selectedOrder.status, step)" class="bi bi-check" style="color: white; font-size: 1.2rem;"></i>
                       </div>
-                      <div class="step-label" :style="selectedOrder.status === step ? { color: statusMap[step]?.color, fontWeight: '700' } : {}">
+                      <div class="step-label" :style="selectedOrder.status === step ? { color: 'var(--brand-sky)', fontWeight: '700' } : {}">
                         {{ statusMap[step]?.label }}
                       </div>
                     </div>
@@ -666,11 +668,14 @@ onUnmounted(() => {
                 <div v-else-if="orderItems.length === 0" class="text-center py-4 text-secondary" style="font-size: 0.85rem">尚無明細</div>
                 <div v-else>
                   <div v-for="item in orderItems" :key="item.itemId" class="c-item-row">
-                    <div class="d-flex align-items-center gap-2">
-                      <img v-if="item.product?.imageUrl" :src="item.product.imageUrl.startsWith('/') || item.product.imageUrl.startsWith('http') ? item.product.imageUrl : '/' + item.product.imageUrl" class="rounded" style="width: 40px; height: 40px; object-fit: cover" />
-                      <div v-else class="rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #F1F5F9"><i class="bi bi-box-seam" style="color: #CBD5E1"></i></div>
-                      <div class="flex-grow-1"><div class="fw-semibold" style="font-size: 0.85rem">{{ item.product?.productName || '未知' }}</div><div class="text-secondary" style="font-size: 0.72rem">{{ formatPrice(item.unitPrice) }} × {{ item.quantity }}</div></div>
-                      <div class="fw-bold" style="color: var(--brand-teal); font-size: 0.9rem">{{ formatPrice(item.subtotal) }}</div>
+                    <div class="d-flex align-items-center gap-3">
+                      <img v-if="item.product?.imageUrl" :src="item.product.imageUrl.startsWith('/') || item.product.imageUrl.startsWith('http') ? item.product.imageUrl : '/' + item.product.imageUrl" class="rounded-3" style="width: 72px; height: 72px; object-fit: cover; border: 1px solid #E2E8F0; flex-shrink: 0;" />
+                      <div v-else class="rounded-3 d-flex align-items-center justify-content-center" style="width: 72px; height: 72px; background: #F1F5F9; flex-shrink: 0;"><i class="bi bi-box-seam" style="color: #CBD5E1; font-size: 1.5rem"></i></div>
+                      <div class="flex-grow-1">
+                        <div class="fw-semibold" style="font-size: 0.9rem; color: var(--brand-dark); line-height: 1.4;">{{ item.product?.productName || '未知商品' }}</div>
+                        <div class="text-secondary mt-1" style="font-size: 0.78rem">單價 {{ formatPrice(item.unitPrice) }} × {{ item.quantity }} 件</div>
+                      </div>
+                      <div class="fw-bold text-end" style="color: var(--brand-teal); font-size: 1rem; white-space: nowrap;">{{ formatPrice(item.subtotal) }}</div>
                     </div>
                   </div>
                 </div>
@@ -1293,21 +1298,25 @@ table td {
   justify-content: space-between;
   margin-bottom: 1rem;
 }
-.progress-line {
+.progress-lines-wrap {
   position: absolute;
   top: 10px;
   left: 12.5%;
   right: 12.5%;
   height: 4px;
-  background: #E2E8F0;
   z-index: 1;
+}
+.progress-line {
+  width: 100%;
+  height: 100%;
+  background: #E2E8F0;
   border-radius: 2px;
 }
 .progress-line-fill {
   position: absolute;
-  top: 10px;
-  left: 12.5%;
-  height: 4px;
+  top: 0;
+  left: 0;
+  height: 100%;
   background: var(--brand-sky);
   z-index: 2;
   transition: width 0.4s ease;
