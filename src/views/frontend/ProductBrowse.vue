@@ -7,6 +7,11 @@ import { useCartStore } from '@/stores/cart'
 const router = useRouter()
 const cart = useCartStore()
 
+const defaultImage = 'http://localhost:8080/images/products/default.png'
+function onImageError(e) {
+  e.target.src = defaultImage
+}
+
 // ===================== 商品資料（從資料庫撈取） =====================
 const products = ref([])
 const loading = ref(false)
@@ -33,6 +38,22 @@ const categoryMap = {
   RACKET: '球拍', SHUTTLECOCK: '羽球', GRIP: '握把布',
   STRING: '球線', ACCESSORY: '配件', OTHER: '其他',
 }
+
+// ===================== 類別篩選 =====================
+const filterCategory = ref('')
+
+// 從已載入商品動態產生有資料的類別清單
+const availableCategories = computed(() => {
+  const seen = new Set()
+  return products.value
+    .map((p) => p.category)
+    .filter((c) => { if (seen.has(c)) return false; seen.add(c); return true })
+})
+
+const filteredProducts = computed(() => {
+  if (!filterCategory.value) return products.value
+  return products.value.filter((p) => p.category === filterCategory.value)
+})
 
 // ===================== 加入購物車確認 Modal =====================
 const modal = ref({ show: false, product: null, qty: 1 })
@@ -100,7 +121,6 @@ function confirmAdd() {
 function goToCart() {
   cart.add(modal.value.product, modal.value.qty)
   closeModal()
-  router.push('/cart')
 }
 
 function goToCheckout() {
@@ -141,6 +161,22 @@ function goToCheckout() {
     <div class="browse-container">
       <h2 class="section-title">所有商品</h2>
 
+      <!-- 類別篩選按鈕 -->
+      <div v-if="products.length > 0" class="category-filter">
+        <button
+          class="cat-btn"
+          :class="{ active: filterCategory === '' }"
+          @click="filterCategory = ''"
+        >全部</button>
+        <button
+          v-for="cat in availableCategories"
+          :key="cat"
+          class="cat-btn"
+          :class="{ active: filterCategory === cat }"
+          @click="filterCategory = cat"
+        >{{ categoryMap[cat] || cat }}</button>
+      </div>
+
       <!-- 載入中 -->
       <div v-if="loading" class="status-center">
         <div class="spinner-border text-info" role="status"></div>
@@ -163,7 +199,7 @@ function goToCheckout() {
       <!-- 商品清單 -->
       <div v-else class="row g-4">
         <div
-          v-for="product in products"
+          v-for="product in filteredProducts"
           :key="product.productId"
           class="col-6 col-md-4 col-lg-3"
         >
@@ -171,14 +207,11 @@ function goToCheckout() {
             <!-- 商品圖片 -->
             <div class="img-zoom product-img-wrap">
               <img
-                v-if="product.imageUrl"
-                :src="product.imageUrl"
+                :src="product.imageUrl || defaultImage"
                 :alt="product.productName"
                 class="product-img"
+                @error="onImageError"
               />
-              <div v-else class="product-img-placeholder">
-                <i class="bi bi-image"></i>
-              </div>
 
               <!-- 右上角庫存 badge -->
               <span v-if="product.stockQty === 0" class="stock-badge stock-badge--empty">缺貨中</span>
@@ -195,7 +228,7 @@ function goToCheckout() {
 
             <!-- 商品資訊 -->
             <div class="product-body">
-              <span class="badge-teal tracking-wide mb-2">{{ product.category }}</span>
+              <span class="badge-teal tracking-wide mb-2">{{ categoryMap[product.category] || product.category }}</span>
               <p class="product-brand">{{ product.brand }}</p>
               <h6 class="product-name line-clamp-2">{{ product.productName }}</h6>
               <div class="product-footer">
@@ -242,8 +275,7 @@ function goToCheckout() {
         <ul v-else class="cart-list">
           <li v-for="item in cart.items" :key="item.id" class="cart-item">
             <div class="cart-item-img">
-              <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" class="cart-thumb" />
-              <i v-else class="bi bi-image"></i>
+              <img :src="item.imageUrl || defaultImage" :alt="item.name" class="cart-thumb" @error="onImageError" />
             </div>
             <div class="cart-item-info">
               <p class="cart-item-name">{{ item.name }}</p>
@@ -297,8 +329,7 @@ function goToCheckout() {
           <!-- 商品列 -->
           <div class="cart-modal-item">
             <div class="cart-modal-img">
-              <img v-if="modal.product?.imageUrl" :src="modal.product.imageUrl" :alt="modal.product.productName" />
-              <i v-else class="bi bi-image"></i>
+              <img :src="modal.product?.imageUrl || defaultImage" :alt="modal.product?.productName" @error="onImageError" />
             </div>
             <div class="cart-modal-info">
               <p class="cart-modal-name">{{ modal.product?.productName }}</p>
@@ -338,8 +369,7 @@ function goToCheckout() {
                 <div class="rec-grid">
                   <div v-for="p in recVisible" :key="p.productId" class="rec-card">
                     <div class="rec-img-wrap">
-                      <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.productName" class="rec-img" />
-                      <div v-else class="rec-img-placeholder"><i class="bi bi-image"></i></div>
+                      <img :src="p.imageUrl || defaultImage" :alt="p.productName" class="rec-img" @error="onImageError" />
                     </div>
                     <p class="rec-name">{{ p.productName }}</p>
                     <p class="rec-desc">{{ p.brand }}</p>
@@ -443,6 +473,34 @@ function goToCheckout() {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem;
+}
+
+/* ===== 類別篩選按鈕 ===== */
+.category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+}
+.cat-btn {
+  padding: 0.4rem 1.1rem;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 9999px;
+  background: white;
+  color: #64748B;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.cat-btn:hover {
+  border-color: var(--brand-teal);
+  color: var(--brand-teal);
+}
+.cat-btn.active {
+  background: var(--brand-teal);
+  border-color: var(--brand-teal);
+  color: white;
 }
 
 /* ===== 商品卡片（card-rounded + hover-lift 來自 frontend.css） ===== */
