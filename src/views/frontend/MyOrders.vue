@@ -23,11 +23,11 @@ const memberId = 1
 
 // 狀態對照
 const statusMap = {
-  UNPAID:    { label: '未付款', color: '#F59E0B', bg: '#FFFBEB', icon: 'bi-clock' },
-  PAID:      { label: '已付款', color: '#10B981', bg: '#ECFDF5', icon: 'bi-check-circle' },
-  SHIPPED:   { label: '已出貨', color: '#0EA5E9', bg: '#F0F9FF', icon: 'bi-truck' },
-  COMPLETED: { label: '已完成', color: '#8B5CF6', bg: '#F5F3FF', icon: 'bi-trophy' },
-  CANCELLED: { label: '已取消', color: '#EF4444', bg: '#FEF2F2', icon: 'bi-x-circle' },
+  UNPAID: { label: '訂單成立', color: '#F59E0B', bg: '#FEF3C7', icon: 'bi-clipboard-check' },
+  PAID: { label: '備貨中', color: '#3B82F6', bg: '#DBEAFE', icon: 'bi-box-seam' },
+  SHIPPED: { label: '待取貨', color: '#8B5CF6', bg: '#EDE9FE', icon: 'bi-shop' },
+  COMPLETED: { label: '已取貨', color: '#10B981', bg: '#D1FAE5', icon: 'bi-check2-circle' },
+  CANCELLED: { label: '已取消', color: '#F43F5E', bg: '#FFE4E6', icon: 'bi-x-circle' },
 }
 
 const paymentMap = {
@@ -118,8 +118,7 @@ function formatDate(dateStr) {
 
     <!-- 訂單列表 -->
     <div v-else class="d-flex flex-column gap-3">
-      <div v-for="order in orders" :key="order.orderId"
-           class="card card-rounded shadow-sm border-0 order-card">
+      <div v-for="order in orders" :key="order.orderId" class="card card-rounded shadow-sm border-0 order-card">
         <!-- 訂單標題列 -->
         <div class="card-body p-4 pb-3" style="cursor: pointer;" @click="toggleExpand(order.orderId)">
           <div class="d-flex justify-content-between align-items-start mb-3">
@@ -133,12 +132,12 @@ function formatDate(dateStr) {
             </div>
             <div class="d-flex align-items-center gap-2">
               <span class="order-status-badge"
-                    :style="{ backgroundColor: statusMap[order.status]?.bg, color: statusMap[order.status]?.color }">
+                :style="{ backgroundColor: statusMap[order.status]?.bg, color: statusMap[order.status]?.color }">
                 <i :class="['bi', statusMap[order.status]?.icon]" class="me-1"></i>
                 {{ statusMap[order.status]?.label }}
               </span>
               <i class="bi" :class="expandedId === order.orderId ? 'bi-chevron-up' : 'bi-chevron-down'"
-                 style="color: #94A3B8; font-size: 0.85rem;"></i>
+                style="color: #94A3B8; font-size: 0.85rem;"></i>
             </div>
           </div>
 
@@ -159,22 +158,27 @@ function formatDate(dateStr) {
             <!-- 進度條 -->
             <div class="px-4 pt-3 pb-2">
               <div class="progress-tracker-mini">
-                <div class="progress-line-bg"></div>
-                <div class="progress-line-fill"
-                     :style="{ width: getProgressWidth(order.status), backgroundColor: statusMap[order.status]?.color || 'var(--brand-sky)' }"></div>
-                <div v-for="step in progressSteps" :key="step"
-                     class="progress-step-mini"
-                     :class="{ active: isStepActive(order.status, step), current: order.status === step }">
-                  <div class="step-dot"
-                       :style="isStepActive(order.status, step) ? { borderColor: statusMap[step]?.color, backgroundColor: order.status === step ? 'white' : statusMap[step]?.color } : {}">
-                    <div v-if="order.status === step" class="step-dot-inner" :style="{ backgroundColor: statusMap[step]?.color }"></div>
+                <div class="progress-lines-wrap">
+                  <div class="progress-line-bg"></div>
+                  <div class="progress-line-fill"
+                    :style="{ width: getProgressWidth(order.status), backgroundColor: 'var(--brand-sky)' }">
                   </div>
-                  <div class="step-text" :style="order.status === step ? { color: statusMap[step]?.color, fontWeight: '700' } : {}">
+                </div>
+                <div v-for="step in progressSteps" :key="step" class="progress-step-mini"
+                  :class="{ active: isStepActive(order.status, step), current: order.status === step }">
+                  <div class="step-dot"
+                    :style="isStepActive(order.status, step) ? { borderColor: 'var(--brand-sky)', backgroundColor: order.status === step ? 'white' : 'var(--brand-sky)' } : {}">
+                    <div v-if="order.status === step" class="step-dot-inner"
+                      style="background-color: var(--brand-sky);"></div>
+                  </div>
+                  <div class="step-text"
+                    :style="order.status === step ? { color: 'var(--brand-sky)', fontWeight: '700' } : {}">
                     {{ statusMap[step]?.label }}
                   </div>
                 </div>
               </div>
-              <div v-if="order.status === 'CANCELLED'" class="text-center text-danger fw-bold mt-2" style="font-size: 0.8rem;">
+              <div v-if="order.status === 'CANCELLED'" class="text-center text-danger fw-bold mt-2"
+                style="font-size: 0.8rem;">
                 <i class="bi bi-x-circle me-1"></i>此訂單已取消
               </div>
             </div>
@@ -190,19 +194,20 @@ function formatDate(dateStr) {
                 <div v-for="item in orderItems[order.orderId]" :key="item.itemId" class="detail-item">
                   <div class="d-flex align-items-center gap-3">
                     <img v-if="item.product?.imageUrl"
-                         :src="item.product.imageUrl.startsWith('/') || item.product.imageUrl.startsWith('http') ? item.product.imageUrl : '/' + item.product.imageUrl"
-                         class="rounded-3 border" style="width: 44px; height: 44px; object-fit: cover;" />
+                      :src="item.product.imageUrl.startsWith('/') || item.product.imageUrl.startsWith('http') ? item.product.imageUrl : '/' + item.product.imageUrl"
+                      class="rounded-3" style="width: 64px; height: 64px; object-fit: cover; border: 1px solid #E2E8F0; flex-shrink: 0;" />
                     <div v-else class="rounded-3 d-flex align-items-center justify-content-center"
-                         style="width: 44px; height: 44px; background: #F1F5F9;">
-                      <i class="bi bi-box-seam" style="color: #CBD5E1;"></i>
+                      style="width: 64px; height: 64px; background: #F1F5F9; flex-shrink: 0;">
+                      <i class="bi bi-box-seam" style="color: #CBD5E1; font-size: 1.3rem;"></i>
                     </div>
                     <div class="flex-grow-1">
-                      <div class="fw-semibold" style="font-size: 0.85rem;">{{ item.product?.productName || '未知商品' }}</div>
-                      <div class="text-secondary" style="font-size: 0.72rem;">
-                        {{ formatPrice(item.unitPrice) }} × {{ item.quantity }}
+                      <div class="fw-semibold" style="font-size: 0.88rem; color: var(--brand-dark); line-height: 1.4;">{{ item.product?.productName || '未知商品' }}
+                      </div>
+                      <div class="text-secondary mt-1" style="font-size: 0.75rem;">
+                        單價 {{ formatPrice(item.unitPrice) }} × {{ item.quantity }} 件
                       </div>
                     </div>
-                    <div class="fw-bold" style="color: var(--brand-teal); font-size: 0.9rem;">
+                    <div class="fw-bold" style="color: var(--brand-teal); font-size: 0.95rem; white-space: nowrap;">
                       {{ formatPrice(item.subtotal) }}
                     </div>
                   </div>
@@ -228,8 +233,13 @@ function formatDate(dateStr) {
 
 <style scoped>
 /* ===== 訂單卡片 ===== */
-.order-card { transition: box-shadow 0.2s ease; }
-.order-card:hover { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); }
+.order-card {
+  transition: box-shadow 0.2s ease;
+}
+
+.order-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
 
 /* ===== 狀態 Badge ===== */
 .order-status-badge {
@@ -247,10 +257,27 @@ function formatDate(dateStr) {
   background: #FAFBFC;
   border-radius: 0 0 var(--brand-card-radius) var(--brand-card-radius);
 }
-.expand-enter-active { transition: all 0.3s ease; }
-.expand-leave-active { transition: all 0.2s ease; }
-.expand-enter-from, .expand-leave-to { opacity: 0; max-height: 0; overflow: hidden; }
-.expand-enter-to, .expand-leave-from { opacity: 1; max-height: 600px; }
+
+.expand-enter-active {
+  transition: all 0.3s ease;
+}
+
+.expand-leave-active {
+  transition: all 0.2s ease;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+}
+
+.expand-enter-to,
+.expand-leave-from {
+  opacity: 1;
+  max-height: 600px;
+}
 
 /* ===== 進度條 (Mini) ===== */
 .progress-tracker-mini {
@@ -260,33 +287,86 @@ function formatDate(dateStr) {
   padding: 0.5rem 1rem;
   overflow: hidden;
 }
+
+.progress-lines-wrap {
+  position: absolute;
+  top: calc(0.5rem + 6px);
+  left: calc(1rem + 12.5%);
+  right: calc(1rem + 12.5%);
+  height: 3px;
+  z-index: 1;
+}
+
 .progress-line-bg {
-  position: absolute; top: calc(0.5rem + 6px); left: calc(1rem + 12.5%); right: calc(1rem + 12.5%);
-  height: 3px; background: #E2E8F0; z-index: 1; border-radius: 2px;
+  width: 100%;
+  height: 100%;
+  background: #E2E8F0;
+  border-radius: 2px;
 }
+
 .progress-line-fill {
-  position: absolute; top: calc(0.5rem + 6px); left: calc(1rem + 12.5%);
-  height: 3px; z-index: 2; transition: width 0.4s ease; border-radius: 2px;
-  max-width: calc(100% - 2rem - 25%);
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 2;
+  transition: width 0.4s ease;
+  border-radius: 2px;
 }
+
 .progress-step-mini {
-  position: relative; z-index: 3;
-  display: flex; flex-direction: column; align-items: center; width: 25%;
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 25%;
 }
+
 .step-dot {
-  width: 16px; height: 16px; border-radius: 50%;
-  background: white; border: 3px solid #E2E8F0;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 0.35rem; transition: all 0.3s ease;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.35rem;
+  transition: all 0.3s ease;
 }
-.progress-step-mini.active .step-dot { border-color: var(--brand-sky); background: var(--brand-sky); }
-.progress-step-mini.current .step-dot { border-color: var(--brand-sky); background: white; }
-.step-dot-inner { width: 6px; height: 6px; border-radius: 50%; }
-.step-text { font-size: 0.65rem; color: #94A3B8; font-weight: 600; }
+
+.progress-step-mini.active .step-dot {
+  border-color: var(--brand-sky);
+  background: var(--brand-sky);
+}
+
+.progress-step-mini.current .step-dot {
+  border-color: var(--brand-sky);
+  background: white;
+}
+
+.step-dot-inner {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.step-text {
+  font-size: 0.65rem;
+  color: #94A3B8;
+  font-weight: 600;
+}
 
 /* ===== 明細列 ===== */
-.detail-item { padding: 0.5rem 0; border-bottom: 1px solid #F1F5F9; }
-.detail-item:last-child { border-bottom: none; }
+.detail-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
 
 /* ===== 備註 ===== */
 .note-box {

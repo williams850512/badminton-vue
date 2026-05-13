@@ -1,6 +1,6 @@
 <script setup>
 /**
- * 結帳頁面
+ * 結帳頁面（Aesop 風格改版）
  *
  * 業務模式：線上訂購、球館自取（不需收件地址）
  *
@@ -84,152 +84,153 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="container py-5" style="max-width: 1000px;">
-    <h2 class="section-title">
-      <i class="bi bi-credit-card-2-front" style="color: var(--brand-teal);"></i>
-      確認結帳
-    </h2>
+  <div class="checkout-page">
+    <div class="checkout-container">
+      <!-- 頁面大標題 -->
+      <h1 class="checkout-title">結帳</h1>
 
-    <div class="row g-4">
-      <!-- 左側：付款資訊 -->
-      <div class="col-lg-7">
-        <!-- 取貨提示 -->
-        <div class="card card-rounded shadow-sm border-0 mb-4">
-          <div class="card-body p-4">
-            <div class="pickup-notice">
-              <div class="pickup-icon">
-                <i class="bi bi-geo-alt-fill"></i>
+      <div class="checkout-layout">
+        <!-- ==================== 左側：結帳表單 ==================== -->
+        <div class="checkout-left">
+
+          <!-- Section 1: 取貨資訊 -->
+          <section class="checkout-section">
+            <div class="section-header">
+              <div class="section-header-left">
+                <i class="bi bi-check-circle-fill section-check"></i>
+                <span class="section-title-text">取貨資訊</span>
               </div>
-              <div>
-                <div class="fw-bold" style="color: var(--brand-dark); font-size: 0.95rem;">
-                  球館自取
-                </div>
-                <div class="text-secondary" style="font-size: 0.82rem;">
+              <span class="section-step">步驟 1/3</span>
+            </div>
+            <div class="section-body">
+              <div class="pickup-box">
+                <div class="pickup-method">球館自取 (羽過天晴羽球館)</div>
+                <div class="pickup-address">
                   訂單成立後，請於打球時間至球館櫃檯領取商品
                 </div>
+                <div class="pickup-tag">
+                  <i class="bi bi-geo-alt-fill me-1"></i>免運費
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- 付款方式 -->
-        <div class="card card-rounded shadow-sm border-0 mb-4">
-          <div class="card-body p-4">
-            <h5 class="fw-bold mb-3" style="font-size: 1rem; color: var(--brand-dark);">
-              <i class="bi bi-wallet2 me-2" style="color: var(--brand-sky);"></i>付款方式
-            </h5>
-            <div class="payment-grid">
-              <label
-                v-for="opt in paymentOptions" :key="opt.value"
-                class="payment-card"
-                :class="{ active: paymentType === opt.value }"
-              >
-                <input type="radio" v-model="paymentType" :value="opt.value" class="d-none" />
-                <div class="d-flex align-items-center gap-3">
-                  <div class="payment-icon" :class="{ active: paymentType === opt.value }">
-                    <i :class="['bi', opt.icon]"></i>
-                  </div>
-                  <div>
-                    <div class="fw-bold" style="font-size: 0.9rem;">{{ opt.label }}</div>
-                    <div class="text-secondary" style="font-size: 0.72rem;">{{ opt.desc }}</div>
-                  </div>
-                </div>
-                <i v-if="paymentType === opt.value" class="bi bi-check-circle-fill"
-                   style="color: var(--brand-teal); font-size: 1.1rem;"></i>
-              </label>
+          <!-- Section 2: 付款方式 -->
+          <section class="checkout-section">
+            <div class="section-header">
+              <div class="section-header-left">
+                <i class="bi bi-wallet2 section-icon"></i>
+                <span class="section-title-text">付款方式</span>
+              </div>
+              <span class="section-step">步驟 2/3</span>
             </div>
-          </div>
+            <div class="section-body">
+              <div class="payment-list">
+                <label
+                  v-for="opt in paymentOptions" :key="opt.value"
+                  class="payment-option"
+                  :class="{ active: paymentType === opt.value }"
+                >
+                  <input type="radio" v-model="paymentType" :value="opt.value" />
+                  <div class="payment-radio-circle">
+                    <div class="payment-radio-dot"></div>
+                  </div>
+                  <div class="payment-info">
+                    <span class="payment-label">{{ opt.label }}</span>
+                    <span class="payment-desc">{{ opt.desc }}</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <!-- Section 3: 備註 -->
+          <section class="checkout-section">
+            <div class="section-header">
+              <div class="section-header-left">
+                <i class="bi bi-sticky section-icon"></i>
+                <span class="section-title-text">訂單備註</span>
+              </div>
+              <span class="section-step">步驟 3/3</span>
+            </div>
+            <div class="section-body">
+              <textarea
+                v-model="note"
+                class="note-textarea"
+                rows="3"
+                placeholder="有什麼想告訴我們的嗎？（選填）"
+              ></textarea>
+            </div>
+          </section>
+
         </div>
 
-        <!-- 備註 -->
-        <div class="card card-rounded shadow-sm border-0">
-          <div class="card-body p-4">
-            <h5 class="fw-bold mb-3" style="font-size: 1rem; color: var(--brand-dark);">
-              <i class="bi bi-sticky me-2" style="color: var(--brand-sky);"></i>訂單備註
-            </h5>
-            <textarea
-              v-model="note"
-              class="form-control"
-              rows="3"
-              placeholder="有什麼想告訴我們的嗎？（選填）"
-              style="border-radius: 0.75rem; border-color: #E2E8F0;"
-            ></textarea>
-          </div>
-        </div>
-      </div>
-
-      <!-- 右側：訂單摘要 -->
-      <div class="col-lg-5">
-        <div class="card card-rounded shadow-sm border-0 sticky-top" style="top: 20px;">
-          <div class="card-body p-4">
-            <h5 class="fw-bold mb-3" style="font-size: 1rem; color: var(--brand-dark);">
-              <i class="bi bi-receipt me-2" style="color: var(--brand-sky);"></i>訂單摘要
-            </h5>
+        <!-- ==================== 右側：訂單詳情 ==================== -->
+        <div class="checkout-right">
+          <div class="order-detail-card">
+            <!-- 標題列 -->
+            <div class="order-detail-header">
+              <h3 class="order-detail-title">
+                您的訂單詳情
+                <span class="item-count">({{ cart.cartCount }}樣商品)</span>
+              </h3>
+              <router-link to="/cart" class="edit-cart-link">編輯購物車</router-link>
+            </div>
 
             <!-- 商品列表 -->
-            <div class="summary-items mb-3">
-              <div v-for="item in cart.items" :key="item.productId" class="summary-item">
-                <div class="d-flex align-items-center gap-3">
+            <div class="order-products">
+              <div v-for="item in cart.items" :key="item.productId" class="order-product-item">
+                <div class="product-img-wrap">
                   <img
                     v-if="item.imageUrl"
                     :src="item.imageUrl.startsWith('/') || item.imageUrl.startsWith('http') ? item.imageUrl : '/' + item.imageUrl"
-                    class="rounded-3 border"
-                    style="width: 48px; height: 48px; object-fit: cover;"
+                    :alt="item.productName"
+                    class="product-img"
                   />
-                  <div v-else class="rounded-3 d-flex align-items-center justify-content-center"
-                       style="width: 48px; height: 48px; background: #F1F5F9;">
-                    <i class="bi bi-box-seam" style="color: #CBD5E1;"></i>
+                  <div v-else class="product-img-placeholder">
+                    <i class="bi bi-box-seam"></i>
                   </div>
-                  <div class="flex-grow-1 min-w-0">
-                    <div class="fw-semibold line-clamp-1" style="font-size: 0.85rem;">{{ item.productName }}</div>
-                    <div class="text-secondary" style="font-size: 0.72rem;">
-                      NT$ {{ item.price.toLocaleString() }} × {{ item.quantity }}
-                    </div>
-                  </div>
-                  <div class="fw-bold" style="color: var(--brand-teal); font-size: 0.9rem; white-space: nowrap;">
-                    NT$ {{ (item.price * item.quantity).toLocaleString() }}
-                  </div>
+                </div>
+                <div class="product-details">
+                  <div class="product-name">{{ item.productName }}</div>
+                  <div class="product-brand" v-if="item.brand">{{ item.brand }}</div>
+                  <div class="product-qty">數量：{{ item.quantity }}</div>
+                </div>
+                <div class="product-price">
+                  NT${{ (item.price * item.quantity).toLocaleString() }}
                 </div>
               </div>
             </div>
 
-            <hr style="border-color: #E2E8F0;" />
-
-            <!-- 金額明細 -->
-            <div class="d-flex justify-content-between mb-2" style="font-size: 0.9rem;">
-              <span class="text-secondary">商品小計</span>
-              <span>NT$ {{ cart.cartTotal.toLocaleString() }}</span>
-            </div>
-            <div class="d-flex justify-content-between mb-3" style="font-size: 0.9rem;">
-              <span class="text-secondary">運費（球館自取）</span>
-              <span class="fw-semibold" style="color: var(--brand-teal);">免運</span>
-            </div>
-
-            <hr style="border-color: #E2E8F0;" />
-
-            <div class="d-flex justify-content-between align-items-end mb-4 mt-3">
-              <span class="fw-bold" style="font-size: 1.05rem; color: var(--brand-dark);">應付總額</span>
-              <span class="fw-bold" style="font-size: 1.5rem; color: var(--brand-teal);">
-                NT$ {{ cart.cartTotal.toLocaleString() }}
-              </span>
+            <!-- 金額摘要 -->
+            <div class="order-summary">
+              <div class="summary-row">
+                <span>小計</span>
+                <span>NT${{ cart.cartTotal.toLocaleString() }}</span>
+              </div>
+              <div class="summary-row">
+                <span>
+                  運費
+                  <span class="shipping-method">球館自取</span>
+                </span>
+                <span class="free-shipping">免運</span>
+              </div>
+              <div class="summary-row total-row">
+                <span>總計</span>
+                <span class="total-price">NT${{ cart.cartTotal.toLocaleString() }}</span>
+              </div>
             </div>
 
             <!-- 下單按鈕 -->
-            <button
-              @click="handleSubmit"
-              class="btn btn-brand w-100 py-3"
-              :disabled="isSubmitting || cart.isEmpty"
-              style="font-size: 1.05rem;"
-            >
-              <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
-              <i v-else class="bi bi-bag-check me-2"></i>
-              {{ isSubmitting ? '訂單處理中...' : '確認下單' }}
-            </button>
-
-            <div class="text-center mt-3">
-              <router-link to="/cart" class="text-secondary" style="font-size: 0.8rem; text-decoration: none;">
-                <i class="bi bi-arrow-left me-1"></i>返回購物車
-              </router-link>
+            <div class="order-submit-wrap">
+              <button
+                @click="handleSubmit"
+                class="submit-btn"
+                :disabled="isSubmitting || cart.isEmpty"
+              >
+                <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+                {{ isSubmitting ? '訂單處理中...' : '確認下單' }}
+              </button>
             </div>
           </div>
         </div>
@@ -239,76 +240,450 @@ async function handleSubmit() {
 </template>
 
 <style scoped>
-/* ===== 取貨提示 ===== */
-.pickup-notice {
+/* =====================================================
+   結帳頁面 — Aesop 風格（保留原色系）
+   ===================================================== */
+.checkout-page {
+  min-height: 100vh;
+  background: #FAFBFC;
+  padding: 2.5rem 1rem 4rem;
+}
+
+.checkout-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ===== 頁面標題 ===== */
+.checkout-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--brand-dark, #1E293B);
+  margin-bottom: 2.5rem;
+  letter-spacing: -0.5px;
+}
+
+/* ===== 雙欄佈局 ===== */
+.checkout-layout {
+  display: grid;
+  grid-template-columns: 1fr 462px;
+  gap: 3rem;
+  align-items: start;
+}
+
+/* ===== 左側區塊 ===== */
+.checkout-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ===== Section 通用 ===== */
+.checkout-section {
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.checkout-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 1.5rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.section-header-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background: linear-gradient(135deg, #F0FDFA, #F0F9FF);
-  border-radius: 0.75rem;
+  gap: 0.5rem;
+}
+
+.section-check {
+  font-size: 1.1rem;
+  color: var(--brand-teal, #0D9488);
+}
+
+.section-icon {
+  font-size: 1.1rem;
+  color: var(--brand-sky, #0EA5E9);
+}
+
+.section-title-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--brand-dark, #1E293B);
+}
+
+.section-step {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94A3B8;
+  letter-spacing: 0.3px;
+}
+
+.section-body {
+  padding-left: 0.25rem;
+}
+
+/* ===== 取貨資訊 ===== */
+.pickup-box {
+  border: 1px solid #E2E8F0;
+  border-radius: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  background: #FFFFFF;
+}
+
+.pickup-method {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--brand-dark, #1E293B);
+  margin-bottom: 0.4rem;
+}
+
+.pickup-address {
+  font-size: 0.82rem;
+  color: #64748B;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+.pickup-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brand-teal, #0D9488);
+  background: #F0FDFA;
+  padding: 0.3rem 0.75rem;
+  border-radius: 2rem;
   border: 1px solid #CCFBF1;
 }
-.pickup-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--brand-teal);
-  color: white;
+
+/* ===== 付款方式（Radio 風格） ===== */
+.payment-list {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 0;
 }
 
-/* ===== 付款方式 ===== */
-.payment-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-.payment-card {
+.payment-option {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border: 2px solid #F1F5F9;
-  border-radius: 0.85rem;
+  gap: 0.85rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #F1F5F9;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.15s;
 }
-.payment-card:hover {
-  border-color: #BAE6FD;
+
+.payment-option:last-child {
+  border-bottom: none;
+}
+
+.payment-option:hover {
   background: #FAFBFC;
 }
-.payment-card.active {
-  border-color: var(--brand-teal);
-  background: #F0FDFA;
+
+.payment-option input[type="radio"] {
+  display: none;
 }
-.payment-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #F1F5F9;
-  color: #64748B;
+
+.payment-radio-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #CBD5E1;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
-  transition: all 0.2s ease;
   flex-shrink: 0;
-}
-.payment-icon.active {
-  background: var(--brand-teal);
-  color: white;
+  transition: border-color 0.2s;
 }
 
-/* ===== 訂單摘要 ===== */
-.summary-items { max-height: 280px; overflow-y: auto; }
-.summary-item {
-  padding: 0.65rem 0;
+.payment-option.active .payment-radio-circle {
+  border-color: var(--brand-teal, #0D9488);
+}
+
+.payment-radio-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.payment-option.active .payment-radio-dot {
+  background: var(--brand-teal, #0D9488);
+}
+
+.payment-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.payment-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--brand-dark, #1E293B);
+}
+
+.payment-desc {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  margin-top: 0.15rem;
+}
+
+/* ===== 備註 ===== */
+.note-textarea {
+  width: 100%;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.5rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.88rem;
+  color: var(--brand-dark, #1E293B);
+  resize: vertical;
+  transition: border-color 0.2s;
+  outline: none;
+  font-family: inherit;
+}
+
+.note-textarea:focus {
+  border-color: var(--brand-teal, #0D9488);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.08);
+}
+
+.note-textarea::placeholder {
+  color: #94A3B8;
+}
+
+/* ===== 下單按鈕 ===== */
+.submit-btn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  background: var(--brand-teal, #0D9488);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  letter-spacing: 0.5px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #0F766E;
+  transform: translateY(-1px);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ===== 右側：訂單詳情 ===== */
+.order-detail-card {
+  position: sticky;
+  top: 1.5rem;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.5rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.order-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 1.5rem 1.5rem 1rem;
   border-bottom: 1px solid #F1F5F9;
 }
-.summary-item:last-child { border-bottom: none; }
-.min-w-0 { min-width: 0; }
+
+.order-detail-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--brand-dark, #1E293B);
+  margin: 0;
+}
+
+.item-count {
+  font-weight: 400;
+  font-size: 0.9rem;
+  color: #64748B;
+}
+
+.edit-cart-link {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--brand-teal, #0D9488);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.edit-cart-link:hover {
+  text-decoration: underline;
+}
+
+/* ===== 商品列表 ===== */
+.order-products {
+  padding: 0;
+}
+
+.order-product-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.order-product-item:last-child {
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.product-img-wrap {
+  flex-shrink: 0;
+}
+
+.product-img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  border: 1px solid #F1F5F9;
+}
+
+.product-img-placeholder {
+  width: 72px;
+  height: 72px;
+  background: #F1F5F9;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #CBD5E1;
+  font-size: 1.5rem;
+}
+
+.product-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--brand-dark, #1E293B);
+  line-height: 1.4;
+  margin-bottom: 0.2rem;
+}
+
+.product-brand {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  margin-bottom: 0.35rem;
+}
+
+.product-qty {
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.product-price {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--brand-dark, #1E293B);
+  white-space: nowrap;
+  align-self: flex-start;
+  padding-top: 0.1rem;
+}
+
+/* ===== 金額摘要 ===== */
+.order-summary {
+  padding: 1.25rem 1.5rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  color: #475569;
+  padding: 0.45rem 0;
+}
+
+.shipping-method {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  margin-left: 0.35rem;
+}
+
+.free-shipping {
+  font-weight: 600;
+  color: var(--brand-teal, #0D9488);
+}
+
+.total-row {
+  border-top: 1px solid #E2E8F0;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+}
+
+.total-row span:first-child {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--brand-dark, #1E293B);
+}
+
+.total-price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--brand-dark, #1E293B);
+}
+
+/* ===== 下單按鈕（右側卡片內） ===== */
+.order-submit-wrap {
+  padding: 0 1.5rem 1.5rem;
+}
+
+/* ===== RWD ===== */
+@media (max-width: 900px) {
+  .checkout-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .checkout-right {
+    order: -1;
+  }
+
+  .order-detail-card {
+    position: static;
+  }
+}
+
+@media (max-width: 576px) {
+  .checkout-title {
+    font-size: 1.5rem;
+  }
+
+  .order-product-item {
+    padding: 1rem;
+  }
+
+  .product-img {
+    width: 56px;
+    height: 56px;
+  }
+}
 </style>
