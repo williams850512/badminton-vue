@@ -17,17 +17,11 @@ const steps = [
 const venues = ref([])
 const selectedVenue = ref(null)
 
-// 場館圖片（後端沒有圖片欄位，先 hardcode）
-const venueImages = {
-  1: 'https://images.unsplash.com/photo-1626224580194-ff9601fe0674?w=600',
-  2: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600',
-  3: 'https://images.unsplash.com/photo-1613918431703-aa50889e3be2?w=600',
-}
+// 場館圖片（從 DB 的 image_url 欄位讀取）
+const defaultVenueImage = 'https://images.unsplash.com/photo-1626224580194-ff9601fe0674?w=600'
 
-function getVenueImage(venueId) {
-  return (
-    venueImages[venueId] || 'https://images.unsplash.com/photo-1626224580194-ff9601fe0674?w=600'
-  )
+function getVenueImage(venue) {
+  return venue.imageUrl || defaultVenueImage
 }
 
 // 選擇場館 → 前進到 Step 2
@@ -219,7 +213,7 @@ async function submitBooking() {
             <!-- 場館圖片 -->
             <div class="img-zoom" style="height: 200px">
               <img
-                :src="getVenueImage(venue.venueId)"
+                :src="getVenueImage(venue)"
                 :alt="venue.venueName"
                 class="card-img-top w-100 h-100"
                 style="object-fit: cover"
