@@ -18,7 +18,7 @@ const showPassword = ref(false)
 
 // 一鍵登入帶入測試帳號
 function quickFill() {
-  username.value = 'admin01'
+  username.value = 'admin.lin'
   password.value = 'admin123'
 }
 
