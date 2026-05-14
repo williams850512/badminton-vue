@@ -184,18 +184,19 @@ function formatDate(dateStr) {
                   </div>
                 </div>
                 <div v-for="step in progressSteps" :key="step" class="progress-step-mini"
-                  :class="{ active: isStepActive(order.status, step), current: order.status === step }">
+                  :class="{ active: isStepActive(order.status, step), current: order.status === step && step !== 'COMPLETED' }">
                   <div class="step-dot"
-                    :style="isStepActive(order.status, step) ? { borderColor: 'var(--brand-sky)', backgroundColor: order.status === step ? 'white' : 'var(--brand-sky)' } : {}">
-                    <div v-if="order.status === step" class="step-dot-inner"
+                    :style="isStepActive(order.status, step) ? { borderColor: 'var(--brand-sky)', backgroundColor: (order.status === step && step !== 'COMPLETED') ? 'white' : 'var(--brand-sky)' } : {}">
+                    <div v-if="order.status === step && step !== 'COMPLETED'" class="step-dot-inner"
                       style="background-color: var(--brand-sky);"></div>
+                    <i v-else-if="isStepActive(order.status, step)" class="bi bi-check" style="color: white; font-size: 0.8rem;"></i>
                   </div>
                   <div class="step-text"
-                    :style="order.status === step ? { color: 'var(--brand-sky)', fontWeight: '700' } : {}">
+                    :style="(order.status === step && step !== 'COMPLETED') ? { color: 'var(--brand-sky)', fontWeight: '700' } : {}">
                     {{ statusMap[step]?.label }}
                   </div>
                   <div class="step-time" v-if="isStepActive(order.status, step) && getStepTime(order, step)"
-                    :style="order.status === step ? { color: 'var(--brand-sky)', fontWeight: '700' } : {}">
+                    :style="(order.status === step && step !== 'COMPLETED') ? { color: 'var(--brand-sky)', fontWeight: '700' } : {}">
                     {{ getStepTime(order, step) }}
                   </div>
                 </div>
@@ -380,6 +381,9 @@ function formatDate(dateStr) {
   color: #94A3B8;
   font-weight: 600;
 }
+.progress-step-mini.active .step-text {
+  color: var(--brand-dark);
+}
 
 .step-time {
   font-size: 0.6rem;
@@ -387,6 +391,9 @@ function formatDate(dateStr) {
   margin-top: 0.1rem;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+}
+.progress-step-mini.active .step-time {
+  color: var(--brand-dark);
 }
 
 /* ===== 明細列 ===== */
