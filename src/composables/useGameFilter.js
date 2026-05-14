@@ -120,7 +120,16 @@ export function useGameFilter(pickupGames, getDisplayStatus, dateFrom, dateTo) {
       result = result.filter((game) => getDisplayStatus(game) === statusFilter.value)
     }
     // 排序
-    if (sortBy.value === 'dateNewest') {
+    if (sortBy.value === 'default') {
+      // 🌟 預設排序：開放中 > 已額滿 > 已結束 > 已取消。同狀態再按日期新到舊
+      const statusWeight = { OPEN: 1, FULL: 2, CLOSED: 3, CANCELLED: 4 }
+      result = [...result].sort((a, b) => {
+        const weightA = statusWeight[getDisplayStatus(a)] || 99
+        const weightB = statusWeight[getDisplayStatus(b)] || 99
+        if (weightA !== weightB) return weightA - weightB
+        return b.gameDate.localeCompare(a.gameDate)
+      })
+    } else if (sortBy.value === 'dateNewest') {
       result = [...result].sort((a, b) => b.gameDate.localeCompare(a.gameDate))
     } else if (sortBy.value === 'dateOldest') {
       result = [...result].sort((a, b) => a.gameDate.localeCompare(b.gameDate))

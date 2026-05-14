@@ -237,7 +237,7 @@ const handleKick = async (signupId, memberName) => {
                   <div v-for="s in displaySignups" :key="s.signupId" class="text-center position-relative player-avatar-wrapper" style="width: 80px;">
                     <!-- 踢出按鈕 -->
                     <button
-                      v-if="isCurrentUserHost && s.displayTag !== '主揪'"
+                      v-if="isCurrentUserHost && s.displayTag !== '主揪' && game.status !== 'CANCELLED' && new Date(`${game.gameDate}T${game.endTime}`) >= new Date()"
                       @click="handleKick(s.signupId, s.member?.fullName)"
                       class="btn btn-danger btn-sm rounded-circle position-absolute shadow kick-btn"
                       title="踢除此成員"

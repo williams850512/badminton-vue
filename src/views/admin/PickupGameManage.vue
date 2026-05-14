@@ -588,6 +588,8 @@ onMounted(() => {
                     @click="openEditModal(game)"
                     data-bs-toggle="modal"
                     data-bs-target="#editGameModal"
+                    :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'"
+                    :title="game.status === 'CANCELLED' ? '已取消的揪團無法編輯' : (getDisplayStatus(game) === 'CLOSED' ? '已結束的揪團無法編輯' : '')"
                   >
                     <i class="bi bi-pencil-fill"></i>
                   </button>
@@ -596,6 +598,8 @@ onMounted(() => {
                   <button
                     class="btn btn-outline-danger btn-sm btn-action"
                     @click="cancelPickupGame(game)"
+                    :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'"
+                    :title="game.status === 'CANCELLED' ? '此揪團已取消' : (getDisplayStatus(game) === 'CLOSED' ? '已結束的揪團無法取消' : '')"
                   >
                     <i class="bi bi-x-circle-fill"></i>
                   </button>
@@ -635,6 +639,8 @@ onMounted(() => {
                           <button
                             class="btn btn-outline-danger btn-sm"
                             @click="removeSignup(s.signupId, game.gameId, s.member?.fullName)"
+                            :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'"
+                            :title="game.status === 'CANCELLED' ? '已取消的揪團無法移除成員' : (getDisplayStatus(game) === 'CLOSED' ? '已結束的揪團無法移除成員' : '')"
                           >
                             <i class="bi bi-person-dash-fill"></i>
                           </button>
@@ -656,6 +662,7 @@ onMounted(() => {
                         v-model="signupKeyword"
                         @input="searchSignupMembers"
                         placeholder="輸入姓名或手機搜尋會員"
+                        :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'"
                       />
                       <!-- 搜尋結果下拉 -->
                       <ul
@@ -674,7 +681,7 @@ onMounted(() => {
                         </li>
                       </ul>
                     </div>
-                    <button class="btn btn-success text-nowrap" @click="addSignup(game.gameId)">
+                    <button class="btn btn-success text-nowrap" @click="addSignup(game.gameId)" :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'">
                       <i class="bi bi-person-plus-fill me-1"></i> 新增報名
                     </button>
                   </div>

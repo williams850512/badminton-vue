@@ -81,12 +81,16 @@ const isTomorrow = (dateStr) => {
               <template v-else>未指定場館</template>
             </span>
           </div>
+          <!-- 🌟 新增：簡略備註或提供球種 -->
+          <div class="mt-2 text-muted" style="font-size: 0.85rem;">
+            <i class="bi bi-card-text me-1 opacity-75"></i> {{ game.description || '無特別備註' }}
+          </div>
         </div>
 
         <!-- 底部主揪資訊 -->
         <div class="d-flex align-items-center mt-2">
           <img :src="game.host?.photoUrl || `https://i.pravatar.cc/150?u=${game.host?.memberId}`"
-               class="rounded-circle border me-2 shadow-sm" width="36" height="36" alt="avatar">
+               class="rounded-circle border me-2 shadow-sm" width="48" height="48" alt="avatar">
           <div class="d-flex flex-column">
             <span class="text-secondary" style="font-size: 0.75rem; letter-spacing: 0.5px;">主揪人</span>
             <span class="fw-bold text-dark fs-6">{{ game.host?.fullName || '揪團主' }}</span>
@@ -95,25 +99,30 @@ const isTomorrow = (dateStr) => {
       </div>
 
       <!-- 右側區域 -->
-      <div class="d-flex flex-row flex-md-column align-items-center align-items-md-end justify-content-between gap-3 mt-2 mt-md-0 pt-3 pt-md-0 border-top-md-none">
-        <!-- 標籤區塊 -->
-        <div class="text-md-end d-flex gap-2 align-items-center">
-          <span v-if="genderBadge" class="badge rounded-pill px-3 py-2 fs-6 fw-bold shadow-sm" :class="genderBadge.class">
-            {{ genderBadge.label }}
-          </span>
-          <span class="badge rounded-pill px-4 py-2 fs-6 fw-bold shadow-sm" :class="levelBadgeClass">
-            {{ displayLevel }}
-          </span>
-        </div>
-        <!-- 報名人數 -->
-        <div class="d-flex flex-column align-items-end">
-          <div class="text-secondary fw-medium mb-1" style="font-size: 0.85rem;">目前報名進度</div>
-          <div class="d-flex align-items-center gap-2">
-            <div class="fs-4 fw-bold" :class="game.currentPlayers >= game.maxPlayers ? 'text-danger' : 'text-dark'">
-              {{ game.currentPlayers }} <span class="fs-6 text-secondary fw-normal">/ {{ game.maxPlayers }} 人</span>
+      <div class="d-flex flex-row flex-md-column align-items-center align-items-md-end justify-content-between mt-3 mt-md-0 pt-3 pt-md-0 border-top-md-none w-md-25">
+        <!-- 🌟 包裝右側資訊區塊 (bg-light, rounded-3, p-3) -->
+        <div class="bg-light rounded-3 p-3 w-100 d-flex flex-column align-items-md-end border">
+          <!-- 標籤區塊 -->
+          <div class="text-md-end d-flex gap-2 align-items-center mb-3">
+            <span v-if="genderBadge" class="badge rounded-pill px-3 py-2 fs-6 fw-bold shadow-sm" :class="genderBadge.class">
+              {{ genderBadge.label }}
+            </span>
+            <span class="badge rounded-pill px-3 py-2 fs-6 fw-bold shadow-sm" :class="levelBadgeClass">
+              {{ displayLevel }}
+            </span>
+          </div>
+          <!-- 報名人數 -->
+          <div class="d-flex flex-column align-items-md-end w-100">
+            <div class="d-flex justify-content-between align-items-center w-100 mb-1">
+              <span class="text-secondary fw-medium" style="font-size: 0.85rem;">報名進度</span>
+              <span v-if="game.currentPlayers >= game.maxPlayers" class="badge bg-danger-subtle text-danger rounded-pill">已滿團</span>
+              <span v-else class="badge bg-success-subtle text-success rounded-pill">報名中</span>
             </div>
-            <span v-if="game.currentPlayers >= game.maxPlayers" class="badge bg-danger-subtle text-danger rounded-pill">已滿團</span>
-            <span v-else class="badge bg-success-subtle text-success rounded-pill">報名中</span>
+            <div class="d-flex align-items-center gap-2">
+              <div class="fs-4 fw-bold" :class="game.currentPlayers >= game.maxPlayers ? 'text-danger' : 'text-dark'">
+                {{ game.currentPlayers }} <span class="fs-6 text-secondary fw-normal">/ {{ game.maxPlayers }} 人</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
