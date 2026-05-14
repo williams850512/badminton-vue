@@ -28,7 +28,15 @@ const levelBadgeClass = computed(() => {
   }
 })
 
-// 🌟 3. 日期處理小工具
+// 🌟 3. 性別限制標籤
+const genderBadge = computed(() => {
+  const g = props.game.requiredGender || props.game.genderLimit
+  if (g === 'FEMALE') return { label: '👩 限女', class: 'bg-pink text-white border border-pink' }
+  if (g === 'MALE') return { label: '👨 限男', class: 'bg-primary text-white border border-primary' }
+  return null
+})
+
+// 🌟 4. 日期處理小工具
 const getDayOfWeek = (dateStr) => {
   if (!dateStr) return ''
   const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六']
@@ -88,8 +96,11 @@ const isTomorrow = (dateStr) => {
 
       <!-- 右側區域 -->
       <div class="d-flex flex-row flex-md-column align-items-center align-items-md-end justify-content-between gap-3 mt-2 mt-md-0 pt-3 pt-md-0 border-top-md-none">
-        <!-- 程度標籤 -->
-        <div class="text-md-end">
+        <!-- 標籤區塊 -->
+        <div class="text-md-end d-flex gap-2 align-items-center">
+          <span v-if="genderBadge" class="badge rounded-pill px-3 py-2 fs-6 fw-bold shadow-sm" :class="genderBadge.class">
+            {{ genderBadge.label }}
+          </span>
           <span class="badge rounded-pill px-4 py-2 fs-6 fw-bold shadow-sm" :class="levelBadgeClass">
             {{ displayLevel }}
           </span>
@@ -148,5 +159,11 @@ const isTomorrow = (dateStr) => {
   .border-top-md-none {
     border-top: none !important;
   }
+}
+.bg-pink {
+  background-color: #ec4899 !important;
+}
+.border-pink {
+  border-color: #f472b6 !important;
 }
 </style>

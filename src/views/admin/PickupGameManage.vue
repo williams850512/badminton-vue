@@ -105,6 +105,17 @@ watch(() => editGame.value?.startTime, (newVal, oldVal) => {
     editGame.value.endTime = ''
   }
 })
+
+// 性別防呆計算屬性
+const isNewGameHostMale = computed(() => {
+  if (!selectedMember.value) return false;
+  return selectedMember.value.gender === 'MALE' || selectedMember.value.gender === '男';
+});
+const isEditGameHostMale = computed(() => {
+  if (!editGame.value || !editGame.value.host) return false;
+  return editGame.value.host.gender === 'MALE' || editGame.value.host.gender === '男';
+});
+
 // ============================================================
 // 搜尋 + 狀態篩選 + 分頁 邏輯
 // ============================================================
@@ -257,6 +268,17 @@ onMounted(() => {
                   <option value="BEGINNER">初級</option>
                   <option value="INTERMEDIATE">中級</option>
                   <option value="ADVANCED">高級</option>
+                </select>
+              </div>
+              <!-- 性別限制 -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">性別限制</label>
+                <select class="form-select" v-model="editGame.requiredGender">
+                  <option value="ALL">不限</option>
+                  <option value="MALE">限男性</option>
+                  <option value="FEMALE" :disabled="isEditGameHostMale">
+                    限女性 {{ isEditGameHostMale ? '(主揪為男性)' : '' }}
+                  </option>
                 </select>
               </div>
             </form>
@@ -846,6 +868,22 @@ onMounted(() => {
                   <option value="BEGINNER">初級</option>
                   <option value="INTERMEDIATE">中級</option>
                   <option value="ADVANCED">高級</option>
+                </select>
+              </div>
+              <!-- 性別限制 -->
+              <div class="col-md-12">
+                <div class="d-flex align-items-center mb-2">
+                  <div class="icon-box me-2" style="background-color: rgba(236, 72, 153, 0.15)">
+                    <i class="bi bi-gender-ambiguous" style="color: #ec4899"></i>
+                  </div>
+                  <label class="form-label fw-bold mb-0">性別限制</label>
+                </div>
+                <select class="form-select" v-model="newGame.requiredGender">
+                  <option value="ALL">不限</option>
+                  <option value="MALE">限男性</option>
+                  <option value="FEMALE" :disabled="isNewGameHostMale">
+                    限女性 {{ isNewGameHostMale ? '(主揪為男性，無法開純女團)' : '' }}
+                  </option>
                 </select>
               </div>
             </form>

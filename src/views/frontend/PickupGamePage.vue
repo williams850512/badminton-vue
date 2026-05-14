@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Modal } from 'bootstrap'
+import Swal from 'sweetalert2'
 import PickupGameRow from '@/components/frontend/PickupGameRow.vue'
 import CreateGameModal from '@/components/frontend/CreateGameModal.vue'
 import { usePickupGameApi } from '@/composables/usePickupGameApi'
@@ -18,14 +19,16 @@ const createModalRef = ref(null)
 const advancedFilters = ref({
   levels: [], // 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'
   hasAvailableSlotsOnly: false,
-  timeOfDay: '' // 'morning', 'afternoon', 'evening', ''
+  timeOfDay: '', // 'morning', 'afternoon', 'evening', ''
+  requiredGender: '' // 'FEMALE', 'MALE', ''
 })
 
 // Offcanvas 專用的暫存篩選狀態 (按下套用後才正式生效)
 const tempFilters = ref({
   levels: [],
   hasAvailableSlotsOnly: false,
-  timeOfDay: ''
+  timeOfDay: '',
+  requiredGender: ''
 })
 
 const applyAdvancedFilters = () => {
@@ -36,8 +39,8 @@ const applyAdvancedFilters = () => {
 }
 
 const clearAdvancedFilters = () => {
-  tempFilters.value = { levels: [], hasAvailableSlotsOnly: false, timeOfDay: '' }
-  advancedFilters.value = { levels: [], hasAvailableSlotsOnly: false, timeOfDay: '' }
+  tempFilters.value = { levels: [], hasAvailableSlotsOnly: false, timeOfDay: '', requiredGender: '' }
+  advancedFilters.value = { levels: [], hasAvailableSlotsOnly: false, timeOfDay: '', requiredGender: '' }
   changePage(1)
 }
 // --- 日期計算小幫手 ---
@@ -102,6 +105,9 @@ const availableGames = computed(() => {
       if (advancedFilters.value.timeOfDay === 'evening') return startHour >= 18 && startHour <= 22
       return true
     })
+  }
+  if (advancedFilters.value.requiredGender) {
+    result = result.filter(g => (g.requiredGender || g.genderLimit) === advancedFilters.value.requiredGender)
   }
 
   return result
@@ -194,7 +200,32 @@ const confirmSignup = async () => {
     return
   }
   
-  const currentMemberId = 1 // 假資料：目前登入的會員 ID
+  // 🌟 性別防呆檢查
+  const memberInfo = JSON.parse(localStorage.getItem('memberInfo')) || {}
+  const reqGender = quickViewGame.value.requiredGender || quickViewGame.value.genderLimit
+  
+  if (reqGender === 'FEMALE' && memberInfo.gender !== 'FEMALE' && memberInfo.gender !== '女') {
+    Swal.fire({ 
+      icon: 'error', 
+      title: '資格不符', 
+      text: '不好意思，本場次為主揪設定之女性專屬場次喔！', 
+      confirmButtonColor: '#ec4899', // 使用粉色符合女團氛圍
+      confirmButtonText: '我知道了'
+    })
+    return
+  }
+  if (reqGender === 'MALE' && memberInfo.gender !== 'MALE' && memberInfo.gender !== '男') {
+    Swal.fire({ 
+      icon: 'error', 
+      title: '資格不符', 
+      text: '不好意思，本場次為主揪設定之男性專屬場次喔！', 
+      confirmButtonColor: '#0ea5e9',
+      confirmButtonText: '我知道了'
+    })
+    return
+  }
+
+  const currentMemberId = memberInfo.memberId || 1 // 假資料：目前登入的會員 ID
   await joinPickupGame(quickViewGame.value.gameId, currentMemberId)
   
   if (quickViewModalInstance) {
@@ -434,6 +465,24 @@ onMounted(() => {
           </div>
         </div>
 
+        <!-- 性別限制 -->
+        <div class="mb-4">
+          <label class="fw-bold mb-2">性別限制</label>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check">
+              <input class="form-check-input cursor-pointer" type="radio" name="tempGender" id="genderAll" value="" v-model="tempFilters.requiredGender">
+              <label class="form-check-label cursor-pointer text-secondary" for="genderAll">全部 (不限)</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input cursor-pointer" type="radio" name="tempGender" id="genderFemale" value="FEMALE" v-model="tempFilters.requiredGender">
+              <label class="form-check-label cursor-pointer text-secondary" for="genderFemale">限女性</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input cursor-pointer" type="radio" name="tempGender" id="genderMale" value="MALE" v-model="tempFilters.requiredGender">
+              <label class="form-check-label cursor-pointer text-secondary" for="genderMale">限男性</label>
+            </div>
+          </div>
+        </div>
       </div>
       
       <!-- 底部按鈕 -->

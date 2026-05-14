@@ -50,6 +50,7 @@ export function usePickupGameApi() {
     endTime: '',
     maxPlayers: 4,
     skillLevel: 'ALL',
+    requiredGender: 'ALL',
   })
 
   // ============================
@@ -125,6 +126,7 @@ export function usePickupGameApi() {
         endTime: '',
         maxPlayers: 4,
         skillLevel: 'ALL',
+        requiredGender: 'ALL',
       }
       selectedMember.value = null
       memberKeyword.value = ''
@@ -279,6 +281,23 @@ export function usePickupGameApi() {
       Swal.fire({ icon: 'warning', title: '請先搜尋並選擇一位會員', confirmButtonText: '好的' })
       return
     }
+
+    // 🌟 後台代報名性別防呆檢查
+    const game = pickupGames.value.find(g => g.gameId === gameId)
+    if (game) {
+      const reqGender = game.requiredGender || game.genderLimit
+      const memberGender = selectedSignupMember.value.gender
+      
+      if (reqGender === 'FEMALE' && memberGender !== 'FEMALE' && memberGender !== '女') {
+        Swal.fire({ icon: 'error', title: '資格不符', text: '本場次為主揪設定之女性專屬場次，無法幫男性會員報名！', confirmButtonColor: '#ec4899' })
+        return
+      }
+      if (reqGender === 'MALE' && memberGender !== 'MALE' && memberGender !== '男') {
+        Swal.fire({ icon: 'error', title: '資格不符', text: '本場次為主揪設定之男性專屬場次，無法幫女性會員報名！', confirmButtonColor: '#0ea5e9' })
+        return
+      }
+    }
+
     try {
       await axios.post('/api/pickup-game-signups', {
         game: { gameId: gameId },
