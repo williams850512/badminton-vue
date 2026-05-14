@@ -17,23 +17,30 @@ const displayLevel = computed(() => {
   const lvl = props.game.skillLevel || props.game.level
   return levelMap[lvl] || lvl || '不限'
 })
-// 🌟 2. 根據翻譯好的中文決定標籤顏色
-const levelBadgeClass = computed(() => {
+// 🌟 2. 整合式徽章設計 (程度 + 性別)
+const integratedBadge = computed(() => {
   const lvl = displayLevel.value
-  switch (lvl) {
-    case '初級': return 'text-success bg-success-subtle border border-success border-opacity-25'
-    case '中級': return 'text-sky-blue bg-sky-blue-subtle border border-sky-blue border-opacity-25'
-    case '高級': return 'text-danger bg-danger-subtle border border-danger border-opacity-25'
-    default: return 'text-secondary bg-secondary-subtle border border-secondary border-opacity-25'
+  const g = props.game.requiredGender || props.game.genderLimit || 'ALL'
+  
+  if (g === 'FEMALE') {
+    return { 
+      label: `限女 · ${lvl}`, 
+      icon: 'bi-gender-female', 
+      class: 'badge-integrated-female' 
+    }
+  } else if (g === 'MALE') {
+    return { 
+      label: `限男 · ${lvl}`, 
+      icon: 'bi-gender-male', 
+      class: 'badge-integrated-male' 
+    }
+  } else {
+    return { 
+      label: lvl, 
+      icon: null, 
+      class: 'badge-integrated-all' 
+    }
   }
-})
-
-// 🌟 3. 性別限制標籤
-const genderBadge = computed(() => {
-  const g = props.game.requiredGender || props.game.genderLimit
-  if (g === 'FEMALE') return { label: '👩 限女', class: 'bg-pink text-white border border-pink' }
-  if (g === 'MALE') return { label: '👨 限男', class: 'bg-primary text-white border border-primary' }
-  return null
 })
 
 // 🌟 4. 日期處理小工具
@@ -58,7 +65,7 @@ const isTomorrow = (dateStr) => {
 }
 </script>
 <template>
-  <div class="card border-0 rounded-4 shadow-sm mb-4 game-card-hover" 
+  <div class="card border-0 rounded-4 shadow-sm mb-4 game-card-hover col-12 col-lg-10 col-xl-8 mx-auto" 
        @click="$emit('open-quick-view', game)">
     <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
       
@@ -71,7 +78,7 @@ const isTomorrow = (dateStr) => {
             <span v-if="isToday(game.gameDate)" class="badge bg-danger rounded-pill px-2 py-1 shadow-sm">🔥 今天</span>
             <span v-else-if="isTomorrow(game.gameDate)" class="badge bg-warning text-dark rounded-pill px-2 py-1 shadow-sm">🌟 明天</span>
           </div>
-          <div class="d-flex align-items-center gap-3 text-secondary" style="font-size: 0.95rem;">
+          <div class="d-flex flex-wrap align-items-center gap-3 text-secondary small">
             <span><i class="bi bi-clock me-1 text-sky-blue"></i> {{ game.startTime }} - {{ game.endTime }}</span>
             <span>
               <i class="bi bi-geo-alt me-1 text-sky-blue"></i> 
@@ -82,13 +89,13 @@ const isTomorrow = (dateStr) => {
             </span>
           </div>
           <!-- 🌟 新增：簡略備註或提供球種 -->
-          <div class="mt-2 text-muted" style="font-size: 0.85rem;">
+          <div class="mt-2 text-secondary small">
             <i class="bi bi-card-text me-1 opacity-75"></i> {{ game.description || '無特別備註' }}
           </div>
         </div>
 
         <!-- 底部主揪資訊 -->
-        <div class="d-flex align-items-center mt-2">
+        <div class="d-flex align-items-center mt-3">
           <img :src="game.host?.photoUrl || `https://i.pravatar.cc/150?u=${game.host?.memberId}`"
                class="rounded-circle border me-2 shadow-sm" width="48" height="48" alt="avatar">
           <div class="d-flex flex-column">
@@ -102,13 +109,11 @@ const isTomorrow = (dateStr) => {
       <div class="d-flex flex-row flex-md-column align-items-center align-items-md-end justify-content-between mt-3 mt-md-0 pt-3 pt-md-0 border-top-md-none w-md-25">
         <!-- 🌟 包裝右側資訊區塊 (bg-light, rounded-3, p-3) -->
         <div class="bg-light rounded-3 p-3 w-100 d-flex flex-column align-items-md-end border">
-          <!-- 標籤區塊 -->
-          <div class="text-md-end d-flex gap-2 align-items-center mb-3">
-            <span v-if="genderBadge" class="badge rounded-pill px-3 py-2 fs-6 fw-bold shadow-sm" :class="genderBadge.class">
-              {{ genderBadge.label }}
-            </span>
-            <span class="badge rounded-pill px-3 py-2 fs-6 fw-bold shadow-sm" :class="levelBadgeClass">
-              {{ displayLevel }}
+          <!-- 整合標籤區塊 -->
+          <div class="text-md-end d-flex align-items-center mb-3">
+            <span class="badge rounded-pill px-4 py-2 fs-6 fw-bold shadow-sm d-flex align-items-center gap-1" :class="integratedBadge.class">
+              <i v-if="integratedBadge.icon" class="bi fs-5" :class="integratedBadge.icon"></i> 
+              {{ integratedBadge.label }}
             </span>
           </div>
           <!-- 報名人數 -->
@@ -118,10 +123,11 @@ const isTomorrow = (dateStr) => {
               <span v-if="game.currentPlayers >= game.maxPlayers" class="badge bg-danger-subtle text-danger rounded-pill">已滿團</span>
               <span v-else class="badge bg-success-subtle text-success rounded-pill">報名中</span>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <div class="fs-4 fw-bold" :class="game.currentPlayers >= game.maxPlayers ? 'text-danger' : 'text-dark'">
-                {{ game.currentPlayers }} <span class="fs-6 text-secondary fw-normal">/ {{ game.maxPlayers }} 人</span>
-              </div>
+            <div class="d-flex align-items-baseline gap-1 mt-1">
+              <span class="fs-3 fw-bold" :class="game.currentPlayers >= game.maxPlayers ? 'text-danger' : 'text-dark'">
+                {{ game.currentPlayers }}
+              </span>
+              <span class="text-muted small">/ {{ game.maxPlayers }} 人</span>
             </div>
           </div>
         </div>
@@ -169,10 +175,20 @@ const isTomorrow = (dateStr) => {
     border-top: none !important;
   }
 }
-.bg-pink {
-  background-color: #ec4899 !important;
+/* 🌟 整合式徽章專屬樣式 */
+.badge-integrated-male {
+  background-color: #E3F2FD !important;
+  color: #1976D2 !important;
+  border: 1px solid #90CAF9 !important;
 }
-.border-pink {
-  border-color: #f472b6 !important;
+.badge-integrated-female {
+  background-color: #FCE4EC !important;
+  color: #D81B60 !important;
+  border: 1px solid #F48FB1 !important;
+}
+.badge-integrated-all {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  border: 1px solid #dee2e6 !important;
 }
 </style>

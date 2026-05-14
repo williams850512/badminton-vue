@@ -36,6 +36,10 @@ export function usePickupGameApi() {
   const signupSearchResults = ref([])
   const selectedSignupMember = ref(null)
 
+  // 🌟 主揪的可用預約清單（選完主揪後載入）
+  const memberBookings = ref([])
+  const selectedBookingId = ref(null)
+
   // 編輯揪團相關
   const editGame = ref(null)           // 正在編輯的揪團資料（深拷貝）
   const editMemberKeyword = ref('')    // 編輯表單裡主揪的顯示文字
@@ -95,12 +99,52 @@ export function usePickupGameApi() {
     }
   }
 
-  // 選中會員後：填入表單
+  // 選中會員後：填入表單 + 載入該會員的可用預約
   const selectMember = (member) => {
     selectedMember.value = member
     newGame.value.host.memberId = member.memberId
     memberKeyword.value = member.fullName
     memberResults.value = []
+    // 🌟 選完主揪後，自動載入該主揪的可用預約
+    selectedBookingId.value = null
+    fetchMemberBookings(member.memberId)
+  }
+
+  // ============================
+  // 🔌 GET：抓取指定會員的可用預約（未過期、已確認、尚未綁定揪團）
+  // ============================
+  const fetchMemberBookings = async (memberId) => {
+    try {
+      // 🌟 TODO：等後端 API 開好後，替換成真正的 API 呼叫
+      // const res = await axios.get(`/api/bookings/member/${memberId}/available`)
+      // memberBookings.value = res.data
+
+      // 暫時使用模擬資料（後端完成後刪除這段）
+      memberBookings.value = [
+        { bookingId: 201, courtId: 1, venueName: '總館', courtName: '總館第一場地', bookingDate: '2026-05-20', startTime: '19:00', endTime: '21:00' },
+        { bookingId: 202, courtId: 2, venueName: '總館', courtName: '總館第二場地', bookingDate: '2026-05-22', startTime: '14:00', endTime: '16:00' },
+        { bookingId: 203, courtId: 3, venueName: '分館', courtName: '分館第一場地', bookingDate: '2026-05-25', startTime: '10:00', endTime: '12:00' },
+      ]
+    } catch (err) {
+      console.error('抓取會員預約失敗', err)
+      memberBookings.value = []
+    }
+  }
+
+  // 🌟 選擇預約後：自動帶入場地、日期、時間
+  const selectAdminBooking = (bookingId) => {
+    const b = memberBookings.value.find(x => x.bookingId === bookingId)
+    if (b) {
+      selectedBookingId.value = b.bookingId
+      newGame.value.bookingId = b.bookingId
+      newGame.value.court.courtId = b.courtId
+      newGame.value.gameDate = b.bookingDate
+      newGame.value.startTime = b.startTime
+      newGame.value.endTime = b.endTime
+      // 暫存場地名稱供顯示用
+      newGame.value._venueName = b.venueName
+      newGame.value._courtName = b.courtName
+    }
   }
 
   // ============================
@@ -108,7 +152,13 @@ export function usePickupGameApi() {
   // ============================
   const createPickupGame = async () => {
     try {
-      await axios.post('/api/pickup-games', newGame.value)
+      // 🌟 送出前清理：移除前端暫存的顯示用欄位（後端 Entity 不認識這些）
+      const payload = { ...newGame.value }
+      delete payload.venueName
+      delete payload.courtName
+      delete payload._venueName
+      delete payload._courtName
+      await axios.post('/api/pickup-games', payload)
       Swal.fire({
         icon: 'success',
         title: '建立成功！',
@@ -127,9 +177,12 @@ export function usePickupGameApi() {
         maxPlayers: 4,
         skillLevel: 'ALL',
         requiredGender: 'ALL',
+        bookingId: null,
       }
       selectedMember.value = null
       memberKeyword.value = ''
+      memberBookings.value = []
+      selectedBookingId.value = null
     } catch (error) {
       console.error('新增失敗：', error)
       Swal.fire({
@@ -427,6 +480,8 @@ export function usePickupGameApi() {
     today,
     inlineEdit,
     joinPickupGame,
+    memberBookings,       // 🌟 主揪的可用預約清單
+    selectedBookingId,    // 🌟 選中的預約 ID
 
     // API 方法
     fetchGames,
@@ -445,5 +500,7 @@ export function usePickupGameApi() {
     removeSignup,
     startInlineEdit,
     saveInlineEdit,
+    fetchMemberBookings,  // 🌟 抓取會員預約
+    selectAdminBooking,   // 🌟 選擇預約後帶入資料
   }
 }

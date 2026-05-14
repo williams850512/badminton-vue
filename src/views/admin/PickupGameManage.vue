@@ -30,11 +30,13 @@ const {
   memberKeyword, memberResults, selectedMember,
   signupKeyword, signupSearchResults, selectedSignupMember,
   editGame, editMemberKeyword, newGame, today, inlineEdit,
+  memberBookings, selectedBookingId,
   fetchGames, fetchCourts, searchMembers, selectMember,
   createPickupGame, openEditModal, updatePickupGame,
   cancelPickupGame, batchCancel: doBatchCancel,
   fetchSignups, searchSignupMembers, selectSignupMember,
   addSignup, removeSignup, startInlineEdit, saveInlineEdit,
+  fetchMemberBookings, selectAdminBooking,
 } = usePickupGameApi()
 // ============================
 // ⏰ 時間下拉選單的邏輯 (與前台同步的嚴謹連動防呆邏輯)
@@ -783,65 +785,47 @@ onMounted(() => {
                   ✅ 已選擇：{{ selectedMember.fullName }} (ID: {{ selectedMember.memberId }})
                 </small>
               </div>
-              <!-- 場地 -->
-              <div class="col-12">
+              <!-- 🌟 選擇該主揪的預約場地 (取代原本自由選場地/日期/時間) -->
+              <div class="col-12" v-if="selectedMember">
                 <div class="d-flex align-items-center mb-2">
                   <div class="icon-box me-2" style="background-color: rgba(25, 135, 84, 0.1)">
-                    <i class="bi bi-geo-alt-fill text-success"></i>
+                    <i class="bi bi-calendar-check-fill text-success"></i>
                   </div>
                   <label class="form-label fw-bold mb-0"
-                    >場地 <span class="text-danger">*</span></label
+                    >選擇預約場地 <span class="text-danger">*</span></label
                   >
                 </div>
-                <select class="form-select" v-model="newGame.court.courtId">
-                  <option :value="null" disabled>請選擇場地</option>
-                  <option v-for="c in courts" :key="c.courtId" :value="c.courtId">
-                    {{ c.venue?.venueName }} / {{ c.courtName }}
+                <select class="form-select" v-model="selectedBookingId" @change="selectAdminBooking(selectedBookingId)">
+                  <option :value="null" disabled>請選擇該會員的可用預約...</option>
+                  <option v-for="b in memberBookings" :key="b.bookingId" :value="b.bookingId">
+                    {{ b.bookingDate }} ({{ b.startTime }}-{{ b.endTime }}) | {{ b.venueName }} - {{ b.courtName }}
                   </option>
                 </select>
+                <small v-if="memberBookings.length === 0" class="text-warning d-block mt-1">
+                  ⚠️ 該會員目前沒有可用的預約紀錄
+                </small>
               </div>
-              <!-- 日期 -->
-              <div class="col-12">
-                <div class="d-flex align-items-center mb-2">
-                  <div class="icon-box me-2" style="background-color: rgba(255, 193, 7, 0.15)">
-                    <i class="bi bi-calendar-event-fill text-warning"></i>
+              <!-- 🌟 自動帶入的預約資訊 (唯讀顯示) -->
+              <div class="col-12" v-if="selectedBookingId">
+                <div class="card bg-light border-0 rounded-3 p-3">
+                  <div class="row text-secondary small fw-medium">
+                    <div class="col-12 mb-2">
+                      <i class="bi bi-geo-alt me-1 text-primary"></i>
+                      {{ newGame._venueName }} - {{ newGame._courtName }}
+                    </div>
+                    <div class="col-6">
+                      <i class="bi bi-calendar-event me-1 text-warning"></i>
+                      {{ newGame.gameDate }}
+                    </div>
+                    <div class="col-6">
+                      <i class="bi bi-clock me-1 text-info"></i>
+                      {{ newGame.startTime }} ~ {{ newGame.endTime }}
+                    </div>
                   </div>
-                  <label class="form-label fw-bold mb-0"
-                    >日期 <span class="text-danger">*</span></label
-                  >
                 </div>
-                <input type="date" class="form-control" v-model="newGame.gameDate" :min="today" />
               </div>
-              <!-- 開始時間 -->
-              <div class="col-md-6">
-                <div class="d-flex align-items-center mb-2">
-                  <div class="icon-box me-2" style="background-color: rgba(13, 202, 240, 0.15)">
-                    <i class="bi bi-clock-fill text-info"></i>
-                  </div>
-                  <label class="form-label fw-bold mb-0"
-                    >開始時間 <span class="text-danger">*</span></label
-                  >
-                </div>
-                <select class="form-select" v-model="newGame.startTime" :disabled="!newGame.gameDate || startTimeOptions.length === 0">
-                  <option value="" disabled>{{ startTimeOptions.length === 0 ? '今日已無時段' : '請選擇...' }}</option>
-                  <option v-for="t in startTimeOptions" :key="t" :value="t">{{ t }}</option>
-                </select>
-              </div>
-              <!-- 結束時間 -->
-              <div class="col-md-6">
-                <div class="d-flex align-items-center mb-2">
-                  <div class="icon-box me-2" style="background-color: rgba(13, 202, 240, 0.15)">
-                    <i class="bi bi-clock-history text-info"></i>
-                  </div>
-                  <label class="form-label fw-bold mb-0"
-                    >結束時間 <span class="text-danger">*</span></label
-                  >
-                </div>
-                <select class="form-select" v-model="newGame.endTime" :disabled="!newGame.startTime">
-                  <option value="" disabled>請先選擇開始時間</option>
-                  <option v-for="t in endTimeOptions" :key="t" :value="t">{{ t }}</option>
-                </select>
-              </div>
+              <!-- 以下欄位：選完預約後才顯示 -->
+              <template v-if="selectedBookingId">
               <!-- 最大人數 -->
               <div class="col-md-6">
                 <div class="d-flex align-items-center mb-2">
@@ -893,6 +877,7 @@ onMounted(() => {
                   </option>
                 </select>
               </div>
+              </template>
             </form>
           </div>
           <div class="modal-footer">
@@ -904,6 +889,7 @@ onMounted(() => {
               class="btn btn-primary"
               @click="createPickupGame"
               data-bs-dismiss="modal"
+              :disabled="!selectedBookingId || !selectedMember"
             >
               <i class="bi bi-check-lg me-1"></i> 儲存
             </button>

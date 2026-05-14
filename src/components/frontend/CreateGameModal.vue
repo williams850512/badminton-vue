@@ -37,13 +37,36 @@ onMounted(() => {
   modalInstance = new bootstrap.Modal(modalRef.value)
 
   // 幫 newGame 塞入前台預設值
-  newGame.value.gameDate = minDate
-  newGame.value.startTime = '19:00'
-  newGame.value.endTime = '21:00'
+  newGame.value.gameDate = ''
+  newGame.value.startTime = ''
+  newGame.value.endTime = ''
   newGame.value.maxPlayers = 6
   newGame.value.skillLevel = 'ALL'
   newGame.value.requiredGender = 'ALL'
+  newGame.value.bookingId = null
+  selectedBookingId.value = ''
 })
+
+// 🌟 模擬：後端回傳「我目前已付款、且還沒被揪團的場地預約」
+const myBookings = ref([
+  { bookingId: 101, courtId: 1, venueName: '總館', courtName: '總館第一場地', bookingDate: '2026-05-20', startTime: '19:00', endTime: '21:00' },
+  { bookingId: 102, courtId: 2, venueName: '總館', courtName: '總館第二場地', bookingDate: '2026-05-22', startTime: '14:00', endTime: '16:00' }
+])
+const selectedBookingId = ref('')
+const applyBooking = () => {
+  const b = myBookings.value.find(x => x.bookingId === selectedBookingId.value)
+  if (b) {
+    newGame.value.bookingId = b.bookingId
+    newGame.value.court.courtId = b.courtId
+    newGame.value.gameDate = b.bookingDate
+    newGame.value.startTime = b.startTime
+    newGame.value.endTime = b.endTime
+    // 為了顯示用，可暫存場地名稱
+    newGame.value.venueName = b.venueName
+    newGame.value.courtName = b.courtName
+  }
+}
+
 const showModal = () => modalInstance.show()
 defineExpose({ showModal })
 // 送出表單
@@ -71,41 +94,30 @@ const submitForm = async () => {
         <div class="modal-body px-4 pt-3 pb-4">
           <form @submit.prevent="submitForm">
 
+            <!-- 🌟 新版：從我的預約中挑選場地時段 -->
             <div class="mb-4">
-              <label class="form-label fw-bold text-secondary small mb-1">打球地點</label>
+              <label class="form-label fw-bold text-secondary small mb-1">1. 選擇您的預約場地與時段</label>
               <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-geo-alt"></i></span>
-                <select class="form-select border-start-0 ps-0 shadow-none" v-model="newGame.court.courtId" required>
-                  <option value="" disabled>請選擇場館與場地...</option>
-                  <option v-for="court in courts" :key="court.courtId" :value="court.courtId">
-                    {{ court.venue.venueName }} - {{ court.courtName }}
+                <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-calendar-check"></i></span>
+                <select class="form-select border-start-0 ps-0 shadow-none" v-model="selectedBookingId" @change="applyBooking" required>
+                  <option value="" disabled>請選擇可用預約...</option>
+                  <option v-for="b in myBookings" :key="b.bookingId" :value="b.bookingId">
+                    {{ b.bookingDate }} ({{ b.startTime }}-{{ b.endTime }}) | {{ b.venueName }} - {{ b.courtName }}
                   </option>
                 </select>
               </div>
             </div>
-            <div class="mb-4">
-              <label class="form-label fw-bold text-secondary small mb-1">揪團日期</label>
-              <div class="input-group">
-                <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-calendar-event"></i></span>
-                <input type="date" class="form-control border-start-0 ps-0 shadow-none" v-model="newGame.gameDate" :min="minDate" required>
+
+            <!-- 自動帶入的預約資訊 (唯讀) -->
+            <div class="card bg-light border-0 rounded-3 p-3 mb-4" v-if="selectedBookingId">
+              <div class="row text-secondary small fw-medium">
+                <div class="col-6 mb-2"><i class="bi bi-geo-alt me-1 text-sky-blue"></i> {{ newGame.venueName }} - {{ newGame.courtName }}</div>
+                <div class="col-6 mb-2"><i class="bi bi-calendar-event me-1 text-sky-blue"></i> {{ newGame.gameDate }}</div>
+                <div class="col-12"><i class="bi bi-clock me-1 text-sky-blue"></i> {{ newGame.startTime }} ~ {{ newGame.endTime }}</div>
               </div>
             </div>
-            <div class="row mb-4">
-              <div class="col-6">
-                <label class="form-label fw-bold text-secondary small mb-1">開始時間</label>
-                <select class="form-select shadow-none" v-model="newGame.startTime">
-                  <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label fw-bold text-secondary small mb-1">結束時間</label>
-                <select class="form-select shadow-none" v-model="newGame.endTime" :class="{'is-invalid': !isValidTime}">
-                  <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
-                </select>
-                <div class="invalid-feedback fw-bold" style="font-size: 0.75rem;">結束需晚於開始</div>
-              </div>
-            </div>
-            <div class="row mb-4">
+            
+            <div class="row mb-4" v-if="selectedBookingId">
               <div class="col-6">
                 <label class="form-label fw-bold text-secondary small mb-1">程度要求</label>
                 <div class="input-group">
@@ -144,7 +156,7 @@ const submitForm = async () => {
               </div>
             </div>
 
-            <button type="submit" class="btn w-100 rounded-pill fw-bold text-white py-2 shadow-sm btn-sky-blue" :disabled="!isValidTime">
+            <button type="submit" class="btn w-100 rounded-pill fw-bold text-white py-2 shadow-sm btn-sky-blue" :disabled="!selectedBookingId">
               確認發佈揪團
             </button>
 

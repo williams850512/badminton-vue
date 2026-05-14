@@ -61,12 +61,20 @@ const isWeekend = (dateStr) => {
 const availableGames = computed(() => {
   const todayStr = getTodayStr()
   
-  // 🌟 基本過濾：過濾掉已取消、已結束，且【只顯示今天或未來的場次】
-  let result = pickupGames.value.filter(game => 
-    game.status !== 'CANCELLED' && 
-    game.status !== 'CLOSED' && 
-    game.gameDate >= todayStr
-  )
+  // 🌟 基本過濾：過濾掉已取消、已結束，且【只顯示今天或未來且尚未結束的場次】
+  const now = new Date()
+  let result = pickupGames.value.filter(game => {
+    // 資料庫狀態已標記為取消或結束 → 直接排除
+    if (game.status === 'CANCELLED' || game.status === 'CLOSED') return false
+    // 日期已過 → 排除
+    if (game.gameDate < todayStr) return false
+    // 🌟 關鍵修正：即使是「今天」的場次，如果結束時間已過也要排除
+    if (game.gameDate === todayStr && game.endTime) {
+      const endDateTime = new Date(`${game.gameDate}T${game.endTime}`)
+      if (endDateTime < now) return false
+    }
+    return true
+  })
 
   // 🌟 1. 快速日期篩選
   if (selectedDateFilter.value === '今天') {
