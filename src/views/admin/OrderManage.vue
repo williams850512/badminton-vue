@@ -949,10 +949,10 @@ onUnmounted(() => {
                       <img v-if="item.product?.imageUrl"
                         :src="item.product.imageUrl.startsWith('/') || item.product.imageUrl.startsWith('http') ? item.product.imageUrl : '/' + item.product.imageUrl"
                         class="rounded-3"
-                        style="width: 72px; height: 72px; object-fit: cover; border: 1px solid #E2E8F0; flex-shrink: 0;" />
+                        style="width: 80px; height: 80px; object-fit: scale-down; background: #fff; border: 1.5px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); flex-shrink: 0;" />
                       <div v-else class="rounded-3 d-flex align-items-center justify-content-center"
-                        style="width: 72px; height: 72px; background: #F1F5F9; flex-shrink: 0;"><i
-                          class="bi bi-box-seam" style="color: #CBD5E1; font-size: 1.5rem"></i></div>
+                        style="width: 80px; height: 80px; background: #F1F5F9; border: 1.5px solid #E2E8F0; flex-shrink: 0;"><i
+                          class="bi bi-box-seam" style="color: #CBD5E1; font-size: 1.6rem"></i></div>
                       <div class="flex-grow-1">
                         <div class="fw-semibold" style="font-size: 0.9rem; color: var(--brand-dark); line-height: 1.4;">
                           {{
