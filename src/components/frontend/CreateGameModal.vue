@@ -49,17 +49,17 @@ onMounted(() => {
 })
 
 // 🌟 從後端撈取登入者自己的可用預約
-import axios from 'axios'
+import api from '@/api'
 const myBookings = ref([])
 const fetchMyBookings = async () => {
   try {
     // 🌟 同時撈取預約 + 揪團，排除已被使用的預約
     const [bookingsRes, gamesRes] = await Promise.all([
-      axios.get('/api/bookings'),
-      axios.get('/api/pickup-games'),
+      api.get('/bookings'),
+      api.get('/pickup-games'),
     ])
-    const allBookings = bookingsRes.data
-    const allGames = gamesRes.data
+    const allBookings = bookingsRes
+    const allGames = gamesRes
     const todayStr = new Date().toISOString().split('T')[0]
     const myId = memberInfo.value.memberId
 

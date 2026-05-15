@@ -271,9 +271,14 @@ export function usePickupGameApi() {
     })
     if (result.isConfirmed) {
       try {
+        const token = localStorage.getItem('adminToken') || localStorage.getItem('memberToken');
         await axios.put(`/api/pickup-games/${game.gameId}`, {
           ...game,
           status: 'CANCELLED',
+        }, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : ''
+          }
         })
         Swal.fire({
           icon: 'success',
@@ -285,7 +290,8 @@ export function usePickupGameApi() {
         fetchGames()
       } catch (err) {
         console.error('取消失敗', err)
-        Swal.fire({ icon: 'error', title: '取消失敗', confirmButtonText: '我知道了' })
+        const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || '未知錯誤';
+        Swal.fire({ icon: 'error', title: '取消失敗', text: errMsg, confirmButtonText: '我知道了' })
       }
     }
   }
@@ -305,10 +311,13 @@ export function usePickupGameApi() {
     })
     if (result.isConfirmed) {
       try {
+        const token = localStorage.getItem('adminToken') || localStorage.getItem('memberToken');
         await Promise.all(
           selectedIds.map((id) => {
             const game = pickupGames.value.find((g) => g.gameId === id)
-            return axios.put(`/api/pickup-games/${id}`, { ...game, status: 'CANCELLED' })
+            return axios.put(`/api/pickup-games/${id}`, { ...game, status: 'CANCELLED' }, {
+              headers: { Authorization: token ? `Bearer ${token}` : '' }
+            })
           }),
         )
         Swal.fire({ icon: 'success', title: `已取消 ${selectedIds.length} 場揪團` })
@@ -365,19 +374,37 @@ export function usePickupGameApi() {
       return
     }
 
-    // 🌟 後台代報名性別防呆檢查
+    // 🌟 後台代報名性別防呆檢查 (改為軟性警告，允許強制報名)
     const game = pickupGames.value.find(g => g.gameId === gameId)
     if (game) {
       const reqGender = game.requiredGender || game.genderLimit
       const memberGender = selectedSignupMember.value.gender
+      let isConflict = false;
+      let conflictMsg = '';
       
       if (reqGender === 'FEMALE' && memberGender !== 'FEMALE' && memberGender !== '女') {
-        Swal.fire({ icon: 'error', title: '資格不符', text: '本場次為主揪設定之女性專屬場次，無法幫男性會員報名！', confirmButtonColor: '#ec4899' })
-        return
+        isConflict = true;
+        conflictMsg = '本場次為主揪設定之「女性專屬場次」，但您選擇的會員為男性。';
+      } else if (reqGender === 'MALE' && memberGender !== 'MALE' && memberGender !== '男') {
+        isConflict = true;
+        conflictMsg = '本場次為主揪設定之「男性專屬場次」，但您選擇的會員為女性。';
       }
-      if (reqGender === 'MALE' && memberGender !== 'MALE' && memberGender !== '男') {
-        Swal.fire({ icon: 'error', title: '資格不符', text: '本場次為主揪設定之男性專屬場次，無法幫女性會員報名！', confirmButtonColor: '#0ea5e9' })
-        return
+
+      if (isConflict) {
+        const result = await Swal.fire({
+          icon: 'warning',
+          title: '性別條件衝突',
+          text: `${conflictMsg} 管理員可不受限制，是否要強制報名？`,
+          showCancelButton: true,
+          confirmButtonText: '是，強制報名',
+          cancelButtonText: '取消',
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d',
+        });
+        
+        if (!result.isConfirmed) {
+          return;
+        }
       }
     }
 

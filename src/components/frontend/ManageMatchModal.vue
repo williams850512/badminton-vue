@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import * as bootstrap from 'bootstrap'
-import axios from 'axios'
+import api from '@/api'
 import Swal from 'sweetalert2'
 
 const props = defineProps({
@@ -43,8 +43,8 @@ const fetchRoster = async () => {
   if (!props.game?.gameId) return
   rosterLoading.value = true
   try {
-    const res = await axios.get(`/api/pickup-games/${props.game.gameId}/signups`)
-    roster.value = res.data
+    const res = await api.get(`/pickup-games/${props.game.gameId}/signups`)
+    roster.value = res
   } catch (err) {
     console.error('抓取報名名單失敗', err)
     roster.value = []
@@ -74,7 +74,7 @@ const removePlayer = async (signup) => {
   })
   if (result.isConfirmed) {
     try {
-      await axios.delete(`/api/pickup-game-signups/${signup.signupId}`)
+      await api.delete(`/pickup-game-signups/${signup.signupId}`)
       Swal.fire({
         icon: 'success',
         title: '已移除',
@@ -117,7 +117,7 @@ const toggleStatus = async () => {
   const actionText = newStatus === 'CLOSED' ? '停止報名' : '重新開放報名'
   
   try {
-    await axios.put(`/api/pickup-games/${props.game.gameId}`, {
+    await api.put(`/pickup-games/${props.game.gameId}`, {
       ...props.game,
       status: newStatus
     })
@@ -148,7 +148,7 @@ const cancelGame = async () => {
   })
   if (result.isConfirmed) {
     try {
-      await axios.put(`/api/pickup-games/${props.game.gameId}`, {
+      await api.put(`/pickup-games/${props.game.gameId}`, {
         ...props.game,
         status: 'CANCELLED'
       })
@@ -222,10 +222,10 @@ const sendBroadcast = async () => {
 
   isSending.value = true
   try {
-    const res = await axios.post(`/api/pickup-games/${props.game.gameId}/broadcast`, {
+    const res = await api.post(`/pickup-games/${props.game.gameId}/broadcast`, {
       message: broadcastMessage.value.trim()
     })
-    const data = res.data
+    const data = res
     Swal.fire({
       icon: 'success',
       title: '公告已發送！',

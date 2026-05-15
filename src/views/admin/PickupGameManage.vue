@@ -190,7 +190,7 @@ const exportData = (format) => {
     程度: game.level || '不限',
     狀態: getDisplayStatus(game),
   }))
-  doExport(dataToExport, format)
+  doExport(dataToExport, format, '揪團名單')
 }
 
 // ============================

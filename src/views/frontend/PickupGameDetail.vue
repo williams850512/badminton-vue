@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePickupGameApi } from '@/composables/usePickupGameApi'
 import SignupPanel from '@/components/frontend/SignupPanel.vue'
+import GoogleMap from '@/components/common/GoogleMap.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,12 +21,7 @@ const skillMap = {
   ADVANCED: '高級',
 }
 
-// 真實地圖網址計算邏輯
-const googleMapUrl = computed(() => {
-  if (!game.value || !game.value.court) return ''
-  const searchQuery = '聖德基督學院'
-  return `https://maps.google.com/maps?q=${encodeURIComponent(searchQuery)}&t=&z=15&ie=UTF8&iwloc=&output=embed`
-})
+
 
 onMounted(async () => {
   await Promise.all([
@@ -311,21 +307,7 @@ const handleKick = async (signupId, memberName) => {
             <div class="card border-0 shadow-sm rounded-4 mb-5">
               <div class="card-body p-4 p-md-5">
                 <h4 class="fw-bold mb-4 pb-2 border-bottom"><i class="bi bi-geo-alt-fill text-sky-blue me-2"></i>場館位置</h4>
-                <div class="rounded-4 overflow-hidden position-relative map-container shadow-sm border mt-3" style="height: 350px; background-color: #f8f9fa;">
-                  <div v-if="!googleMapUrl" class="position-absolute top-50 start-50 translate-middle text-center">
-                    <div class="spinner-border text-sky-blue mb-2" role="status"></div>
-                    <div class="fw-bold text-secondary">載入地圖中...</div>
-                  </div>
-                  <iframe
-                    v-else
-                    width="100%"
-                    height="100%"
-                    style="border:0; position: absolute; top: 0; left: 0;"
-                    loading="lazy"
-                    allowfullscreen
-                    :src="googleMapUrl">
-                  </iframe>
-                </div>
+                <GoogleMap address="聖德基督學院" height="350px" />
               </div>
             </div>
 
