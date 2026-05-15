@@ -5,7 +5,7 @@
  * - 上方：歡迎區 + 帳號 / 等級概覽
  * - 下方：個人資料表單（姓名、性別不可改）
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { memberApi } from '@/api/member'
 import { bookingApi } from '@/api/booking'
@@ -33,7 +33,7 @@ const form = ref({
 const pwdForm = ref({
   oldPassword: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 const showOldPwd = ref(false)
 const showNewPwd = ref(false)
@@ -54,7 +54,10 @@ const statusMap = {
   CANCELLED: { label: '已取消', color: '#F43F5E', bg: '#FFE4E6', icon: 'bi-x-circle' },
 }
 const paymentMap = {
-  CASH: '現金', CREDIT_CARD: '信用卡', TRANSFER: '轉帳', LINE_PAY: 'LINE Pay',
+  CASH: '現金',
+  CREDIT_CARD: '信用卡',
+  TRANSFER: '轉帳',
+  LINE_PAY: 'LINE Pay',
 }
 
 // 展開與明細相關
@@ -74,7 +77,12 @@ function getProgressWidth(currentStatus) {
   if (index === -1) return '0%'
   return (index / (progressSteps.length - 1)) * 100 + '%'
 }
-const stepTimeFields = { UNPAID: 'createdAt', PAID: 'paidAt', SHIPPED: 'shippedAt', COMPLETED: 'completedAt' }
+const stepTimeFields = {
+  UNPAID: 'createdAt',
+  PAID: 'paidAt',
+  SHIPPED: 'shippedAt',
+  COMPLETED: 'completedAt',
+}
 function getStepTime(order, step) {
   const field = stepTimeFields[step]
   const val = order[field]
@@ -104,13 +112,13 @@ async function fetchOrders() {
   try {
     const data = await orderApi.findByMemberId(member.value.memberId)
     orders.value = data.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
-    
+
     // 為了顯示代表圖，預抓前 5 筆的明細
     const prefetchCount = Math.min(orders.value.length, 5)
     for (let i = 0; i < prefetchCount; i++) {
       const oid = orders.value[i].orderId
       if (!orderItems.value[oid]) {
-        orderApi.findItems(oid).then(items => {
+        orderApi.findItems(oid).then((items) => {
           orderItems.value[oid] = items
         })
       }
@@ -273,7 +281,7 @@ const bookingsLoading = ref(false)
 
 const filteredBookings = computed(() => {
   const today = new Date().toISOString().split('T')[0] // yyyy-MM-dd
-  return bookings.value.filter(b => {
+  return bookings.value.filter((b) => {
     if (bookingFilter.value === 'upcoming') {
       return b.bookingDate >= today && b.status === 'CONFIRMED'
     }
@@ -313,8 +321,12 @@ function switchTab(tabId) {
 // 狀態顯示輔助
 function getStatusInfo(booking) {
   const today = new Date().toISOString().split('T')[0]
-  if (booking.status === 'CANCELLED') return { label: '已取消', cls: 'status-cancelled', icon: 'bi-x-circle' }
-  if (booking.status === 'COMPLETED' || (booking.status === 'CONFIRMED' && booking.bookingDate < today)) {
+  if (booking.status === 'CANCELLED')
+    return { label: '已取消', cls: 'status-cancelled', icon: 'bi-x-circle' }
+  if (
+    booking.status === 'COMPLETED' ||
+    (booking.status === 'CONFIRMED' && booking.bookingDate < today)
+  ) {
     return { label: '已完成', cls: 'status-completed', icon: 'bi-check-circle' }
   }
   return { label: '即將到來', cls: 'status-upcoming', icon: 'bi-clock' }
@@ -322,7 +334,10 @@ function getStatusInfo(booking) {
 
 // 取消預約
 async function cancelBooking(booking) {
-  if (!confirm(`確定要取消 ${booking.bookingDate} ${booking.startTime}~${booking.endTime} 的預約嗎？`)) return
+  if (
+    !confirm(`確定要取消 ${booking.bookingDate} ${booking.startTime}~${booking.endTime} 的預約嗎？`)
+  )
+    return
   try {
     await bookingApi.cancelBooking(booking.bookingId)
     alert('預約已取消！')
@@ -374,7 +389,7 @@ async function handleAvatarUpload(event) {
     info.profilePicture = res.imageUrl
     localStorage.setItem('memberInfo', JSON.stringify(info))
     successMsg.value = '頭像更新成功！'
-    setTimeout(() => successMsg.value = '', 3000)
+    setTimeout(() => (successMsg.value = ''), 3000)
   } catch (err) {
     alert('頭像上傳失敗，請重試')
   } finally {
@@ -389,15 +404,23 @@ async function handleAvatarUpload(event) {
     <div class="container-fluid px-lg-4">
       <div class="row justify-content-center">
         <div class="col-lg-12 col-xl-11">
-          
           <div class="row g-4">
             <!-- 左側選單 -->
             <div class="col-lg-4 col-xl-3">
               <div class="member-sidebar shadow-sm border bg-white p-3">
                 <div class="sidebar-user-info text-center py-3 mb-3 border-bottom">
                   <!-- 可點擊上傳的頭像 -->
-                  <div class="sidebar-avatar mx-auto mb-2" @click="triggerAvatarUpload" title="點擊更換頭像">
-                    <img v-if="avatarUrl" :src="'http://localhost:8080' + avatarUrl" alt="頭像" class="avatar-img" />
+                  <div
+                    class="sidebar-avatar mx-auto mb-2"
+                    @click="triggerAvatarUpload"
+                    title="點擊更換頭像"
+                  >
+                    <img
+                      v-if="avatarUrl"
+                      :src="'http://localhost:8080' + avatarUrl"
+                      alt="頭像"
+                      class="avatar-img"
+                    />
                     <i v-else class="bi bi-person-fill"></i>
                     <div class="avatar-overlay">
                       <i class="bi bi-camera-fill"></i>
@@ -407,17 +430,26 @@ async function handleAvatarUpload(event) {
                       <div class="spinner-border spinner-border-sm text-white" role="status"></div>
                     </div>
                   </div>
-                  <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" @change="handleAvatarUpload" />
+                  <input
+                    type="file"
+                    id="avatarFileInput"
+                    accept="image/*"
+                    style="display: none"
+                    @change="handleAvatarUpload"
+                  />
                   <h6 class="fw-bold mb-1 text-dark">{{ member?.fullName || member?.username }}</h6>
                   <span class="badge" :class="getLevelBadge(member?.membershipLevel).cls">
                     {{ getLevelBadge(member?.membershipLevel).label }}
                   </span>
                 </div>
                 <div class="list-group list-group-flush border-0">
-                  <button v-for="item in menuItems" :key="item.id"
-                          class="list-group-item list-group-item-action sidebar-item mb-2"
-                          :class="{ 'active': activeTab === item.id }"
-                          @click="switchTab(item.id)">
+                  <button
+                    v-for="item in menuItems"
+                    :key="item.id"
+                    class="list-group-item list-group-item-action sidebar-item mb-2"
+                    :class="{ active: activeTab === item.id }"
+                    @click="switchTab(item.id)"
+                  >
                     <i class="bi me-3" :class="item.icon"></i>
                     {{ item.label }}
                   </button>
@@ -441,11 +473,21 @@ async function handleAvatarUpload(event) {
                     <div class="row g-3 mb-4">
                       <div class="col-md-6">
                         <label class="form-label-gray">姓名</label>
-                        <input v-model="form.fullName" type="text" class="form-control-styled" disabled />
+                        <input
+                          v-model="form.fullName"
+                          type="text"
+                          class="form-control-styled"
+                          disabled
+                        />
                       </div>
                       <div class="col-md-6">
                         <label class="form-label-gray">帳號</label>
-                        <input :value="member.username" type="text" class="form-control-styled" disabled />
+                        <input
+                          :value="member.username"
+                          type="text"
+                          class="form-control-styled"
+                          disabled
+                        />
                       </div>
                     </div>
 
@@ -453,7 +495,12 @@ async function handleAvatarUpload(event) {
                     <div class="row g-3 mb-4">
                       <div class="col-md-6">
                         <label class="form-label-gray">生日</label>
-                        <input v-model="form.birthday" type="date" class="form-control-styled" disabled />
+                        <input
+                          v-model="form.birthday"
+                          type="date"
+                          class="form-control-styled"
+                          disabled
+                        />
                       </div>
                       <div class="col-md-6">
                         <label class="form-label-gray">性別</label>
@@ -472,8 +519,14 @@ async function handleAvatarUpload(event) {
                     <div class="row g-3 mb-4">
                       <div class="col-md-6">
                         <label class="form-label-gray">手機號碼</label>
-                        <input v-model="form.phone" type="text" class="form-control-styled"
-                                placeholder="09xx-xxx-xxx" maxlength="12" @input="formatPhone" />
+                        <input
+                          v-model="form.phone"
+                          type="text"
+                          class="form-control-styled"
+                          placeholder="09xx-xxx-xxx"
+                          maxlength="12"
+                          @input="formatPhone"
+                        />
                       </div>
                       <div class="col-md-6">
                         <label class="form-label-gray">電子信箱</label>
@@ -481,15 +534,26 @@ async function handleAvatarUpload(event) {
                       </div>
                     </div>
 
-                    <div v-if="successMsg" class="alert alert-success border-0 py-2 mb-3 small text-center">
+                    <div
+                      v-if="successMsg"
+                      class="alert alert-success border-0 py-2 mb-3 small text-center"
+                    >
                       <i class="bi bi-check-circle-fill me-1"></i> {{ successMsg }}
                     </div>
-                    <div v-if="errorMsg" class="alert alert-danger border-0 py-2 mb-3 small text-center">
+                    <div
+                      v-if="errorMsg"
+                      class="alert alert-danger border-0 py-2 mb-3 small text-center"
+                    >
                       <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ errorMsg }}
                     </div>
 
                     <div class="d-flex justify-content-end mt-4 pt-3 border-top">
-                      <button type="submit" class="btn-save-styled" @click="handleSave" :disabled="isSaving">
+                      <button
+                        type="submit"
+                        class="btn-save-styled"
+                        @click="handleSave"
+                        :disabled="isSaving"
+                      >
                         <span v-if="isSaving" class="spinner-border spinner-border-sm me-2"></span>
                         儲存變更
                       </button>
@@ -503,9 +567,17 @@ async function handleAvatarUpload(event) {
                       <div class="col-md-12">
                         <label class="form-label-gray">目前密碼</label>
                         <div class="position-relative">
-                          <input v-model="pwdForm.oldPassword" :type="showOldPwd ? 'text' : 'password'" 
-                                 class="form-control-styled" placeholder="請輸入原有的密碼" />
-                          <button type="button" class="btn-pwd-toggle" @click="showOldPwd = !showOldPwd">
+                          <input
+                            v-model="pwdForm.oldPassword"
+                            :type="showOldPwd ? 'text' : 'password'"
+                            class="form-control-styled"
+                            placeholder="請輸入原有的密碼"
+                          />
+                          <button
+                            type="button"
+                            class="btn-pwd-toggle"
+                            @click="showOldPwd = !showOldPwd"
+                          >
                             <i :class="showOldPwd ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                           </button>
                         </div>
@@ -515,30 +587,56 @@ async function handleAvatarUpload(event) {
                       <div class="col-md-6">
                         <label class="form-label-gray">新密碼</label>
                         <div class="position-relative">
-                          <input v-model="pwdForm.newPassword" :type="showNewPwd ? 'text' : 'password'" 
-                                 class="form-control-styled" placeholder="6-12 碼英數字" />
-                          <button type="button" class="btn-pwd-toggle" @click="showNewPwd = !showNewPwd">
+                          <input
+                            v-model="pwdForm.newPassword"
+                            :type="showNewPwd ? 'text' : 'password'"
+                            class="form-control-styled"
+                            placeholder="6-12 碼英數字"
+                          />
+                          <button
+                            type="button"
+                            class="btn-pwd-toggle"
+                            @click="showNewPwd = !showNewPwd"
+                          >
                             <i :class="showNewPwd ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                           </button>
                         </div>
                       </div>
                       <div class="col-md-6">
                         <label class="form-label-gray">確認新密碼</label>
-                        <input v-model="pwdForm.confirmPassword" type="password" 
-                               class="form-control-styled" placeholder="請再次輸入新密碼" />
+                        <input
+                          v-model="pwdForm.confirmPassword"
+                          type="password"
+                          class="form-control-styled"
+                          placeholder="請再次輸入新密碼"
+                        />
                       </div>
                     </div>
 
-                    <div v-if="pwdSuccessMsg" class="alert alert-success border-0 py-2 mb-3 small text-center">
+                    <div
+                      v-if="pwdSuccessMsg"
+                      class="alert alert-success border-0 py-2 mb-3 small text-center"
+                    >
                       <i class="bi bi-shield-check me-1"></i> {{ pwdSuccessMsg }}
                     </div>
-                    <div v-if="pwdErrorMsg" class="alert alert-danger border-0 py-2 mb-3 small text-center">
+                    <div
+                      v-if="pwdErrorMsg"
+                      class="alert alert-danger border-0 py-2 mb-3 small text-center"
+                    >
                       <i class="bi bi-shield-exclamation me-1"></i> {{ pwdErrorMsg }}
                     </div>
 
                     <div class="d-flex justify-content-end mt-4 pt-3 border-top">
-                      <button type="button" class="btn-pwd-save" @click="handleChangePassword" :disabled="isChangingPwd">
-                        <span v-if="isChangingPwd" class="spinner-border spinner-border-sm me-2"></span>
+                      <button
+                        type="button"
+                        class="btn-pwd-save"
+                        @click="handleChangePassword"
+                        :disabled="isChangingPwd"
+                      >
+                        <span
+                          v-if="isChangingPwd"
+                          class="spinner-border spinner-border-sm me-2"
+                        ></span>
                         確認變更
                       </button>
                     </div>
@@ -549,12 +647,14 @@ async function handleAvatarUpload(event) {
                 <div v-if="activeTab === 'bookings'" class="tab-content-fade">
                   <!-- 篩選 Tab -->
                   <div class="d-flex gap-2 mb-4 flex-wrap">
-                    <button v-for="f in [
-                      { id: 'all', label: '全部' },
-                      { id: 'upcoming', label: '即將到來' },
-                      { id: 'completed', label: '已完成' },
-                      { id: 'cancelled', label: '已取消' }
-                    ]" :key="f.id"
+                    <button
+                      v-for="f in [
+                        { id: 'all', label: '全部' },
+                        { id: 'upcoming', label: '即將到來' },
+                        { id: 'completed', label: '已完成' },
+                        { id: 'cancelled', label: '已取消' },
+                      ]"
+                      :key="f.id"
                       class="btn btn-sm rounded-pill px-3"
                       :class="bookingFilter === f.id ? 'btn-brand' : 'btn-outline-secondary'"
                       @click="bookingFilter = f.id"
@@ -572,15 +672,20 @@ async function handleAvatarUpload(event) {
 
                   <!-- 預約卡片列表 -->
                   <template v-else-if="filteredBookings.length > 0">
-                    <div v-for="booking in filteredBookings" :key="booking.bookingId"
-                         class="booking-card mb-3"
-                         :class="getStatusInfo(booking).cls"
+                    <div
+                      v-for="booking in filteredBookings"
+                      :key="booking.bookingId"
+                      class="booking-card mb-3"
+                      :class="getStatusInfo(booking).cls"
                     >
                       <div class="row g-0 align-items-center">
                         <!-- 左側：場館圖片 -->
                         <div class="col-auto d-none d-md-block">
                           <div class="booking-img-wrap">
-                            <img :src="getVenueImage(booking)" :alt="booking.court?.venue?.venueName" />
+                            <img
+                              :src="getVenueImage(booking)"
+                              :alt="booking.court?.venue?.venueName"
+                            />
                           </div>
                         </div>
 
@@ -596,15 +701,23 @@ async function handleAvatarUpload(event) {
                                   {{ booking.court?.courtName }}
                                 </span>
                               </div>
-                              <span class="badge booking-status-badge" :class="getStatusInfo(booking).cls">
+                              <span
+                                class="badge booking-status-badge"
+                                :class="getStatusInfo(booking).cls"
+                              >
                                 <i class="bi me-1" :class="getStatusInfo(booking).icon"></i>
                                 {{ getStatusInfo(booking).label }}
                               </span>
                             </div>
 
                             <div class="booking-meta d-flex flex-wrap gap-3 mb-2">
-                              <span><i class="bi bi-calendar3 me-1"></i>{{ booking.bookingDate }}</span>
-                              <span><i class="bi bi-clock me-1"></i>{{ booking.startTime }} ~ {{ booking.endTime }}</span>
+                              <span
+                                ><i class="bi bi-calendar3 me-1"></i>{{ booking.bookingDate }}</span
+                              >
+                              <span
+                                ><i class="bi bi-clock me-1"></i>{{ booking.startTime }} ~
+                                {{ booking.endTime }}</span
+                              >
                               <span class="fw-semibold" style="color: var(--brand-teal-dark)">
                                 <i class="bi bi-cash-stack me-1"></i>NT$ {{ booking.totalAmount }}
                               </span>
@@ -612,14 +725,18 @@ async function handleAvatarUpload(event) {
 
                             <!-- 操作按鈕 -->
                             <div class="d-flex gap-2 mt-2">
-                              <button v-if="getStatusInfo(booking).label === '即將到來'"
-                                      class="btn btn-sm btn-outline-danger rounded-pill px-3"
-                                      @click="cancelBooking(booking)">
+                              <button
+                                v-if="getStatusInfo(booking).label === '即將到來'"
+                                class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                @click="cancelBooking(booking)"
+                              >
                                 <i class="bi bi-x-circle me-1"></i>取消預約
                               </button>
-                              <button v-if="getStatusInfo(booking).label === '已完成'"
-                                      class="btn btn-sm btn-outline-primary rounded-pill px-3"
-                                      @click="rebookVenue(booking)">
+                              <button
+                                v-if="getStatusInfo(booking).label === '已完成'"
+                                class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                @click="rebookVenue(booking)"
+                              >
                                 <i class="bi bi-arrow-repeat me-1"></i>再次預約
                               </button>
                             </div>
@@ -632,10 +749,17 @@ async function handleAvatarUpload(event) {
                   <!-- 空狀態 -->
                   <div v-else class="profile-card-base shadow-sm border p-5 bg-white text-center">
                     <div class="empty-state py-4">
-                      <i class="bi bi-calendar-x mb-3 d-block" style="font-size: 4rem; color: #e2e8f0;"></i>
+                      <i
+                        class="bi bi-calendar-x mb-3 d-block"
+                        style="font-size: 4rem; color: #e2e8f0"
+                      ></i>
                       <h5 class="fw-bold">尚無預約紀錄</h5>
                       <p class="text-muted">歡迎預約打羽球！</p>
-                      <RouterLink to="/booking" class="btn-save-styled d-inline-block mt-3" style="text-decoration: none;">
+                      <RouterLink
+                        to="/booking"
+                        class="btn-save-styled d-inline-block mt-3"
+                        style="text-decoration: none"
+                      >
                         前往預約
                       </RouterLink>
                     </div>
@@ -653,26 +777,48 @@ async function handleAvatarUpload(event) {
                     </div>
 
                     <div v-else-if="orders.length === 0" class="empty-state py-5 text-center">
-                      <i class="bi bi-cart-x mb-3 d-block text-light" style="font-size: 4rem;"></i>
+                      <i class="bi bi-cart-x mb-3 d-block text-light" style="font-size: 4rem"></i>
                       <h5 class="fw-bold">尚無訂單紀錄</h5>
                       <p class="text-muted">尚無購買紀錄，快去逛逛吧！</p>
-                      <RouterLink to="/products" class="btn-save-styled d-inline-block mt-3" style="text-decoration: none;">
+                      <RouterLink
+                        to="/products"
+                        class="btn-save-styled d-inline-block mt-3"
+                        style="text-decoration: none"
+                      >
                         前往商城
                       </RouterLink>
                     </div>
 
                     <div v-else class="order-list">
-                      <div v-for="order in orders" :key="order.orderId" 
-                           class="order-item-row p-3 mb-3 border rounded-3"
-                           :class="{ 'is-expanded': expandedId === order.orderId }">
-                        <div class="row align-items-center cursor-pointer" @click="toggleExpand(order.orderId)">
+                      <div
+                        v-for="order in orders"
+                        :key="order.orderId"
+                        class="order-item-row p-3 mb-3 border rounded-3"
+                        :class="{ 'is-expanded': expandedId === order.orderId }"
+                      >
+                        <div
+                          class="row align-items-center cursor-pointer"
+                          @click="toggleExpand(order.orderId)"
+                        >
                           <!-- 商品代表圖 -->
                           <div class="col-auto">
                             <div class="order-repr-img-wrap">
-                              <img v-if="orderItems[order.orderId] && orderItems[order.orderId][0]?.product?.imageUrl" 
-                                   :src="orderItems[order.orderId][0].product.imageUrl.startsWith('/') ? orderItems[order.orderId][0].product.imageUrl : '/' + orderItems[order.orderId][0].product.imageUrl" 
-                                   class="order-repr-img" />
-                              <div v-else-if="loadingItems === order.orderId" class="order-repr-placeholder">
+                              <img
+                                v-if="
+                                  orderItems[order.orderId] &&
+                                  orderItems[order.orderId][0]?.product?.imageUrl
+                                "
+                                :src="
+                                  orderItems[order.orderId][0].product.imageUrl.startsWith('/')
+                                    ? orderItems[order.orderId][0].product.imageUrl
+                                    : '/' + orderItems[order.orderId][0].product.imageUrl
+                                "
+                                class="order-repr-img"
+                              />
+                              <div
+                                v-else-if="loadingItems === order.orderId"
+                                class="order-repr-placeholder"
+                              >
                                 <div class="spinner-border spinner-border-sm text-light"></div>
                               </div>
                               <div v-else class="order-repr-placeholder">
@@ -685,46 +831,96 @@ async function handleAvatarUpload(event) {
                             <div class="d-flex justify-content-between align-items-start">
                               <div>
                                 <div class="order-id-text">訂單編號 #{{ order.orderId }}</div>
-                                <div class="order-date-text text-muted small">{{ formatDate(order.orderDate) }}</div>
+                                <div class="order-date-text text-muted small">
+                                  {{ formatDate(order.orderDate) }}
+                                </div>
                               </div>
-                              <span class="badge" :style="{ backgroundColor: statusMap[order.status]?.bg, color: statusMap[order.status]?.color }">
+                              <span
+                                class="badge"
+                                :style="{
+                                  backgroundColor: statusMap[order.status]?.bg,
+                                  color: statusMap[order.status]?.color,
+                                }"
+                              >
                                 {{ statusMap[order.status]?.label }}
                               </span>
                             </div>
                             <div class="mt-2 d-flex justify-content-between align-items-end">
                               <div class="order-summary-text text-secondary small">
-                                共 {{ orderItems[order.orderId]?.length || '...' }} 項商品 · {{ paymentMap[order.paymentType] }}
+                                共 {{ orderItems[order.orderId]?.length || '...' }} 項商品 ·
+                                {{ paymentMap[order.paymentType] }}
                               </div>
-                              <div class="order-amount-text fw-bold" style="color: var(--brand-dark);">
+                              <div
+                                class="order-amount-text fw-bold"
+                                style="color: var(--brand-dark)"
+                              >
                                 NT$ {{ order.totalAmount.toLocaleString() }}
                               </div>
                             </div>
                           </div>
                           <!-- 展開箭頭 -->
                           <div class="col-auto">
-                            <i class="bi fs-5 text-secondary" :class="expandedId === order.orderId ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                            <i
+                              class="bi fs-5 text-secondary"
+                              :class="
+                                expandedId === order.orderId ? 'bi-chevron-up' : 'bi-chevron-down'
+                              "
+                            ></i>
                           </div>
                         </div>
 
                         <!-- 展開內容：明細與進度條 -->
-                        <div v-if="expandedId === order.orderId" class="order-expanded-content mt-3 pt-3 border-top">
+                        <div
+                          v-if="expandedId === order.orderId"
+                          class="order-expanded-content mt-3 pt-3 border-top"
+                        >
                           <!-- 進度條 (Mini 版) -->
                           <div class="progress-tracker-mini mb-4">
                             <div class="progress-lines-wrap">
                               <div class="progress-line-bg"></div>
-                              <div class="progress-line-fill" :style="{ width: getProgressWidth(order.status), backgroundColor: 'var(--brand-sky)' }"></div>
+                              <div
+                                class="progress-line-fill"
+                                :style="{
+                                  width: getProgressWidth(order.status),
+                                  backgroundColor: 'var(--brand-sky)',
+                                }"
+                              ></div>
                             </div>
-                            <div v-for="step in progressSteps" :key="step" 
-                                 class="progress-step-mini" 
-                                 :class="{ 'active': isStepActive(order.status, step), 'current': order.status === step && step !== 'COMPLETED' }">
-                              <div class="step-dot" :style="isStepActive(order.status, step) ? { borderColor: 'var(--brand-sky)', backgroundColor: (order.status === step && step !== 'COMPLETED') ? 'white' : 'var(--brand-sky)' } : {}">
+                            <div
+                              v-for="step in progressSteps"
+                              :key="step"
+                              class="progress-step-mini"
+                              :class="{
+                                active: isStepActive(order.status, step),
+                                current: order.status === step && step !== 'COMPLETED',
+                              }"
+                            >
+                              <div
+                                class="step-dot"
+                                :style="
+                                  isStepActive(order.status, step)
+                                    ? {
+                                        borderColor: 'var(--brand-sky)',
+                                        backgroundColor:
+                                          order.status === step && step !== 'COMPLETED'
+                                            ? 'white'
+                                            : 'var(--brand-sky)',
+                                      }
+                                    : {}
+                                "
+                              >
                                 <!-- 如果是當前狀態：秀出專屬圖示 -->
-                                <i v-if="order.status === step && step !== 'COMPLETED'"
-                                   :class="['bi', statusMap[step]?.icon]"
-                                   :style="{ color: 'var(--brand-sky)', fontSize: '0.85rem' }"></i>
+                                <i
+                                  v-if="order.status === step && step !== 'COMPLETED'"
+                                  :class="['bi', statusMap[step]?.icon]"
+                                  :style="{ color: 'var(--brand-sky)', fontSize: '0.85rem' }"
+                                ></i>
                                 <!-- 如果是已完成狀態：秀出打勾 -->
-                                <i v-else-if="isStepActive(order.status, step)" class="bi bi-check-lg"
-                                   style="color: white; font-size: 1rem;"></i>
+                                <i
+                                  v-else-if="isStepActive(order.status, step)"
+                                  class="bi bi-check-lg"
+                                  style="color: white; font-size: 1rem"
+                                ></i>
                               </div>
                               <div class="step-text">{{ statusMap[step].label }}</div>
                               <div class="step-time">{{ getStepTime(order, step) }}</div>
@@ -736,14 +932,41 @@ async function handleAvatarUpload(event) {
                             <div class="spinner-border spinner-border-sm text-info"></div>
                           </div>
                           <div v-else class="expanded-items-list px-2">
-                            <div v-for="item in orderItems[order.orderId]" :key="item.itemId" class="d-flex align-items-center gap-3 mb-2 py-2 border-bottom-dashed">
-                              <img :src="item.product?.imageUrl?.startsWith('/') ? item.product.imageUrl : '/' + item.product.imageUrl" 
-                                   class="rounded-2" style="width: 54px; height: 54px; object-fit: scale-down; background: #fff; border: 1.5px solid #f1f5f9; box-shadow: 0 1px 4px rgba(0,0,0,0.05);" />
+                            <div
+                              v-for="item in orderItems[order.orderId]"
+                              :key="item.itemId"
+                              class="d-flex align-items-center gap-3 mb-2 py-2 border-bottom-dashed"
+                            >
+                              <img
+                                :src="
+                                  item.product?.imageUrl?.startsWith('/')
+                                    ? item.product.imageUrl
+                                    : '/' + item.product.imageUrl
+                                "
+                                class="rounded-2"
+                                style="
+                                  width: 54px;
+                                  height: 54px;
+                                  object-fit: scale-down;
+                                  background: #fff;
+                                  border: 1.5px solid #f1f5f9;
+                                  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+                                "
+                              />
                               <div class="flex-grow-1">
-                                <div class="fw-semibold" style="font-size: 0.88rem;">{{ item.product?.productName }}</div>
-                                <div class="text-muted" style="font-size: 0.75rem;">NT$ {{ item.unitPrice.toLocaleString() }} x {{ item.quantity }}</div>
+                                <div class="fw-semibold" style="font-size: 0.88rem">
+                                  {{ item.product?.productName }}
+                                </div>
+                                <div class="text-muted" style="font-size: 0.75rem">
+                                  NT$ {{ item.unitPrice.toLocaleString() }} x {{ item.quantity }}
+                                </div>
                               </div>
-                              <div class="fw-bold" style="font-size: 0.88rem; color: var(--brand-dark);">NT$ {{ (item.unitPrice * item.quantity).toLocaleString() }}</div>
+                              <div
+                                class="fw-bold"
+                                style="font-size: 0.88rem; color: var(--brand-dark)"
+                              >
+                                NT$ {{ (item.unitPrice * item.quantity).toLocaleString() }}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -794,7 +1017,7 @@ async function handleAvatarUpload(event) {
   color: #1bb0c1;
 }
 .section-title-bar::before {
-  content: "";
+  content: '';
   display: inline-block;
   width: 3px;
   height: 1.1rem;
@@ -993,7 +1216,7 @@ async function handleAvatarUpload(event) {
   border: none;
 }
 .sidebar-item.active::after {
-  content: "";
+  content: '';
   position: absolute;
   right: 15px;
   top: 50%;
@@ -1004,8 +1227,16 @@ async function handleAvatarUpload(event) {
   border-radius: 50%;
 }
 
-.badge-vip { background-color: #fef9c3; color: #ca8a04; font-weight: 700; }
-.badge-normal { background-color: #f1f5f9; color: #64748b; font-weight: 700; }
+.badge-vip {
+  background-color: #fef9c3;
+  color: #ca8a04;
+  font-weight: 700;
+}
+.badge-normal {
+  background-color: #f1f5f9;
+  color: #64748b;
+  font-weight: 700;
+}
 
 .empty-state i {
   color: #e9ecef;
@@ -1029,17 +1260,23 @@ async function handleAvatarUpload(event) {
   border-left: 4px solid #e2e8f0;
   overflow: hidden;
   transition: all 0.25s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 .booking-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
 }
 
 /* 狀態左邊線顏色 */
-.booking-card.status-upcoming { border-left-color: #10b981; }
-.booking-card.status-completed { border-left-color: #94a3b8; }
-.booking-card.status-cancelled { border-left-color: #ef4444; }
+.booking-card.status-upcoming {
+  border-left-color: #10b981;
+}
+.booking-card.status-completed {
+  border-left-color: #94a3b8;
+}
+.booking-card.status-cancelled {
+  border-left-color: #ef4444;
+}
 
 /* 場館圖片 */
 .booking-img-wrap {
@@ -1099,7 +1336,7 @@ async function handleAvatarUpload(event) {
   overflow: hidden;
   border: 1.5px solid #f1f5f9;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 .order-repr-img {
   width: 100%;
@@ -1128,8 +1365,12 @@ async function handleAvatarUpload(event) {
   background-color: #1bb0c1;
   color: white;
 }
-.cursor-pointer { cursor: pointer; }
-.border-bottom-dashed { border-bottom: 1px dashed #f1f5f9; }
+.cursor-pointer {
+  cursor: pointer;
+}
+.border-bottom-dashed {
+  border-bottom: 1px dashed #f1f5f9;
+}
 
 /* 進度條 (Mini 版) */
 .progress-tracker-mini {
@@ -1149,7 +1390,7 @@ async function handleAvatarUpload(event) {
 .progress-line-bg {
   width: 100%;
   height: 100%;
-  background: #E2E8F0;
+  background: #e2e8f0;
   border-radius: 2px;
 }
 .progress-line-fill {
@@ -1173,7 +1414,7 @@ async function handleAvatarUpload(event) {
   height: 28px;
   border-radius: 50%;
   background: white;
-  border: 2px solid #E2E8F0;
+  border: 2px solid #e2e8f0;
   margin-bottom: 0.35rem;
   display: flex;
   align-items: center;
@@ -1190,14 +1431,18 @@ async function handleAvatarUpload(event) {
 }
 .step-text {
   font-size: 0.8rem;
-  color: #94A3B8;
+  color: #94a3b8;
   font-weight: 600;
 }
-.progress-step-mini.active .step-text { color: var(--brand-dark); }
+.progress-step-mini.active .step-text {
+  color: var(--brand-dark);
+}
 .step-time {
   font-size: 0.75rem;
-  color: #94A3B8;
+  color: #94a3b8;
   margin-top: 0.1rem;
 }
-.progress-step-mini.active .step-time { color: var(--brand-dark); }
+.progress-step-mini.active .step-time {
+  color: var(--brand-dark);
+}
 </style>

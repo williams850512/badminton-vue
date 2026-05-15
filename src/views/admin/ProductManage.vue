@@ -47,9 +47,9 @@ const categoryMap = {
 const categoryOptions = Object.entries(categoryMap)
 
 const statusMap = {
-  ACTIVE: { label: '上架中', color: '#10B981', bg: '#ECFDF5' },
-  INACTIVE: { label: '已下架', color: '#EF4444', bg: '#FEF2F2' },
-  PREPARING: { label: '備貨中', color: '#F59E0B', bg: '#FFFBEB' },
+  ACTIVE: { label: '上架中', badgeClass: 'badge-active', icon: 'bi-clipboard-check' },
+  INACTIVE: { label: '已下架', badgeClass: 'badge-danger', icon: 'bi-x-circle' },
+  PREPARING: { label: '備貨中', badgeClass: 'badge-warning', icon: 'bi-box-seam' },
 }
 
 // ===================== 計算屬性 =====================
@@ -298,7 +298,7 @@ function onImageError(e) {
       <table class="table table-hover align-middle mb-0 product-table">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>編號</th>
             <th>商品圖片</th>
             <th>商品名稱</th>
             <th>標籤</th>
@@ -339,23 +339,23 @@ function onImageError(e) {
             </td>
             <td>
               <span
-                class="list-status-badge"
-                :style="{ backgroundColor: statusMap[product.status]?.bg, color: statusMap[product.status]?.color }"
+                class="badge"
+                :class="statusMap[product.status]?.badgeClass || 'badge-default'"
               >
                 {{ statusMap[product.status]?.label || product.status }}
               </span>
             </td>
             <td @click.stop>
               <div class="d-flex gap-1">
-                <button class="btn btn-sm btn-outline-primary" title="編輯" @click="openEdit(product)">
+                <button class="btn btn-sm action-btn action-btn-edit" title="編輯" @click="openEdit(product)">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" title="刪除" @click="confirmDelete(product)">
+                <button class="btn btn-sm action-btn action-btn-delete" title="刪除" @click="confirmDelete(product)">
                   <i class="bi bi-trash3"></i>
                 </button>
                 <div class="dropdown">
                   <button
-                    class="btn btn-sm btn-outline-secondary"
+                    class="btn btn-sm action-btn action-btn-status dropdown-toggle"
                     data-bs-toggle="dropdown"
                     title="切換狀態"
                   >
@@ -610,12 +610,15 @@ function onImageError(e) {
 
 /* ===== 列表表格 ===== */
 .product-table thead tr {
-  background: var(--brand-dark);
+  background: #1b4767;
   color: white;
 }
 .product-table thead th {
-  font-size: 0.82rem;
-  font-weight: 600;
+  background: #1b4767;
+  color: white;
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 400;
   letter-spacing: 0.02em;
   padding: 0.85rem 1rem;
   border: none;
@@ -678,12 +681,28 @@ function onImageError(e) {
 }
 
 /* ===== 狀態標籤 ===== */
-.list-status-badge {
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.3rem 0.75rem;
-  border-radius: 9999px;
-  white-space: nowrap;
+}
+.badge-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.badge-danger {
+  background: #fef2f2;
+  color: #ef4444;
+}
+.badge-warning {
+  background: #fef9c3;
+  color: #ca8a04;
+}
+.badge-default {
+  background: #f1f5f9;
+  color: #64748b;
 }
 
 /* ===== 自訂分頁 ===== */
@@ -854,5 +873,45 @@ function onImageError(e) {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 操作按鈕 ===== */
+.action-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.action-btn-edit {
+  background: #eef2ff;
+  color: #6366f1;
+  border: 1px solid #c7d2fe;
+}
+.action-btn-edit:hover {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+.action-btn-delete {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+.action-btn-delete:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+.action-btn-status {
+  background: #f0f9ff;
+  color: var(--brand-sky, #0ea5e9);
+  border: 1px solid #bae6fd;
+}
+.action-btn-status:hover {
+  background: var(--brand-sky, #0ea5e9);
+  color: white;
+  border-color: var(--brand-sky, #0ea5e9);
 }
 </style>

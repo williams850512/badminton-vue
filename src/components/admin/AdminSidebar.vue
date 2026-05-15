@@ -73,9 +73,7 @@ const menuGroups = [
     <!-- 品牌區 -->
     <div class="sidebar-brand">
       <RouterLink to="/admin/dashboard" class="d-flex align-items-center gap-2 text-decoration-none">
-        <div class="brand-icon">
-          <i class="bi bi-feather"></i>
-        </div>
+        <img src="@/assets/images/brand-logo.png" alt="羽過天晴" class="brand-logo" />
         <span v-if="!isCollapsed" class="brand-text">羽過天晴</span>
       </RouterLink>
     </div>
@@ -135,16 +133,10 @@ const menuGroups = [
   border-bottom: 1px solid #F1F5F9;
 }
 
-.brand-icon {
+.brand-logo {
   width: 36px;
   height: 36px;
-  border-radius: 0.75rem;
-  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1rem;
+  object-fit: contain;
   flex-shrink: 0;
 }
 

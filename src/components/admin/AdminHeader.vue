@@ -46,7 +46,7 @@ async function handleLogout() {
   } catch (e) {
     console.error('Logout API failed:', e)
   }
-  
+
   localStorage.removeItem('adminToken')
   localStorage.removeItem('adminInfo')
   router.push('/admin/login')
@@ -55,12 +55,9 @@ async function handleLogout() {
 
 <template>
   <header class="admin-header">
-    <div class="d-flex align-items-center gap-3">
-      <h1 class="header-title">{{ currentTitle }}</h1>
-    </div>
+    <div class="d-flex align-items-center gap-3"></div>
 
     <div class="d-flex align-items-center gap-3">
-
       <!-- 管理員資訊 (點擊前往個人中心) -->
       <RouterLink to="/admin/profile" class="admin-info text-decoration-none">
         <div class="admin-avatar" title="個人中心">
@@ -85,7 +82,7 @@ async function handleLogout() {
   align-items: center;
   padding: 0.75rem 1.5rem;
   background-color: white;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid #f1f5f9;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -102,9 +99,9 @@ async function handleLogout() {
   width: 38px;
   height: 38px;
   border: none;
-  background: #F8FAFC;
+  background: #f8fafc;
   border-radius: 0.75rem;
-  color: #64748B;
+  color: #64748b;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -127,7 +124,7 @@ async function handleLogout() {
   width: 36px;
   height: 36px;
   border-radius: 0.75rem;
-  background: linear-gradient(135deg, #F0F9FF, #E0F2FE);
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -148,9 +145,9 @@ async function handleLogout() {
 
 .btn-logout {
   padding: 0.4rem 0.9rem;
-  border: 1px solid #FEE2E2;
-  background: #FEF2F2;
-  color: #EF4444;
+  border: 1px solid #fee2e2;
+  background: #fef2f2;
+  color: #ef4444;
   border-radius: 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
@@ -158,9 +155,8 @@ async function handleLogout() {
 }
 
 .btn-logout:hover {
-  background: #EF4444;
+  background: #ef4444;
   color: white;
-  border-color: #EF4444;
+  border-color: #ef4444;
 }
-
 </style>

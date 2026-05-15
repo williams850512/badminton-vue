@@ -26,17 +26,40 @@ const skillMap = {
 // 🔌 Step 1: 初始化 API 層（所有跟後端溝通的邏輯）
 // ============================
 const {
-  pickupGames, courts, signupsMap,
-  memberKeyword, memberResults, selectedMember,
-  signupKeyword, signupSearchResults, selectedSignupMember,
-  editGame, editMemberKeyword, newGame, today, inlineEdit,
-  memberBookings, selectedBookingId,
-  fetchGames, fetchCourts, searchMembers, selectMember,
-  createPickupGame, openEditModal, updatePickupGame,
-  cancelPickupGame, batchCancel: doBatchCancel,
-  fetchSignups, searchSignupMembers, selectSignupMember,
-  addSignup, removeSignup, startInlineEdit, saveInlineEdit,
-  fetchMemberBookings, selectAdminBooking,
+  pickupGames,
+  courts,
+  signupsMap,
+  memberKeyword,
+  memberResults,
+  selectedMember,
+  signupKeyword,
+  signupSearchResults,
+  selectedSignupMember,
+  editGame,
+  editMemberKeyword,
+  newGame,
+  today,
+  inlineEdit,
+  memberBookings,
+  selectedBookingId,
+  fetchGames,
+  fetchCourts,
+  searchMembers,
+  selectMember,
+  createPickupGame,
+  openEditModal,
+  updatePickupGame,
+  cancelPickupGame,
+  batchCancel: doBatchCancel,
+  fetchSignups,
+  searchSignupMembers,
+  selectSignupMember,
+  addSignup,
+  removeSignup,
+  startInlineEdit,
+  saveInlineEdit,
+  fetchMemberBookings,
+  selectAdminBooking,
 } = usePickupGameApi()
 // ============================
 // ⏰ 時間下拉選單的邏輯 (與前台同步的嚴謹連動防呆邏輯)
@@ -83,62 +106,74 @@ const editEndTimeOptions = computed(() => {
 })
 
 // 狀態重置 Watchers (新增)
-watch(() => newGame.value.gameDate, (newVal, oldVal) => {
-  if (newVal && oldVal && newVal !== oldVal) {
-    newGame.value.startTime = ''
-    newGame.value.endTime = ''
-  }
-})
-watch(() => newGame.value.startTime, (newVal, oldVal) => {
-  if (newVal && oldVal && newVal !== oldVal) {
-    newGame.value.endTime = ''
-  }
-})
+watch(
+  () => newGame.value.gameDate,
+  (newVal, oldVal) => {
+    if (newVal && oldVal && newVal !== oldVal) {
+      newGame.value.startTime = ''
+      newGame.value.endTime = ''
+    }
+  },
+)
+watch(
+  () => newGame.value.startTime,
+  (newVal, oldVal) => {
+    if (newVal && oldVal && newVal !== oldVal) {
+      newGame.value.endTime = ''
+    }
+  },
+)
 
 // 狀態重置 Watchers (編輯)
-watch(() => editGame.value?.gameDate, (newVal, oldVal) => {
-  if (newVal && oldVal && newVal !== oldVal && editGame.value) {
-    editGame.value.startTime = ''
-    editGame.value.endTime = ''
-  }
-})
-watch(() => editGame.value?.startTime, (newVal, oldVal) => {
-  if (newVal && oldVal && newVal !== oldVal && editGame.value) {
-    editGame.value.endTime = ''
-  }
-})
+watch(
+  () => editGame.value?.gameDate,
+  (newVal, oldVal) => {
+    if (newVal && oldVal && newVal !== oldVal && editGame.value) {
+      editGame.value.startTime = ''
+      editGame.value.endTime = ''
+    }
+  },
+)
+watch(
+  () => editGame.value?.startTime,
+  (newVal, oldVal) => {
+    if (newVal && oldVal && newVal !== oldVal && editGame.value) {
+      editGame.value.endTime = ''
+    }
+  },
+)
 
 // 🌟 性別衝突「軟性警告」（後台不鎖死，僅提示）
 const isNewGameHostMale = computed(() => {
-  if (!selectedMember.value) return false;
-  return selectedMember.value.gender === 'MALE' || selectedMember.value.gender === '男';
-});
+  if (!selectedMember.value) return false
+  return selectedMember.value.gender === 'MALE' || selectedMember.value.gender === '男'
+})
 const isNewGameHostFemale = computed(() => {
-  if (!selectedMember.value) return false;
-  return selectedMember.value.gender === 'FEMALE' || selectedMember.value.gender === '女';
-});
+  if (!selectedMember.value) return false
+  return selectedMember.value.gender === 'FEMALE' || selectedMember.value.gender === '女'
+})
 const isNewGameGenderConflict = computed(() => {
   const g = newGame.value.requiredGender
   if (isNewGameHostMale.value && g === 'FEMALE') return true
   if (isNewGameHostFemale.value && g === 'MALE') return true
   return false
-});
+})
 
 const isEditGameHostMale = computed(() => {
-  if (!editGame.value || !editGame.value.host) return false;
-  return editGame.value.host.gender === 'MALE' || editGame.value.host.gender === '男';
-});
+  if (!editGame.value || !editGame.value.host) return false
+  return editGame.value.host.gender === 'MALE' || editGame.value.host.gender === '男'
+})
 const isEditGameHostFemale = computed(() => {
-  if (!editGame.value || !editGame.value.host) return false;
-  return editGame.value.host.gender === 'FEMALE' || editGame.value.host.gender === '女';
-});
+  if (!editGame.value || !editGame.value.host) return false
+  return editGame.value.host.gender === 'FEMALE' || editGame.value.host.gender === '女'
+})
 const isEditGameGenderConflict = computed(() => {
   if (!editGame.value) return false
   const g = editGame.value.requiredGender
   if (isEditGameHostMale.value && g === 'FEMALE') return true
   if (isEditGameHostFemale.value && g === 'MALE') return true
   return false
-});
+})
 
 // ============================================================
 // 搜尋 + 狀態篩選 + 分頁 邏輯
@@ -148,21 +183,38 @@ const isEditGameGenderConflict = computed(() => {
 // 📅 Step 2: 初始化日期篩選層
 // ============================
 const {
-  dateFrom, dateTo, showDatePanel, datePresetLabel,
-  tempDateFrom, tempDateTo,
-  setDateRange, openDatePanel, applyDateRange, cancelDatePanel
+  dateFrom,
+  dateTo,
+  showDatePanel,
+  datePresetLabel,
+  tempDateFrom,
+  tempDateTo,
+  setDateRange,
+  openDatePanel,
+  applyDateRange,
+  cancelDatePanel,
 } = useDateFilter()
 
 // ============================
 // 🔍 Step 3: 初始化篩選 + 排序 + 分頁層
 // ============================
 const {
-  searchQuery, statusFilter, filterGender, sortBy,
-  currentPage, pageSize, selectedIds, expandedGameId,
+  searchQuery,
+  statusFilter,
+  filterGender,
+  sortBy,
+  currentPage,
+  pageSize,
+  selectedIds,
+  expandedGameId,
   isRefreshing,
-  toggleSelectAll, toggleSignups: doToggleSignups,
+  toggleSelectAll,
+  toggleSignups: doToggleSignups,
   refreshGames: doRefreshGames,
-  dateFilteredGames, filteredGames, totalPages, paginatedGames,
+  dateFilteredGames,
+  filteredGames,
+  totalPages,
+  paginatedGames,
 } = useGameFilter(pickupGames, getDisplayStatus, dateFrom, dateTo)
 
 // 包裝一層，讓 template 呼叫更簡潔
@@ -254,8 +306,14 @@ onMounted(() => {
                 <label class="form-label fw-bold"
                   >開始時間 <span class="text-danger">*</span></label
                 >
-                <select class="form-select" v-model="editGame.startTime" :disabled="!editGame.gameDate || editStartTimeOptions.length === 0">
-                  <option value="" disabled>{{ editStartTimeOptions.length === 0 ? '今日已無時段' : '請選擇...' }}</option>
+                <select
+                  class="form-select"
+                  v-model="editGame.startTime"
+                  :disabled="!editGame.gameDate || editStartTimeOptions.length === 0"
+                >
+                  <option value="" disabled>
+                    {{ editStartTimeOptions.length === 0 ? '今日已無時段' : '請選擇...' }}
+                  </option>
                   <option v-for="t in editStartTimeOptions" :key="t" :value="t">{{ t }}</option>
                 </select>
               </div>
@@ -264,7 +322,11 @@ onMounted(() => {
                 <label class="form-label fw-bold"
                   >結束時間 <span class="text-danger">*</span></label
                 >
-                <select class="form-select" v-model="editGame.endTime" :disabled="!editGame.startTime">
+                <select
+                  class="form-select"
+                  v-model="editGame.endTime"
+                  :disabled="!editGame.startTime"
+                >
                   <option value="" disabled>請先選擇開始時間</option>
                   <option v-for="t in editEndTimeOptions" :key="t" :value="t">{{ t }}</option>
                 </select>
@@ -302,9 +364,16 @@ onMounted(() => {
                   <option value="MALE">限男性</option>
                   <option value="FEMALE">限女性</option>
                 </select>
-                <div v-if="isEditGameGenderConflict" class="alert alert-warning d-flex align-items-start mt-2 py-2 px-3 mb-0" style="font-size: 0.82rem;">
+                <div
+                  v-if="isEditGameGenderConflict"
+                  class="alert alert-warning d-flex align-items-start mt-2 py-2 px-3 mb-0"
+                  style="font-size: 0.82rem"
+                >
                   <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0"></i>
-                  <span>⚠️ 系統提示：您選擇的性別限制與主揪性別衝突。主揪預設會佔用一個名額，請確認此特例操作是否正確。</span>
+                  <span
+                    >⚠️
+                    系統提示：您選擇的性別限制與主揪性別衝突。主揪預設會佔用一個名額，請確認此特例操作是否正確。</span
+                  >
                 </div>
               </div>
             </form>
@@ -365,7 +434,7 @@ onMounted(() => {
             {{ datePresetLabel }}
             <i class="bi bi-chevron-down" style="font-size: 0.7em"></i>
           </button>
-          
+
           <!-- 彈出面板 -->
           <div v-if="showDatePanel" class="date-panel shadow-lg">
             <div class="d-flex">
@@ -382,23 +451,29 @@ onMounted(() => {
               <!-- 右側：手動日期輸入 -->
               <div class="date-panel-inputs">
                 <label class="form-label small text-muted mb-1">開始日期</label>
-                <input type="date" class="form-control form-control-sm mb-3" v-model="tempDateFrom" />
+                <input
+                  type="date"
+                  class="form-control form-control-sm mb-3"
+                  v-model="tempDateFrom"
+                />
                 <label class="form-label small text-muted mb-1">結束日期</label>
                 <input type="date" class="form-control form-control-sm" v-model="tempDateTo" />
               </div>
             </div>
             <!-- 底部按鈕 -->
             <div class="d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
-              <button class="btn btn-sm btn-outline-secondary" @click="cancelDatePanel">取消</button>
+              <button class="btn btn-sm btn-outline-secondary" @click="cancelDatePanel">
+                取消
+              </button>
               <button class="btn btn-sm btn-primary" @click="applyDateRange">套用</button>
             </div>
           </div>
           <!-- 遮罩層 -->
           <div v-if="showDatePanel" class="date-panel-backdrop" @click="cancelDatePanel"></div>
         </div>
-        
+
         <!-- 🚻 性別條件篩選 -->
-        <select class="form-select form-select-sm" v-model="filterGender" style="width: 140px;">
+        <select class="form-select form-select-sm" v-model="filterGender" style="width: 140px">
           <option value="all">全部 (不限)</option>
           <option value="male">限男性</option>
           <option value="female">限女性</option>
@@ -510,14 +585,15 @@ onMounted(() => {
       </button>
     </div>
     <!-- ============ 表格 ============ -->
+    <div class="card card-rounded shadow-sm border-0 overflow-hidden">
     <div class="table-responsive">
-      <table class="table table-hover align-middle text-center">
-        <thead class="table-dark">
+      <table class="table table-hover align-middle text-center mb-0">
+        <thead>
           <tr>
             <th style="width: 40px">
               <input type="checkbox" @change="toggleSelectAll" />
             </th>
-            <th>ID</th>
+            <th>編號</th>
             <th>主揪</th>
             <th>場地</th>
             <th>日期</th>
@@ -583,10 +659,16 @@ onMounted(() => {
                 </span>
               </td>
               <td>
-                <span v-if="game.requiredGender === 'MALE'" class="badge bg-light text-secondary border border-secondary-subtle">
+                <span
+                  v-if="game.requiredGender === 'MALE'"
+                  class="badge bg-light text-secondary border border-secondary-subtle"
+                >
                   限男
                 </span>
-                <span v-else-if="game.requiredGender === 'FEMALE'" class="badge bg-light text-secondary border border-secondary-subtle">
+                <span
+                  v-else-if="game.requiredGender === 'FEMALE'"
+                  class="badge bg-light text-secondary border border-secondary-subtle"
+                >
                   限女
                 </span>
                 <span v-else class="text-muted small">不限</span>
@@ -595,10 +677,10 @@ onMounted(() => {
                 <span
                   class="badge"
                   :class="{
-                    'bg-success': getDisplayStatus(game) === 'OPEN',
-                    'badge-full': game.status === 'FULL',
-                    'bg-dark': getDisplayStatus(game) === 'CLOSED',
-                    'bg-secondary': getDisplayStatus(game) === 'CANCELLED',
+                    'badge-active': getDisplayStatus(game) === 'OPEN',
+                    'badge-warning': game.status === 'FULL',
+                    'badge-dark': getDisplayStatus(game) === 'CLOSED',
+                    'badge-inactive': getDisplayStatus(game) === 'CANCELLED',
                   }"
                 >
                   {{ statusMap[getDisplayStatus(game)] }}
@@ -630,24 +712,36 @@ onMounted(() => {
 
                   <!-- ✏️ 鉛筆按鈕：加上 @click 填資料 + data-bs 開啟編輯 Modal -->
                   <button
-                    class="btn btn-outline-primary btn-sm btn-action"
+                    class="btn btn-sm action-btn action-btn-edit"
                     @click="openEditModal(game)"
                     data-bs-toggle="modal"
                     data-bs-target="#editGameModal"
                     :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'"
-                    :title="game.status === 'CANCELLED' ? '已取消的揪團無法編輯' : (getDisplayStatus(game) === 'CLOSED' ? '已結束的揪團無法編輯' : '')"
+                    :title="
+                      game.status === 'CANCELLED'
+                        ? '已取消的揪團無法編輯'
+                        : getDisplayStatus(game) === 'CLOSED'
+                          ? '已結束的揪團無法編輯'
+                          : '編輯'
+                    "
                   >
-                    <i class="bi bi-pencil-fill"></i>
+                    <i class="bi bi-pencil"></i>
                   </button>
 
                   <!-- 軟刪除cancelPickupGame -->
                   <button
-                    class="btn btn-outline-danger btn-sm btn-action"
+                    class="btn btn-sm action-btn action-btn-delete"
                     @click="cancelPickupGame(game)"
                     :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'"
-                    :title="game.status === 'CANCELLED' ? '此揪團已取消' : (getDisplayStatus(game) === 'CLOSED' ? '已結束的揪團無法取消' : '')"
+                    :title="
+                      game.status === 'CANCELLED'
+                        ? '此揪團已取消'
+                        : getDisplayStatus(game) === 'CLOSED'
+                          ? '已結束的揪團無法取消'
+                          : '取消揪團'
+                    "
                   >
-                    <i class="bi bi-x-circle-fill"></i>
+                    <i class="bi bi-x-circle"></i>
                   </button>
                 </div>
               </td>
@@ -685,8 +779,16 @@ onMounted(() => {
                           <button
                             class="btn btn-outline-danger btn-sm"
                             @click="removeSignup(s.signupId, game.gameId, s.member?.fullName)"
-                            :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'"
-                            :title="game.status === 'CANCELLED' ? '已取消的揪團無法移除成員' : (getDisplayStatus(game) === 'CLOSED' ? '已結束的揪團無法移除成員' : '')"
+                            :disabled="
+                              game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'
+                            "
+                            :title="
+                              game.status === 'CANCELLED'
+                                ? '已取消的揪團無法移除成員'
+                                : getDisplayStatus(game) === 'CLOSED'
+                                  ? '已結束的揪團無法移除成員'
+                                  : ''
+                            "
                           >
                             <i class="bi bi-person-dash-fill"></i>
                           </button>
@@ -708,7 +810,9 @@ onMounted(() => {
                         v-model="signupKeyword"
                         @input="searchSignupMembers"
                         placeholder="輸入姓名或手機搜尋會員"
-                        :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'"
+                        :disabled="
+                          game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'
+                        "
                       />
                       <!-- 搜尋結果下拉 -->
                       <ul
@@ -727,7 +831,11 @@ onMounted(() => {
                         </li>
                       </ul>
                     </div>
-                    <button class="btn btn-success text-nowrap" @click="addSignup(game.gameId)" :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'">
+                    <button
+                      class="btn btn-success text-nowrap"
+                      @click="addSignup(game.gameId)"
+                      :disabled="game.status === 'CANCELLED' || getDisplayStatus(game) === 'CLOSED'"
+                    >
                       <i class="bi bi-person-plus-fill me-1"></i> 新增報名
                     </button>
                   </div>
@@ -741,6 +849,7 @@ onMounted(() => {
           </template>
         </tbody>
       </table>
+    </div>
     </div>
     <!-- ============ 分頁控制列 ============ -->
     <div class="d-flex justify-content-between align-items-center mt-3">
@@ -839,10 +948,15 @@ onMounted(() => {
                     >選擇預約場地 <span class="text-danger">*</span></label
                   >
                 </div>
-                <select class="form-select" v-model="selectedBookingId" @change="selectAdminBooking(selectedBookingId)">
+                <select
+                  class="form-select"
+                  v-model="selectedBookingId"
+                  @change="selectAdminBooking(selectedBookingId)"
+                >
                   <option :value="null" disabled>請選擇該會員的可用預約...</option>
                   <option v-for="b in memberBookings" :key="b.bookingId" :value="b.bookingId">
-                    {{ b.bookingDate }} ({{ b.startTime }}-{{ b.endTime }}) | {{ b.venueName }} - {{ b.courtName }}
+                    {{ b.bookingDate }} ({{ b.startTime }}-{{ b.endTime }}) | {{ b.venueName }} -
+                    {{ b.courtName }}
                   </option>
                 </select>
                 <small v-if="memberBookings.length === 0" class="text-warning d-block mt-1">
@@ -870,59 +984,66 @@ onMounted(() => {
               </div>
               <!-- 以下欄位：選完預約後才顯示 -->
               <template v-if="selectedBookingId">
-              <!-- 最大人數 -->
-              <div class="col-md-6">
-                <div class="d-flex align-items-center mb-2">
-                  <div class="icon-box me-2" style="background-color: rgba(111, 66, 193, 0.1)">
-                    <i class="bi bi-people-fill" style="color: #6f42c1"></i>
+                <!-- 最大人數 -->
+                <div class="col-md-6">
+                  <div class="d-flex align-items-center mb-2">
+                    <div class="icon-box me-2" style="background-color: rgba(111, 66, 193, 0.1)">
+                      <i class="bi bi-people-fill" style="color: #6f42c1"></i>
+                    </div>
+                    <label class="form-label fw-bold mb-0"
+                      >最大人數 <span class="text-danger">*</span></label
+                    >
                   </div>
-                  <label class="form-label fw-bold mb-0"
-                    >最大人數 <span class="text-danger">*</span></label
+                  <select class="form-select" v-model="newGame.maxPlayers">
+                    <option
+                      v-for="n in Array.from({ length: 11 }, (_, i) => i + 2)"
+                      :key="n"
+                      :value="n"
+                    >
+                      {{ n }} 人
+                    </option>
+                  </select>
+                </div>
+                <!-- 程度要求 -->
+                <div class="col-md-6">
+                  <div class="d-flex align-items-center mb-2">
+                    <div class="icon-box me-2" style="background-color: rgba(255, 193, 7, 0.15)">
+                      <i class="bi bi-bar-chart-fill text-warning"></i>
+                    </div>
+                    <label class="form-label fw-bold mb-0">程度要求</label>
+                  </div>
+                  <select class="form-select" v-model="newGame.skillLevel">
+                    <option value="ALL">不限</option>
+                    <option value="BEGINNER">初級</option>
+                    <option value="INTERMEDIATE">中級</option>
+                    <option value="ADVANCED">高級</option>
+                  </select>
+                </div>
+                <!-- 性別限制 -->
+                <div class="col-md-12">
+                  <div class="d-flex align-items-center mb-2">
+                    <div class="icon-box me-2" style="background-color: rgba(236, 72, 153, 0.15)">
+                      <i class="bi bi-gender-ambiguous" style="color: #ec4899"></i>
+                    </div>
+                    <label class="form-label fw-bold mb-0">性別限制</label>
+                  </div>
+                  <select class="form-select" v-model="newGame.requiredGender">
+                    <option value="ALL">不限</option>
+                    <option value="MALE">限男性</option>
+                    <option value="FEMALE">限女性</option>
+                  </select>
+                  <div
+                    v-if="isNewGameGenderConflict"
+                    class="alert alert-warning d-flex align-items-start mt-2 py-2 px-3 mb-0"
+                    style="font-size: 0.82rem"
                   >
-                </div>
-                <select class="form-select" v-model="newGame.maxPlayers">
-                  <option
-                    v-for="n in Array.from({ length: 11 }, (_, i) => i + 2)"
-                    :key="n"
-                    :value="n"
-                  >
-                    {{ n }} 人
-                  </option>
-                </select>
-              </div>
-              <!-- 程度要求 -->
-              <div class="col-md-6">
-                <div class="d-flex align-items-center mb-2">
-                  <div class="icon-box me-2" style="background-color: rgba(255, 193, 7, 0.15)">
-                    <i class="bi bi-bar-chart-fill text-warning"></i>
+                    <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0"></i>
+                    <span
+                      >⚠️
+                      系統提示：您選擇的性別限制與主揪性別衝突。主揪預設會佔用一個名額，請確認此特例操作是否正確。</span
+                    >
                   </div>
-                  <label class="form-label fw-bold mb-0">程度要求</label>
                 </div>
-                <select class="form-select" v-model="newGame.skillLevel">
-                  <option value="ALL">不限</option>
-                  <option value="BEGINNER">初級</option>
-                  <option value="INTERMEDIATE">中級</option>
-                  <option value="ADVANCED">高級</option>
-                </select>
-              </div>
-              <!-- 性別限制 -->
-              <div class="col-md-12">
-                <div class="d-flex align-items-center mb-2">
-                  <div class="icon-box me-2" style="background-color: rgba(236, 72, 153, 0.15)">
-                    <i class="bi bi-gender-ambiguous" style="color: #ec4899"></i>
-                  </div>
-                  <label class="form-label fw-bold mb-0">性別限制</label>
-                </div>
-                <select class="form-select" v-model="newGame.requiredGender">
-                  <option value="ALL">不限</option>
-                  <option value="MALE">限男性</option>
-                  <option value="FEMALE">限女性</option>
-                </select>
-                <div v-if="isNewGameGenderConflict" class="alert alert-warning d-flex align-items-start mt-2 py-2 px-3 mb-0" style="font-size: 0.82rem;">
-                  <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0"></i>
-                  <span>⚠️ 系統提示：您選擇的性別限制與主揪性別衝突。主揪預設會佔用一個名額，請確認此特例操作是否正確。</span>
-                </div>
-              </div>
               </template>
             </form>
           </div>
@@ -947,6 +1068,48 @@ onMounted(() => {
 </template>
 <!-- 🔧 加上 scoped 的 CSS，讓 icon-box 樣式只在這個元件內生效 -->
 <style scoped>
+/* 覆寫圓角 — 與 ProductManage 統一 */
+.card-rounded {
+  border-radius: 0.75rem !important;
+}
+
+/* ===== 表格表頭 ===== */
+.table thead th {
+  background: #1b4767;
+  color: white;
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border: none;
+}
+
+/* ===== 狀態標籤 ===== */
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.badge-warning {
+  background: #fef9c3;
+  color: #ca8a04;
+}
+.badge-dark {
+  background: #1e293b;
+  color: #f8fafc;
+}
+.badge-inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
 .badge-full {
   background-color: #e8a317;
   color: #fff;
@@ -971,13 +1134,38 @@ onMounted(() => {
   background-color: #e8a317;
   color: white;
 }
-/* 讓操作欄的按鈕等寬，排列更整齊 */
-.btn-action {
-  min-width: 36px;
-  min-height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+/* ===== 操作按鈕 ===== */
+.action-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.action-btn-edit {
+  background: #eef2ff;
+  color: #6366f1;
+  border: 1px solid #c7d2fe;
+}
+.action-btn-edit:hover:not(:disabled) {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+.action-btn-delete {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+.action-btn-delete:hover:not(:disabled) {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .icon-box {
   width: 32px;

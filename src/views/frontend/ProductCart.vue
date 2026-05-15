@@ -20,16 +20,6 @@ function grandTotal() {
 <template>
   <div class="cart-page">
 
-    <!-- ====== Navbar ====== -->
-    <nav class="cart-navbar front-navbar">
-      <span class="navbar-brand text-gradient" style="cursor:pointer" @click="router.push('/products')">
-        <i class="bi bi-feather me-2"></i>羽球商城
-      </span>
-      <button class="back-btn" @click="router.push('/products')">
-        <i class="bi bi-arrow-left me-1"></i>繼續購物
-      </button>
-    </nav>
-
     <!-- ====== 麵包屑 ====== -->
     <div class="breadcrumb-bar">
       <div class="breadcrumb-inner">

@@ -33,11 +33,11 @@ function statusText(status) {
 
 function statusClass(status) {
   const map = {
-    ACTIVE: 'bg-success',
-    INACTIVE: 'bg-secondary',
-    MAINTENANCE: 'bg-warning text-dark',
+    ACTIVE: 'badge-active',
+    INACTIVE: 'badge-inactive',
+    MAINTENANCE: 'badge-maintenance',
   }
-  return map[status] || 'bg-secondary'
+  return map[status] || 'badge-default'
 }
 
 // ========== 刪除場館 ==========
@@ -157,12 +157,12 @@ async function saveVenue() {
   </div>
 
   <!-- 場館資料表格 -->
-  <div class="card card-rounded shadow-sm border-0">
+  <div class="card card-rounded shadow-sm border-0 overflow-hidden">
     <div class="card-body p-0">
       <table class="table table-hover mb-0">
         <thead>
-          <tr style="background: var(--brand-dark); color: white">
-            <th class="ps-4">ID</th>
+          <tr>
+            <th class="ps-4">編號</th>
             <th>圖片</th>
             <th>場館名稱</th>
             <th>地址</th>
@@ -202,11 +202,21 @@ async function saveVenue() {
             <td>
               <img
                 v-if="venue.imageUrl"
-                :src="venue.imageUrl.startsWith('/') || venue.imageUrl.startsWith('http') ? venue.imageUrl : '/' + venue.imageUrl"
+                :src="
+                  venue.imageUrl.startsWith('/') || venue.imageUrl.startsWith('http')
+                    ? venue.imageUrl
+                    : '/' + venue.imageUrl
+                "
                 :alt="venue.venueName"
-                style="width: 56px; height: 40px; object-fit: cover; border-radius: 0.5rem; border: 1px solid #E2E8F0;"
+                style="
+                  width: 56px;
+                  height: 40px;
+                  object-fit: cover;
+                  border-radius: 0.5rem;
+                  border: 1px solid #e2e8f0;
+                "
               />
-              <span v-else class="text-muted" style="font-size: 0.8rem;">無圖片</span>
+              <span v-else class="text-muted" style="font-size: 0.8rem">無圖片</span>
             </td>
             <td>
               <strong>{{ venue.venueName }}</strong>
@@ -219,16 +229,16 @@ async function saveVenue() {
               </span>
             </td>
             <td>
-              <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-primary" title="編輯" @click="openEditModal(venue)">
+              <div class="d-flex gap-1">
+                <button class="btn btn-sm action-btn action-btn-edit" title="編輯" @click="openEditModal(venue)">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-outline-danger" title="刪除" @click="deleteVenue(venue)">
-                  <i class="bi bi-trash"></i>
+                <button class="btn btn-sm action-btn action-btn-delete" title="刪除" @click="deleteVenue(venue)">
+                  <i class="bi bi-trash3"></i>
                 </button>
-                <div class="btn-group btn-group-sm">
+                <div class="dropdown">
                   <button
-                    class="btn btn-outline-secondary dropdown-toggle"
+                    class="btn btn-sm action-btn action-btn-status dropdown-toggle"
                     data-bs-toggle="dropdown"
                     title="變更狀態"
                   >
@@ -311,13 +321,32 @@ async function saveVenue() {
           <div class="mb-3">
             <label class="form-label">場館圖片</label>
             <div class="venue-upload-area" @click="$refs.venueFileInput.click()">
-              <img v-if="imagePreview" :src="imagePreview.startsWith('blob:') || imagePreview.startsWith('/') || imagePreview.startsWith('http') ? imagePreview : '/' + imagePreview" class="venue-upload-preview" />
+              <img
+                v-if="imagePreview"
+                :src="
+                  imagePreview.startsWith('blob:') ||
+                  imagePreview.startsWith('/') ||
+                  imagePreview.startsWith('http')
+                    ? imagePreview
+                    : '/' + imagePreview
+                "
+                class="venue-upload-preview"
+              />
               <div v-else class="venue-upload-placeholder">
-                <i class="bi bi-cloud-arrow-up" style="font-size: 2rem; color: var(--brand-sky)"></i>
+                <i
+                  class="bi bi-cloud-arrow-up"
+                  style="font-size: 2rem; color: var(--brand-sky)"
+                ></i>
                 <p class="text-secondary mt-1 mb-0" style="font-size: 0.85rem">點擊上傳場館圖片</p>
               </div>
             </div>
-            <input ref="venueFileInput" type="file" accept="image/*" class="d-none" @change="onImageChange" />
+            <input
+              ref="venueFileInput"
+              type="file"
+              accept="image/*"
+              class="d-none"
+              @change="onImageChange"
+            />
           </div>
         </div>
         <div class="modal-footer">
@@ -333,8 +362,50 @@ async function saveVenue() {
 </template>
 
 <style scoped>
+/* ===== 狀態標籤 ===== */
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.badge-inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.badge-maintenance {
+  background: #fef9c3;
+  color: #ca8a04;
+}
+.badge-default {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* 覆寫圓角 — 與 ProductManage 統一 */
+.card-rounded {
+  border-radius: 0.75rem !important;
+}
+
+/* ===== 表格表頭 ===== */
+.table thead th {
+  background: #1b4767;
+  color: white;
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border: none;
+}
+
 .venue-upload-area {
-  border: 2px dashed #E2E8F0;
+  border: 2px dashed #e2e8f0;
   border-radius: 1rem;
   padding: 1.5rem;
   text-align: center;
@@ -348,7 +419,7 @@ async function saveVenue() {
 
 .venue-upload-area:hover {
   border-color: var(--brand-sky);
-  background: #F0F9FF;
+  background: #f0f9ff;
 }
 
 .venue-upload-preview {
@@ -362,5 +433,45 @@ async function saveVenue() {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* ===== 操作按鈕 ===== */
+.action-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.action-btn-edit {
+  background: #eef2ff;
+  color: #6366f1;
+  border: 1px solid #c7d2fe;
+}
+.action-btn-edit:hover {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+.action-btn-delete {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+.action-btn-delete:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+.action-btn-status {
+  background: #f0f9ff;
+  color: var(--brand-sky, #0ea5e9);
+  border: 1px solid #bae6fd;
+}
+.action-btn-status:hover {
+  background: var(--brand-sky, #0ea5e9);
+  color: white;
+  border-color: var(--brand-sky, #0ea5e9);
 }
 </style>

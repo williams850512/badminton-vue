@@ -25,15 +25,15 @@ const { exportData } = useExport()
 const showExportMenu = ref(false)
 
 function getExportData() {
-  return filteredOrders.value.map(o => ({
-    '訂單編號': o.orderId,
-    '會員': o.member?.fullName || '未知',
-    '電話': o.member?.phone || '',
-    '訂購日期': o.orderDate,
-    '金額': o.totalAmount,
-    '狀態': statusMap[o.status]?.label || o.status,
-    '付款方式': paymentMap[o.paymentType] || o.paymentType || '',
-    '備註': o.note || '',
+  return filteredOrders.value.map((o) => ({
+    訂單編號: o.orderId,
+    會員: o.member?.fullName || '未知',
+    電話: o.member?.phone || '',
+    訂購日期: o.orderDate,
+    金額: o.totalAmount,
+    狀態: statusMap[o.status]?.label || o.status,
+    付款方式: paymentMap[o.paymentType] || o.paymentType || '',
+    備註: o.note || '',
   }))
 }
 
@@ -47,14 +47,16 @@ const filterStatus = ref('')
 const selectedIds = ref(new Set())
 
 const isAllSelected = computed(() => {
-  return pagedOrders.value.length > 0 && pagedOrders.value.every(o => selectedIds.value.has(o.orderId))
+  return (
+    pagedOrders.value.length > 0 && pagedOrders.value.every((o) => selectedIds.value.has(o.orderId))
+  )
 })
 
 function toggleSelectAll() {
   if (isAllSelected.value) {
-    pagedOrders.value.forEach(o => selectedIds.value.delete(o.orderId))
+    pagedOrders.value.forEach((o) => selectedIds.value.delete(o.orderId))
   } else {
-    pagedOrders.value.forEach(o => selectedIds.value.add(o.orderId))
+    pagedOrders.value.forEach((o) => selectedIds.value.add(o.orderId))
   }
 }
 
@@ -114,16 +116,16 @@ async function handleBatchDelete() {
 // 批次匯出（只匯出勾選的）
 function batchExport(format) {
   const ids = [...selectedIds.value]
-  const selected = orders.value.filter(o => ids.includes(o.orderId))
-  const data = selected.map(o => ({
-    '訂單編號': o.orderId,
-    '會員': o.member?.fullName || '未知',
-    '電話': o.member?.phone || '',
-    '訂購日期': o.orderDate,
-    '金額': o.totalAmount,
-    '狀態': statusMap[o.status]?.label || o.status,
-    '付款方式': paymentMap[o.paymentType] || o.paymentType || '',
-    '備註': o.note || '',
+  const selected = orders.value.filter((o) => ids.includes(o.orderId))
+  const data = selected.map((o) => ({
+    訂單編號: o.orderId,
+    會員: o.member?.fullName || '未知',
+    電話: o.member?.phone || '',
+    訂購日期: o.orderDate,
+    金額: o.totalAmount,
+    狀態: statusMap[o.status]?.label || o.status,
+    付款方式: paymentMap[o.paymentType] || o.paymentType || '',
+    備註: o.note || '',
   }))
   exportData(data, format)
 }
@@ -146,7 +148,10 @@ function closeDetail() {
   selectedOrder.value = null
 }
 watch(selectedOrder, async (order) => {
-  if (!order) { orderItems.value = []; return }
+  if (!order) {
+    orderItems.value = []
+    return
+  }
   loadingItems.value = true
   try {
     orderItems.value = await orderApi.findItems(order.orderId)
@@ -200,7 +205,7 @@ const selectQty = ref(1)
 const cart = ref([])
 
 const cartTotal = computed(() =>
-  cart.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  cart.value.reduce((sum, item) => sum + item.price * item.quantity, 0),
 )
 
 // 會員搜尋（防抖 300ms）
@@ -241,7 +246,7 @@ function clearMember() {
 async function loadProducts() {
   try {
     const all = await productApi.findAll()
-    products.value = all.filter(p => p.status === 'ACTIVE' && p.stockQty > 0)
+    products.value = all.filter((p) => p.status === 'ACTIVE' && p.stockQty > 0)
   } catch (e) {
     console.error('載入商品失敗', e)
   }
@@ -250,12 +255,15 @@ async function loadProducts() {
 // 加入購物車
 function addToCart() {
   const pid = parseInt(selectedProductId.value)
-  if (!pid) { alert('請選擇商品！'); return }
+  if (!pid) {
+    alert('請選擇商品！')
+    return
+  }
   const qty = parseInt(selectQty.value) || 1
-  const product = products.value.find(p => p.productId === pid)
+  const product = products.value.find((p) => p.productId === pid)
   if (!product) return
 
-  const existing = cart.value.find(c => c.productId === pid)
+  const existing = cart.value.find((c) => c.productId === pid)
   if (existing) {
     existing.quantity += qty
   } else {
@@ -281,7 +289,10 @@ function updateCartQty(index, delta) {
   const item = cart.value[index]
   const newQty = item.quantity + delta
   if (newQty < 1) return
-  if (newQty > item.stock) { alert(`庫存不足！剩餘 ${item.stock} 件`); return }
+  if (newQty > item.stock) {
+    alert(`庫存不足！剩餘 ${item.stock} 件`)
+    return
+  }
   item.quantity = newQty
 }
 
@@ -300,8 +311,14 @@ function openCreateOrder() {
 
 // 送出新增訂單
 async function handleCreateOrder() {
-  if (!selectedMember.value) { alert('請選擇會員！'); return }
-  if (cart.value.length === 0) { alert('請至少加入一項商品！'); return }
+  if (!selectedMember.value) {
+    alert('請選擇會員！')
+    return
+  }
+  if (cart.value.length === 0) {
+    alert('請至少加入一項商品！')
+    return
+  }
 
   creating.value = true
   try {
@@ -335,16 +352,19 @@ async function handleCreateOrder() {
 
 // ===================== 常數 =====================
 const statusMap = {
-  UNPAID: { label: '訂單成立', color: '#F59E0B', bg: '#FEF3C7', icon: 'bi-clipboard-check' },
-  PAID: { label: '備貨中', color: '#3B82F6', bg: '#DBEAFE', icon: 'bi-box-seam' },
-  SHIPPED: { label: '待取貨', color: '#8B5CF6', bg: '#EDE9FE', icon: 'bi-shop' },
-  COMPLETED: { label: '已取貨', color: '#10B981', bg: '#D1FAE5', icon: 'bi-check2-circle' },
-  CANCELLED: { label: '已取消', color: '#F43F5E', bg: '#FFE4E6', icon: 'bi-x-circle' },
+  UNPAID: { label: '訂單成立', color: '#F59E0B', bg: '#FEF3C7', icon: 'bi-clipboard-check', badgeClass: 'badge-unpaid' },
+  PAID: { label: '備貨中', color: '#3B82F6', bg: '#DBEAFE', icon: 'bi-box-seam', badgeClass: 'badge-paid' },
+  SHIPPED: { label: '待取貨', color: '#8B5CF6', bg: '#EDE9FE', icon: 'bi-shop', badgeClass: 'badge-shipped' },
+  COMPLETED: { label: '已取貨', color: '#10B981', bg: '#D1FAE5', icon: 'bi-check2-circle', badgeClass: 'badge-active' },
+  CANCELLED: { label: '已取消', color: '#F43F5E', bg: '#FFE4E6', icon: 'bi-x-circle', badgeClass: 'badge-cancelled' },
 }
 const statusOptions = Object.entries(statusMap)
 
 const paymentMap = {
-  CASH: '現金', CREDIT_CARD: '信用卡', TRANSFER: '轉帳', LINE_PAY: 'LINE Pay',
+  CASH: '現金',
+  CREDIT_CARD: '信用卡',
+  TRANSFER: '轉帳',
+  LINE_PAY: 'LINE Pay',
 }
 
 // 狀態流程：定義每個狀態「可以」轉到哪些狀態
@@ -382,14 +402,14 @@ const filteredOrders = computed(() => {
     // 一般模糊搜尋（所有欄位）
     const matchKeyword =
       String(o.orderId).includes(kw) ||
-      (o.member?.fullName?.toLowerCase().includes(kw)) ||
-      (o.member?.phone?.includes(kw)) ||
-      (o.member?.email?.toLowerCase().includes(kw)) ||
-      (statusMap[o.status]?.label?.includes(kw)) ||
-      (paymentMap[o.paymentType]?.includes(kw)) ||
+      o.member?.fullName?.toLowerCase().includes(kw) ||
+      o.member?.phone?.includes(kw) ||
+      o.member?.email?.toLowerCase().includes(kw) ||
+      statusMap[o.status]?.label?.includes(kw) ||
+      paymentMap[o.paymentType]?.includes(kw) ||
       String(o.totalAmount).includes(kw) ||
-      (o.orderDate?.includes(kw.replace(/\//g, '-'))) ||
-      (o.note?.toLowerCase().includes(kw))
+      o.orderDate?.includes(kw.replace(/\//g, '-')) ||
+      o.note?.toLowerCase().includes(kw)
     return matchKeyword && matchStatus
   })
 })
@@ -419,7 +439,7 @@ const dashboardStats = computed(() => {
   let pendingCount = 0
   let monthSales = 0
 
-  orders.value.forEach(o => {
+  orders.value.forEach((o) => {
     // 待處理訂單
     if (['UNPAID', 'PAID'].includes(o.status)) {
       pendingCount++
@@ -445,7 +465,7 @@ const dashboardStats = computed(() => {
     monthRevenue: monthSales,
     todayOrders: todayCount,
     pendingOrders: pendingCount,
-    todayRevenue: todaySales
+    todayRevenue: todaySales,
   }
 })
 
@@ -490,7 +510,7 @@ async function loadOrders() {
   try {
     orders.value = await orderApi.findAll()
     if (selectedOrder.value) {
-      const updated = orders.value.find(o => o.orderId === selectedOrder.value.orderId)
+      const updated = orders.value.find((o) => o.orderId === selectedOrder.value.orderId)
       selectedOrder.value = updated || null
     }
   } catch (e) {
@@ -579,7 +599,11 @@ function formatPrice(val) {
 function formatDate(dateStr) {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
-  return d.toLocaleDateString('zh-TW') + ' ' + d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+  return (
+    d.toLocaleDateString('zh-TW') +
+    ' ' +
+    d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+  )
 }
 
 // 點擊外部關閉狀態下拉選單 & 匯出選單 & 批次狀態選單
@@ -611,7 +635,9 @@ onUnmounted(() => {
       <div class="row text-center g-0">
         <div class="col-6 col-md-3 stat-block">
           <div class="stat-label">本月累積營收</div>
-          <div class="stat-value" style="color: var(--brand-sky);">{{ formatPrice(dashboardStats.monthRevenue) }}</div>
+          <div class="stat-value" style="color: var(--brand-sky)">
+            {{ formatPrice(dashboardStats.monthRevenue) }}
+          </div>
         </div>
         <div class="col-6 col-md-3 stat-block">
           <div class="stat-label">今日訂單</div>
@@ -636,23 +662,26 @@ onUnmounted(() => {
         </h2>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <button class="btn btn-brand" @click="openCreateOrder"><i class="bi bi-plus-lg me-1"></i>新增訂單</button>
+        <button class="btn btn-brand" @click="openCreateOrder">
+          <i class="bi bi-plus-lg me-1"></i>新增訂單
+        </button>
         <!-- 匯出下拉選單 -->
-        <div class="export-dropdown-wrap" style="position: relative;">
+        <div class="export-dropdown-wrap" style="position: relative">
           <button class="btn btn-outline-brand" @click="showExportMenu = !showExportMenu">
             <i class="bi bi-download me-1"></i>
-            <i class="bi bi-caret-down-fill" style="font-size: 0.6rem;"></i>
+            <i class="bi bi-caret-down-fill" style="font-size: 0.6rem"></i>
           </button>
           <transition name="fade">
             <div v-if="showExportMenu" class="export-dropdown-menu">
               <button class="export-menu-item" @click="handleExport('EXCEL')">
-                <i class="bi bi-file-earmark-excel me-2" style="color: #10B981;"></i>匯出 Excel (.xlsx)
+                <i class="bi bi-file-earmark-excel me-2" style="color: #10b981"></i>匯出 Excel
+                (.xlsx)
               </button>
               <button class="export-menu-item" @click="handleExport('PDF')">
-                <i class="bi bi-file-earmark-pdf me-2" style="color: #EF4444;"></i>匯出 PDF (.pdf)
+                <i class="bi bi-file-earmark-pdf me-2" style="color: #ef4444"></i>匯出 PDF (.pdf)
               </button>
               <button class="export-menu-item" @click="handleExport('JSON')">
-                <i class="bi bi-filetype-json me-2" style="color: #3B82F6;"></i>匯出 JSON (.json)
+                <i class="bi bi-filetype-json me-2" style="color: #3b82f6"></i>匯出 JSON (.json)
               </button>
             </div>
           </transition>
@@ -664,41 +693,71 @@ onUnmounted(() => {
       <div class="card-body p-3 d-flex flex-column flex-md-row align-items-center gap-4">
         <!-- 狀態長條比例圖 (篩選器) -->
         <div class="flex-grow-1 w-100">
-          <div class="d-flex justify-content-between align-items-end mb-2" style="color: #64748B;">
-            <span class="fw-bold" style="font-size: 0.85rem;"><i class="bi bi-funnel me-1"></i>訂單狀態分佈 (點擊篩選)</span>
-            <div class="d-flex align-items-center" style="font-size: 0.95rem;">
-              <span v-if="filterStatus" class="badge bg-secondary me-3 px-3 py-2 shadow-sm"
-                style="cursor:pointer; font-size: 0.85rem;" @click="onFilterChange('')"><i
-                  class="bi bi-x-circle me-1"></i>清除篩選</span>
-              <span class="fw-bold text-dark" style="letter-spacing: 0.5px;">總計 {{ Number(statusCounts[''] ||
-                0).toLocaleString() }} 筆</span>
+          <div class="d-flex justify-content-between align-items-end mb-2" style="color: #64748b">
+            <span class="fw-bold" style="font-size: 0.85rem"
+              ><i class="bi bi-funnel me-1"></i>訂單狀態分佈 (點擊篩選)</span
+            >
+            <div class="d-flex align-items-center" style="font-size: 0.95rem">
+              <span
+                v-if="filterStatus"
+                class="badge bg-secondary me-3 px-3 py-2 shadow-sm"
+                style="cursor: pointer; font-size: 0.85rem"
+                @click="onFilterChange('')"
+                ><i class="bi bi-x-circle me-1"></i>清除篩選</span
+              >
+              <span class="fw-bold text-dark" style="letter-spacing: 0.5px"
+                >總計 {{ Number(statusCounts[''] || 0).toLocaleString() }} 筆</span
+              >
             </div>
           </div>
           <div class="status-stacked-bar">
             <!-- 我們只顯示有數量的狀態 -->
             <template v-for="tab in statusTabs.slice(1)" :key="tab.key">
-              <div v-if="statusCounts[tab.key] > 0" class="stacked-segment"
-                :class="{ 'is-dimmed': filterStatus && filterStatus !== tab.key, 'is-active': filterStatus === tab.key }"
+              <div
+                v-if="statusCounts[tab.key] > 0"
+                class="stacked-segment"
+                :class="{
+                  'is-dimmed': filterStatus && filterStatus !== tab.key,
+                  'is-active': filterStatus === tab.key,
+                }"
                 :style="{
-                  width: (statusCounts[tab.key] / statusCounts[''] * 100) + '%',
+                  width: (statusCounts[tab.key] / statusCounts['']) * 100 + '%',
                   backgroundColor: statusMap[tab.key]?.color,
-                  color: 'white'
-                }" @click="onFilterChange(tab.key)" :title="tab.label + ': ' + statusCounts[tab.key] + '筆'">
-                <span class="segment-label" v-if="(statusCounts[tab.key] / statusCounts[''] * 100) > 8">
+                  color: 'white',
+                }"
+                @click="onFilterChange(tab.key)"
+                :title="tab.label + ': ' + statusCounts[tab.key] + '筆'"
+              >
+                <span
+                  class="segment-label"
+                  v-if="(statusCounts[tab.key] / statusCounts['']) * 100 > 8"
+                >
                   {{ tab.label }} {{ statusCounts[tab.key] }}
                 </span>
               </div>
             </template>
             <!-- 若完全沒訂單的佔位 -->
-            <div v-if="statusCounts[''] === 0" class="stacked-segment"
-              style="width: 100%; background-color: #E2E8F0; color: #94A3B8;">無資料</div>
+            <div
+              v-if="statusCounts[''] === 0"
+              class="stacked-segment"
+              style="width: 100%; background-color: #e2e8f0; color: #94a3b8"
+            >
+              無資料
+            </div>
           </div>
         </div>
 
         <!-- 搜尋框 -->
-        <div class="input-group" style="width: 100%; max-width: 320px; flex-shrink: 0;">
-          <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-secondary"></i></span>
-          <input v-model="keyword" type="text" class="form-control border-start-0" placeholder="搜尋訂單 (#編號可精確查詢)" />
+        <div class="input-group" style="width: 100%; max-width: 320px; flex-shrink: 0">
+          <span class="input-group-text bg-white border-end-0"
+            ><i class="bi bi-search text-secondary"></i
+          ></span>
+          <input
+            v-model="keyword"
+            type="text"
+            class="form-control border-start-0"
+            placeholder="搜尋訂單 (#編號可精確查詢)"
+          />
         </div>
       </div>
     </div>
@@ -711,28 +770,46 @@ onUnmounted(() => {
           <p class="text-secondary mt-2">載入訂單中...</p>
         </div>
         <div v-else-if="filteredOrders.length === 0" class="text-center py-5">
-          <i class="bi bi-inbox" style="font-size: 3rem; color: #CBD5E1"></i>
-          <p class="text-secondary mt-2">{{ orders.length === 0 ? '尚無任何訂單' : '沒有符合條件的訂單' }}</p>
+          <i class="bi bi-inbox" style="font-size: 3rem; color: #cbd5e1"></i>
+          <p class="text-secondary mt-2">
+            {{ orders.length === 0 ? '尚無任何訂單' : '沒有符合條件的訂單' }}
+          </p>
         </div>
-        <div v-else class="card card-rounded shadow-sm border-0">
+        <div v-else class="card card-rounded shadow-sm border-0 overflow-hidden">
           <!-- 批次操作工具列 -->
           <transition name="batch-bar">
             <div v-if="selectedIds.size > 0" class="batch-toolbar">
               <div class="batch-toolbar-left">
-                <span class="batch-count"><i class="bi bi-check2-square me-1"></i>已選取 <strong>{{ selectedIds.size
-                    }}</strong> 筆訂單</span>
+                <span class="batch-count"
+                  ><i class="bi bi-check2-square me-1"></i>已選取
+                  <strong>{{ selectedIds.size }}</strong> 筆訂單</span
+                >
               </div>
               <div class="batch-toolbar-actions">
-                <div class="batch-status-wrap" style="position: relative;">
-                  <button class="batch-btn batch-btn-status" @click.stop="showBatchStatusMenu = !showBatchStatusMenu">
-                    <i class="bi bi-arrow-repeat me-1"></i>批次變更狀態 <i class="bi bi-caret-down-fill"
-                      style="font-size: 0.55rem; margin-left: 2px;"></i>
+                <div class="batch-status-wrap" style="position: relative">
+                  <button
+                    class="batch-btn batch-btn-status"
+                    @click.stop="showBatchStatusMenu = !showBatchStatusMenu"
+                  >
+                    <i class="bi bi-arrow-repeat me-1"></i>批次變更狀態
+                    <i
+                      class="bi bi-caret-down-fill"
+                      style="font-size: 0.55rem; margin-left: 2px"
+                    ></i>
                   </button>
                   <div v-if="showBatchStatusMenu" class="batch-status-menu">
-                    <button v-for="s in ['UNPAID', 'PAID', 'SHIPPED', 'COMPLETED', 'CANCELLED']" :key="s"
-                      class="batch-status-item" @click="batchChangeStatus(s)">
-                      <i :class="['bi', statusMap[s]?.icon]" class="me-1" :style="{ color: statusMap[s]?.color }"></i>{{
-                      statusMap[s]?.label }}
+                    <button
+                      v-for="s in ['UNPAID', 'PAID', 'SHIPPED', 'COMPLETED', 'CANCELLED']"
+                      :key="s"
+                      class="batch-status-item"
+                      @click="batchChangeStatus(s)"
+                    >
+                      <i
+                        :class="['bi', statusMap[s]?.icon]"
+                        class="me-1"
+                        :style="{ color: statusMap[s]?.color }"
+                      ></i
+                      >{{ statusMap[s]?.label }}
                     </button>
                   </div>
                 </div>
@@ -751,12 +828,17 @@ onUnmounted(() => {
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
               <thead>
-                <tr style="background: #F8FAFC">
-                  <th style="width: 4%; text-align: center; padding-left: 0.75rem;"><input type="checkbox"
-                      class="form-check-input table-check" :checked="isAllSelected" @change="toggleSelectAll"
-                      @click.stop />
+                <tr>
+                  <th style="width: 4%; text-align: center; padding-left: 0.75rem">
+                    <input
+                      type="checkbox"
+                      class="form-check-input table-check"
+                      :checked="isAllSelected"
+                      @change="toggleSelectAll"
+                      @click.stop
+                    />
                   </th>
-                  <th style="width: 9%">訂單編號</th>
+                  <th style="width: 9%">編號</th>
                   <th style="width: 20%">會員</th>
                   <th style="width: 21%">訂購日期</th>
                   <th style="width: 14%" class="text-end">金額</th>
@@ -765,31 +847,63 @@ onUnmounted(() => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="order in pagedOrders" :key="order.orderId" class="c-order-row"
-                  :class="{ 'c-selected': selectedOrder?.orderId === order.orderId }" @click="selectOrder(order)"
-                  style="cursor: pointer">
-                  <td style="text-align: center; padding-left: 0.75rem;" @click.stop><input type="checkbox"
-                      class="form-check-input table-check" :checked="selectedIds.has(order.orderId)"
-                      @change="toggleSelect(order.orderId)" /></td>
-                  <td><span class="fw-bold" style="color: var(--brand-dark)">#{{ order.orderId }}</span></td>
+                <tr
+                  v-for="order in pagedOrders"
+                  :key="order.orderId"
+                  class="c-order-row"
+                  :class="{ 'c-selected': selectedOrder?.orderId === order.orderId }"
+                  @click="selectOrder(order)"
+                  style="cursor: pointer"
+                >
+                  <td style="text-align: center; padding-left: 0.75rem" @click.stop>
+                    <input
+                      type="checkbox"
+                      class="form-check-input table-check"
+                      :checked="selectedIds.has(order.orderId)"
+                      @change="toggleSelect(order.orderId)"
+                    />
+                  </td>
                   <td>
-                    <div class="fw-semibold" style="font-size: 0.85rem">{{ order.member?.fullName || '未知' }}</div>
-                    <div class="text-secondary" style="font-size: 0.72rem">{{ order.member?.phone || '' }}</div>
+                    <span class="fw-bold" style="color: var(--brand-dark)"
+                      >#{{ order.orderId }}</span
+                    >
+                  </td>
+                  <td>
+                    <div class="fw-semibold" style="font-size: 0.85rem">
+                      {{ order.member?.fullName || '未知' }}
+                    </div>
+                    <div class="text-secondary" style="font-size: 0.72rem">
+                      {{ order.member?.phone || '' }}
+                    </div>
                   </td>
                   <td style="font-size: 0.82rem">{{ formatDate(order.orderDate) }}</td>
-                  <td class="text-end"><span class="fw-bold" style="color: var(--brand-teal)">{{
-                    formatPrice(order.totalAmount) }}</span></td>
-                  <td class="text-center"><span class="order-status-badge"
-                      :style="{ backgroundColor: statusMap[order.status]?.bg, color: statusMap[order.status]?.color }"><i
-                        :class="['bi', statusMap[order.status]?.icon]" class="me-1"></i>{{
-                          statusMap[order.status]?.label
-                      }}</span></td>
+                  <td class="text-end">
+                    <span class="fw-bold" style="color: var(--brand-teal)">{{
+                      formatPrice(order.totalAmount)
+                    }}</span>
+                  </td>
+                  <td class="text-center">
+                    <span
+                      class="badge"
+                      :class="statusMap[order.status]?.badgeClass || 'badge-default'"
+                      ><i :class="['bi', statusMap[order.status]?.icon]" class="me-1"></i
+                      >{{ statusMap[order.status]?.label }}</span
+                    >
+                  </td>
                   <td class="text-center" @click.stop>
                     <div class="d-flex gap-1 justify-content-center">
-                      <button class="btn btn-sm action-btn action-btn-edit" @click="openEdit(order)"><i
-                          class="bi bi-pencil"></i></button>
-                      <button class="btn btn-sm action-btn action-btn-delete" @click="confirmDelete(order)"><i
-                          class="bi bi-trash3"></i></button>
+                      <button
+                        class="btn btn-sm action-btn action-btn-edit"
+                        @click="openEdit(order)"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm action-btn action-btn-delete"
+                        @click="confirmDelete(order)"
+                      >
+                        <i class="bi bi-trash3"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -799,25 +913,39 @@ onUnmounted(() => {
           <!-- 頁面資訊 + 分頁 -->
           <div class="table-footer">
             <div class="table-footer-left">
-              <span v-if="selectedIds.size > 0" class="selected-count"><i class="bi bi-check2-square me-1"></i>已選 {{
-                selectedIds.size }} 筆</span>
-              <span>共 <strong>{{ filteredOrders.length }}</strong> 筆訂單</span>
+              <span v-if="selectedIds.size > 0" class="selected-count"
+                ><i class="bi bi-check2-square me-1"></i>已選 {{ selectedIds.size }} 筆</span
+              >
+              <span
+                >共 <strong>{{ filteredOrders.length }}</strong> 筆訂單</span
+              >
             </div>
             <nav v-if="totalPages > 1" class="table-footer-center">
               <ul class="pagination pagination-custom mb-0">
-                <li class="page-item" :class="{ disabled: currentPage === 1 }"><button class="page-link"
-                    @click="goToPage(currentPage - 1)"><i class="bi bi-chevron-left"></i></button></li>
-                <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                  <button class="page-link" @click="goToPage(currentPage - 1)">
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                </li>
+                <li
+                  v-for="page in totalPages"
+                  :key="page"
+                  class="page-item"
+                  :class="{ active: currentPage === page }"
+                >
                   <button class="page-link" @click="goToPage(page)">{{ page }}</button>
                 </li>
-                <li class="page-item" :class="{ disabled: currentPage === totalPages }"><button class="page-link"
-                    @click="goToPage(currentPage + 1)"><i class="bi bi-chevron-right"></i></button></li>
+                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                  <button class="page-link" @click="goToPage(currentPage + 1)">
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </li>
               </ul>
             </nav>
             <div class="table-footer-right">
-              顯示第 <strong>{{ (currentPage - 1) * pageSize + 1 }}</strong>–<strong>{{ Math.min(currentPage * pageSize,
-                filteredOrders.length) }}</strong> 筆，第 <strong>{{ currentPage }}</strong> / <strong>{{ totalPages
-                }}</strong> 頁
+              顯示第 <strong>{{ (currentPage - 1) * pageSize + 1 }}</strong
+              >–<strong>{{ Math.min(currentPage * pageSize, filteredOrders.length) }}</strong>
+              筆，第 <strong>{{ currentPage }}</strong> / <strong>{{ totalPages }}</strong> 頁
             </div>
           </div>
         </div>
@@ -828,29 +956,57 @@ onUnmounted(() => {
           <div class="c-detail-inner">
             <div class="c-detail-header d-flex align-items-center">
               <div class="flex-grow-1">
-                <h5 class="fw-bold mb-1" style="color: var(--brand-dark); font-size: 1.1rem"><i
-                    class="bi bi-receipt me-2" style="color: var(--brand-sky)"></i>#{{ selectedOrder.orderId }}</h5>
-                <span class="order-status-badge"
-                  :style="{ backgroundColor: statusMap[selectedOrder.status]?.bg, color: statusMap[selectedOrder.status]?.color }"><i
-                    :class="['bi', statusMap[selectedOrder.status]?.icon]" class="me-1"></i>{{
-                      statusMap[selectedOrder.status]?.label }}</span>
+                <h5 class="fw-bold mb-1" style="color: var(--brand-dark); font-size: 1.1rem">
+                  <i class="bi bi-receipt me-2" style="color: var(--brand-sky)"></i>#{{
+                    selectedOrder.orderId
+                  }}
+                </h5>
+                <span
+                  class="order-status-badge"
+                  :style="{
+                    backgroundColor: statusMap[selectedOrder.status]?.bg,
+                    color: statusMap[selectedOrder.status]?.color,
+                  }"
+                  ><i :class="['bi', statusMap[selectedOrder.status]?.icon]" class="me-1"></i
+                  >{{ statusMap[selectedOrder.status]?.label }}</span
+                >
               </div>
               <div class="text-end me-3">
-                <div class="text-secondary mb-1" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">
+                <div
+                  class="text-secondary mb-1"
+                  style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px"
+                >
                   訂單總額
                 </div>
-                <div class="fw-bold" style="color: var(--brand-teal); font-size: 1.25rem; line-height: 1;">{{
-                  formatPrice(selectedOrder.totalAmount) }}</div>
+                <div
+                  class="fw-bold"
+                  style="color: var(--brand-teal); font-size: 1.25rem; line-height: 1"
+                >
+                  {{ formatPrice(selectedOrder.totalAmount) }}
+                </div>
               </div>
-              <button class="btn btn-sm btn-outline-secondary" @click="closeDetail"
-                style="border-radius: 50%; width: 30px; height: 30px; padding: 0"><i class="bi bi-x-lg"
-                  style="font-size: 0.7rem"></i></button>
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                @click="closeDetail"
+                style="border-radius: 50%; width: 30px; height: 30px; padding: 0"
+              >
+                <i class="bi bi-x-lg" style="font-size: 0.7rem"></i>
+              </button>
             </div>
             <div class="c-detail-tabs">
               <button
-                v-for="t in [{ key: 'info', icon: 'bi-info-circle', label: '資訊' }, { key: 'items', icon: 'bi-box-seam', label: '明細' }, { key: 'notes', icon: 'bi-sticky', label: '備註' }]"
-                :key="t.key" class="c-tab-btn" :class="{ active: activeTab === t.key }" @click="activeTab = t.key"><i
-                  :class="['bi', t.icon]" class="me-1"></i>{{ t.label }}</button>
+                v-for="t in [
+                  { key: 'info', icon: 'bi-info-circle', label: '資訊' },
+                  { key: 'items', icon: 'bi-box-seam', label: '明細' },
+                  { key: 'notes', icon: 'bi-sticky', label: '備註' },
+                ]"
+                :key="t.key"
+                class="c-tab-btn"
+                :class="{ active: activeTab === t.key }"
+                @click="activeTab = t.key"
+              >
+                <i :class="['bi', t.icon]" class="me-1"></i>{{ t.label }}
+              </button>
             </div>
             <div class="c-detail-body">
               <div v-if="activeTab === 'info'" class="c-tab-content">
@@ -859,24 +1015,31 @@ onUnmounted(() => {
                     <div class="col-12 border-bottom pb-2">
                       <div class="info-label"><i class="bi bi-person me-1"></i>訂購會員</div>
                       <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="fw-bold" style="font-size: 0.95rem; color: var(--brand-dark);">{{
-                          selectedOrder.member?.fullName || '未知' }}</span>
-                        <span class="badge bg-light text-secondary border">{{ selectedOrder.member?.phone || '-'
-                          }}</span>
+                        <span
+                          class="fw-bold"
+                          style="font-size: 0.95rem; color: var(--brand-dark)"
+                          >{{ selectedOrder.member?.fullName || '未知' }}</span
+                        >
+                        <span class="badge bg-light text-secondary border">{{
+                          selectedOrder.member?.phone || '-'
+                        }}</span>
                       </div>
-                      <div class="info-sub text-muted" style="font-size: 0.75rem;"><i class="bi bi-envelope me-1"></i>{{
-                        selectedOrder.member?.email || '-' }}</div>
+                      <div class="info-sub text-muted" style="font-size: 0.75rem">
+                        <i class="bi bi-envelope me-1"></i>{{ selectedOrder.member?.email || '-' }}
+                      </div>
                     </div>
                     <div class="col-6">
                       <div class="info-label"><i class="bi bi-calendar3 me-1"></i>訂購日期</div>
-                      <div class="info-value" style="font-size: 0.85rem;">{{ formatDate(selectedOrder.orderDate) }}
+                      <div class="info-value" style="font-size: 0.85rem">
+                        {{ formatDate(selectedOrder.orderDate) }}
                       </div>
                     </div>
                     <div class="col-6">
                       <div class="info-label"><i class="bi bi-credit-card me-1"></i>付款方式</div>
-                      <div class="info-value" style="font-size: 0.85rem;">
-                        <span class="badge" style="background: #F1F5F9; color: #475569;">{{
-                          paymentMap[selectedOrder.paymentType] || '未設定' }}</span>
+                      <div class="info-value" style="font-size: 0.85rem">
+                        <span class="badge" style="background: #f1f5f9; color: #475569">{{
+                          paymentMap[selectedOrder.paymentType] || '未設定'
+                        }}</span>
                       </div>
                     </div>
                   </div>
@@ -887,92 +1050,215 @@ onUnmounted(() => {
                   <div class="progress-tracker">
                     <div class="progress-lines-wrap">
                       <div class="progress-line"></div>
-                      <div class="progress-line-fill"
-                        :style="{ width: getProgressWidth(selectedOrder.status), backgroundColor: 'var(--brand-sky)' }">
-                      </div>
+                      <div
+                        class="progress-line-fill"
+                        :style="{
+                          width: getProgressWidth(selectedOrder.status),
+                          backgroundColor: 'var(--brand-sky)',
+                        }"
+                      ></div>
                     </div>
 
-                    <div v-for="(step, index) in ['UNPAID', 'PAID', 'SHIPPED', 'COMPLETED']" :key="step"
+                    <div
+                      v-for="(step, index) in ['UNPAID', 'PAID', 'SHIPPED', 'COMPLETED']"
+                      :key="step"
                       class="progress-step"
-                      :class="{ 'active': isStepActive(selectedOrder.status, step), 'current': selectedOrder.status === step && step !== 'COMPLETED' }">
-                      <div class="step-circle"
-                        :style="isStepActive(selectedOrder.status, step) ? { borderColor: 'var(--brand-sky)', backgroundColor: (selectedOrder.status === step && step !== 'COMPLETED') ? 'white' : 'var(--brand-sky)' } : {}">
-                        <i v-if="selectedOrder.status === step && step !== 'COMPLETED'"
+                      :class="{
+                        active: isStepActive(selectedOrder.status, step),
+                        current: selectedOrder.status === step && step !== 'COMPLETED',
+                      }"
+                    >
+                      <div
+                        class="step-circle"
+                        :style="
+                          isStepActive(selectedOrder.status, step)
+                            ? {
+                                borderColor: 'var(--brand-sky)',
+                                backgroundColor:
+                                  selectedOrder.status === step && step !== 'COMPLETED'
+                                    ? 'white'
+                                    : 'var(--brand-sky)',
+                              }
+                            : {}
+                        "
+                      >
+                        <i
+                          v-if="selectedOrder.status === step && step !== 'COMPLETED'"
                           :class="['bi', statusMap[step]?.icon]"
-                          :style="{ color: 'var(--brand-sky)', fontSize: '0.95rem' }"></i>
-                        <i v-else-if="isStepActive(selectedOrder.status, step)" class="bi bi-check"
-                          style="color: white; font-size: 1.2rem;"></i>
+                          :style="{ color: 'var(--brand-sky)', fontSize: '0.95rem' }"
+                        ></i>
+                        <i
+                          v-else-if="isStepActive(selectedOrder.status, step)"
+                          class="bi bi-check"
+                          style="color: white; font-size: 1.2rem"
+                        ></i>
                       </div>
-                      <div class="step-label"
-                        :style="(selectedOrder.status === step && step !== 'COMPLETED') ? { color: 'var(--brand-sky)', fontWeight: '700' } : {}">
+                      <div
+                        class="step-label"
+                        :style="
+                          selectedOrder.status === step && step !== 'COMPLETED'
+                            ? { color: 'var(--brand-sky)', fontWeight: '700' }
+                            : {}
+                        "
+                      >
                         {{ statusMap[step]?.label }}
                       </div>
-                      <div class="step-time"
-                        v-if="isStepActive(selectedOrder.status, step) && getStepTime(selectedOrder, step)"
-                        :style="(selectedOrder.status === step && step !== 'COMPLETED') ? { color: 'var(--brand-sky)', fontWeight: '700' } : {}">
+                      <div
+                        class="step-time"
+                        v-if="
+                          isStepActive(selectedOrder.status, step) &&
+                          getStepTime(selectedOrder, step)
+                        "
+                        :style="
+                          selectedOrder.status === step && step !== 'COMPLETED'
+                            ? { color: 'var(--brand-sky)', fontWeight: '700' }
+                            : {}
+                        "
+                      >
                         {{ getStepTime(selectedOrder, step) }}
                       </div>
                     </div>
                   </div>
 
                   <!-- 若有可變更的下一步，顯示按鈕 -->
-                  <div v-if="statusFlow[selectedOrder.status]?.length > 0"
-                    class="d-flex justify-content-center gap-2 mt-4 pt-3" style="border-top: 1px dashed #E2E8F0;">
-                    <span class="text-secondary" style="font-size: 0.8rem; line-height: 30px;">手動更新進度：</span>
-                    <button v-for="next in statusFlow[selectedOrder.status]" :key="next" class="btn btn-sm fw-bold"
-                      style="font-size: 0.85rem; padding: 0.35rem 1rem; border-radius: 8px; transition: all 0.2s;"
-                      :style="next === 'CANCELLED' ? { color: statusMap[next]?.color, border: '1px solid ' + statusMap[next]?.color, background: 'white' } : { color: 'white', background: statusMap[next]?.color, border: '1px solid ' + statusMap[next]?.color, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }"
-                      @click="changeStatus(selectedOrder, next)" onmouseover="this.style.opacity='0.85'"
-                      onmouseout="this.style.opacity='1'">
-                      <i v-if="next !== 'CANCELLED'" :class="['bi', statusMap[next]?.icon]" class="me-1"></i>
+                  <div
+                    v-if="statusFlow[selectedOrder.status]?.length > 0"
+                    class="d-flex justify-content-center gap-2 mt-4 pt-3"
+                    style="border-top: 1px dashed #e2e8f0"
+                  >
+                    <span class="text-secondary" style="font-size: 0.8rem; line-height: 30px"
+                      >手動更新進度：</span
+                    >
+                    <button
+                      v-for="next in statusFlow[selectedOrder.status]"
+                      :key="next"
+                      class="btn btn-sm fw-bold"
+                      style="
+                        font-size: 0.85rem;
+                        padding: 0.35rem 1rem;
+                        border-radius: 8px;
+                        transition: all 0.2s;
+                      "
+                      :style="
+                        next === 'CANCELLED'
+                          ? {
+                              color: statusMap[next]?.color,
+                              border: '1px solid ' + statusMap[next]?.color,
+                              background: 'white',
+                            }
+                          : {
+                              color: 'white',
+                              background: statusMap[next]?.color,
+                              border: '1px solid ' + statusMap[next]?.color,
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                            }
+                      "
+                      @click="changeStatus(selectedOrder, next)"
+                      onmouseover="this.style.opacity = '0.85'"
+                      onmouseout="this.style.opacity = '1'"
+                    >
+                      <i
+                        v-if="next !== 'CANCELLED'"
+                        :class="['bi', statusMap[next]?.icon]"
+                        class="me-1"
+                      ></i>
                       <i v-else class="bi bi-x-lg me-1"></i>
                       {{ statusMap[next]?.label }}
                     </button>
                   </div>
                   <!-- 訂單取消提示 -->
-                  <div v-if="selectedOrder.status === 'CANCELLED'" class="text-center mt-3 text-danger fw-bold"
-                    style="font-size: 0.9rem;">
+                  <div
+                    v-if="selectedOrder.status === 'CANCELLED'"
+                    class="text-center mt-3 text-danger fw-bold"
+                    style="font-size: 0.9rem"
+                  >
                     <i class="bi bi-x-circle me-1"></i>此訂單已取消
                   </div>
                 </div>
               </div>
               <div v-if="activeTab === 'items'" class="c-tab-content">
                 <div v-if="loadingItems" class="text-center py-4">
-                  <div class="spinner-border spinner-border-sm" style="color: var(--brand-sky)"></div>
+                  <div
+                    class="spinner-border spinner-border-sm"
+                    style="color: var(--brand-sky)"
+                  ></div>
                 </div>
-                <div v-else-if="orderItems.length === 0" class="text-center py-4 text-secondary"
-                  style="font-size: 0.85rem">
-                  尚無明細</div>
+                <div
+                  v-else-if="orderItems.length === 0"
+                  class="text-center py-4 text-secondary"
+                  style="font-size: 0.85rem"
+                >
+                  尚無明細
+                </div>
                 <div v-else>
                   <div v-for="item in orderItems" :key="item.itemId" class="c-item-row">
                     <div class="d-flex align-items-center gap-3">
-                      <img v-if="item.product?.imageUrl"
-                        :src="item.product.imageUrl.startsWith('/') || item.product.imageUrl.startsWith('http') ? item.product.imageUrl : '/' + item.product.imageUrl"
+                      <img
+                        v-if="item.product?.imageUrl"
+                        :src="
+                          item.product.imageUrl.startsWith('/') ||
+                          item.product.imageUrl.startsWith('http')
+                            ? item.product.imageUrl
+                            : '/' + item.product.imageUrl
+                        "
                         class="rounded-3"
-                        style="width: 80px; height: 80px; object-fit: scale-down; background: #fff; border: 1.5px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); flex-shrink: 0;" />
-                      <div v-else class="rounded-3 d-flex align-items-center justify-content-center"
-                        style="width: 80px; height: 80px; background: #F1F5F9; border: 1.5px solid #E2E8F0; flex-shrink: 0;"><i
-                          class="bi bi-box-seam" style="color: #CBD5E1; font-size: 1.6rem"></i></div>
-                      <div class="flex-grow-1">
-                        <div class="fw-semibold" style="font-size: 0.9rem; color: var(--brand-dark); line-height: 1.4;">
-                          {{
-                            item.product?.productName || '未知商品' }}</div>
-                        <div class="text-secondary mt-1" style="font-size: 0.78rem">單價 {{ formatPrice(item.unitPrice) }}
-                          ×
-                          {{ item.quantity }} 件</div>
+                        style="
+                          width: 80px;
+                          height: 80px;
+                          object-fit: scale-down;
+                          background: #fff;
+                          border: 1.5px solid #e2e8f0;
+                          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                          flex-shrink: 0;
+                        "
+                      />
+                      <div
+                        v-else
+                        class="rounded-3 d-flex align-items-center justify-content-center"
+                        style="
+                          width: 80px;
+                          height: 80px;
+                          background: #f1f5f9;
+                          border: 1.5px solid #e2e8f0;
+                          flex-shrink: 0;
+                        "
+                      >
+                        <i class="bi bi-box-seam" style="color: #cbd5e1; font-size: 1.6rem"></i>
                       </div>
-                      <div class="fw-bold text-end"
-                        style="color: var(--brand-teal); font-size: 1rem; white-space: nowrap;">
-                        {{ formatPrice(item.subtotal) }}</div>
+                      <div class="flex-grow-1">
+                        <div
+                          class="fw-semibold"
+                          style="font-size: 0.9rem; color: var(--brand-dark); line-height: 1.4"
+                        >
+                          {{ item.product?.productName || '未知商品' }}
+                        </div>
+                        <div class="text-secondary mt-1" style="font-size: 0.78rem">
+                          單價 {{ formatPrice(item.unitPrice) }}
+                          ×
+                          {{ item.quantity }} 件
+                        </div>
+                      </div>
+                      <div
+                        class="fw-bold text-end"
+                        style="color: var(--brand-teal); font-size: 1rem; white-space: nowrap"
+                      >
+                        {{ formatPrice(item.subtotal) }}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
               <div v-if="activeTab === 'notes'" class="c-tab-content">
-                <div v-if="selectedOrder.note" class="p-3 rounded-3"
-                  style="background: #FFFBEB; font-size: 0.85rem; line-height: 1.8"><i class="bi bi-sticky me-1"
-                    style="color: #F59E0B"></i>{{ selectedOrder.note }}</div>
-                <div v-else class="text-center text-secondary py-4" style="font-size: 0.85rem">此訂單無備註</div>
+                <div
+                  v-if="selectedOrder.note"
+                  class="p-3 rounded-3"
+                  style="background: #fffbeb; font-size: 0.85rem; line-height: 1.8"
+                >
+                  <i class="bi bi-sticky me-1" style="color: #f59e0b"></i>{{ selectedOrder.note }}
+                </div>
+                <div v-else class="text-center text-secondary py-4" style="font-size: 0.85rem">
+                  此訂單無備註
+                </div>
               </div>
             </div>
           </div>
@@ -995,7 +1281,9 @@ onUnmounted(() => {
             <div class="col-md-6">
               <label class="form-label small fw-semibold">訂單狀態</label>
               <select v-model="editForm.status" class="form-select">
-                <option v-for="[val, info] in statusOptions" :key="val" :value="val">{{ info.label }}</option>
+                <option v-for="[val, info] in statusOptions" :key="val" :value="val">
+                  {{ info.label }}
+                </option>
               </select>
             </div>
             <div class="col-md-6">
@@ -1010,7 +1298,12 @@ onUnmounted(() => {
             </div>
             <div class="col-12">
               <label class="form-label small fw-semibold">備註</label>
-              <textarea v-model="editForm.note" class="form-control" rows="3" placeholder="訂單備註..."></textarea>
+              <textarea
+                v-model="editForm.note"
+                class="form-control"
+                rows="3"
+                placeholder="訂單備註..."
+              ></textarea>
             </div>
           </div>
         </div>
@@ -1025,13 +1318,21 @@ onUnmounted(() => {
     </div>
 
     <!-- ====== 刪除確認 ====== -->
-    <ConfirmDialog :visible="showConfirm" title="確認刪除"
-      :message="`確定要刪除訂單 #${deleteTarget?.orderId} 嗎？訂單明細也會一併刪除，此操作無法復原。`" @confirm="handleDelete"
-      @cancel="showConfirm = false" />
+    <ConfirmDialog
+      :visible="showConfirm"
+      title="確認刪除"
+      :message="`確定要刪除訂單 #${deleteTarget?.orderId} 嗎？訂單明細也會一併刪除，此操作無法復原。`"
+      @confirm="handleDelete"
+      @cancel="showConfirm = false"
+    />
     <!-- ====== 批次刪除確認 ====== -->
-    <ConfirmDialog :visible="showBatchDeleteConfirm" title="批次刪除確認"
-      :message="`確定要刪除已勾選的 ${selectedIds.size} 筆訂單嗎？訂單明細也會一併刪除，此操作無法復原。`" @confirm="handleBatchDelete"
-      @cancel="showBatchDeleteConfirm = false" />
+    <ConfirmDialog
+      :visible="showBatchDeleteConfirm"
+      title="批次刪除確認"
+      :message="`確定要刪除已勾選的 ${selectedIds.size} 筆訂單嗎？訂單明細也會一併刪除，此操作無法復原。`"
+      @confirm="handleBatchDelete"
+      @cancel="showBatchDeleteConfirm = false"
+    />
 
     <!-- ====== 新增訂單 Modal ====== -->
     <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
@@ -1046,14 +1347,22 @@ onUnmounted(() => {
         <div class="modal-body-custom">
           <!-- 會員搜尋 -->
           <div class="mb-3">
-            <label class="form-label small fw-semibold">會員 <span class="text-danger">*</span></label>
+            <label class="form-label small fw-semibold"
+              >會員 <span class="text-danger">*</span></label
+            >
             <div v-if="selectedMember" class="selected-member-card">
               <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-person-check-fill" style="color: var(--brand-teal); font-size: 1.2rem"></i>
+                <i
+                  class="bi bi-person-check-fill"
+                  style="color: var(--brand-teal); font-size: 1.2rem"
+                ></i>
                 <div>
-                  <div class="fw-semibold">{{ selectedMember.fullName || selectedMember.username }}</div>
-                  <div class="text-secondary" style="font-size: 0.75rem">{{ selectedMember.phone || '' }} · ID: {{
-                    selectedMember.memberId }}</div>
+                  <div class="fw-semibold">
+                    {{ selectedMember.fullName || selectedMember.username }}
+                  </div>
+                  <div class="text-secondary" style="font-size: 0.75rem">
+                    {{ selectedMember.phone || '' }} · ID: {{ selectedMember.memberId }}
+                  </div>
                 </div>
               </div>
               <button class="btn btn-sm btn-outline-secondary" @click="clearMember">
@@ -1062,26 +1371,44 @@ onUnmounted(() => {
             </div>
             <div v-else class="position-relative">
               <div class="input-group">
-                <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
-                <input v-model="memberKeyword" type="text" class="form-control" placeholder="輸入姓名或手機搜尋會員..."
-                  @input="onMemberInput" @focus="memberKeyword.length > 0 && (showMemberDropdown = true)"
-                  autocomplete="off" />
+                <span class="input-group-text bg-white"
+                  ><i class="bi bi-search text-secondary"></i
+                ></span>
+                <input
+                  v-model="memberKeyword"
+                  type="text"
+                  class="form-control"
+                  placeholder="輸入姓名或手機搜尋會員..."
+                  @input="onMemberInput"
+                  @focus="memberKeyword.length > 0 && (showMemberDropdown = true)"
+                  autocomplete="off"
+                />
                 <span v-if="searchingMember" class="input-group-text bg-white">
                   <div class="spinner-border spinner-border-sm text-secondary"></div>
                 </span>
               </div>
               <!-- 搜尋結果下拉 -->
               <div v-if="showMemberDropdown && memberResults.length > 0" class="member-dropdown">
-                <button v-for="m in memberResults" :key="m.memberId" class="member-dropdown-item"
-                  @click="pickMember(m)">
+                <button
+                  v-for="m in memberResults"
+                  :key="m.memberId"
+                  class="member-dropdown-item"
+                  @click="pickMember(m)"
+                >
                   <i class="bi bi-person me-2" style="color: var(--brand-sky)"></i>
                   <span class="fw-semibold">{{ m.fullName || m.username }}</span>
-                  <span class="text-secondary ms-2" style="font-size: 0.75rem">{{ m.phone || '' }}</span>
+                  <span class="text-secondary ms-2" style="font-size: 0.75rem">{{
+                    m.phone || ''
+                  }}</span>
                 </button>
               </div>
-              <div v-else-if="showMemberDropdown && memberKeyword.length > 0 && !searchingMember"
-                class="member-dropdown">
-                <div class="text-center text-secondary py-2" style="font-size: 0.85rem">找不到符合的會員</div>
+              <div
+                v-else-if="showMemberDropdown && memberKeyword.length > 0 && !searchingMember"
+                class="member-dropdown"
+              >
+                <div class="text-center text-secondary py-2" style="font-size: 0.85rem">
+                  找不到符合的會員
+                </div>
               </div>
             </div>
           </div>
@@ -1099,7 +1426,12 @@ onUnmounted(() => {
             </div>
             <div class="col-md-6">
               <label class="form-label small fw-semibold">備註</label>
-              <input v-model="createForm.note" type="text" class="form-control" placeholder="選填" />
+              <input
+                v-model="createForm.note"
+                type="text"
+                class="form-control"
+                placeholder="選填"
+              />
             </div>
           </div>
 
@@ -1113,14 +1445,21 @@ onUnmounted(() => {
             <div class="col">
               <select v-model="selectedProductId" class="form-select form-select-sm">
                 <option value="">請選擇商品</option>
-                <option v-for="p in products" :key="p.productId" :value="p.productId">{{ p.productName }} ({{ p.brand
-                  }}) -
-                  NT${{ p.price.toLocaleString() }} [庫存:{{ p.stockQty }}]</option>
+                <option v-for="p in products" :key="p.productId" :value="p.productId">
+                  {{ p.productName }} ({{ p.brand }}) - NT${{ p.price.toLocaleString() }} [庫存:{{
+                    p.stockQty
+                  }}]
+                </option>
               </select>
             </div>
             <div class="col-auto" style="width: 80px">
-              <input v-model.number="selectQty" type="number" class="form-control form-control-sm" min="1"
-                placeholder="數量" />
+              <input
+                v-model.number="selectQty"
+                type="number"
+                class="form-control form-control-sm"
+                min="1"
+                placeholder="數量"
+              />
             </div>
             <div class="col-auto">
               <button class="btn btn-sm btn-success" @click="addToCart">
@@ -1133,7 +1472,7 @@ onUnmounted(() => {
           <div class="cart-table-wrap">
             <table class="table table-sm mb-0">
               <thead>
-                <tr style="background: #F8FAFC; font-size: 0.8rem">
+                <tr style="background: #f8fafc; font-size: 0.8rem">
                   <th>商品</th>
                   <th class="text-center">單價</th>
                   <th class="text-center" style="width: 120px">數量</th>
@@ -1143,43 +1482,74 @@ onUnmounted(() => {
               </thead>
               <tbody>
                 <tr v-if="cart.length === 0">
-                  <td colspan="5" class="text-center text-secondary py-3" style="font-size: 0.85rem">
+                  <td
+                    colspan="5"
+                    class="text-center text-secondary py-3"
+                    style="font-size: 0.85rem"
+                  >
                     <i class="bi bi-cart me-1"></i>尚未加入商品
                   </td>
                 </tr>
                 <tr v-for="(item, idx) in cart" :key="item.productId">
                   <td>
                     <div class="d-flex align-items-center gap-2">
-                      <img v-if="item.imageUrl"
-                        :src="item.imageUrl.startsWith('/') || item.imageUrl.startsWith('http') ? item.imageUrl : '/' + item.imageUrl"
-                        class="rounded" style="width: 32px; height: 32px; object-fit: cover" />
+                      <img
+                        v-if="item.imageUrl"
+                        :src="
+                          item.imageUrl.startsWith('/') || item.imageUrl.startsWith('http')
+                            ? item.imageUrl
+                            : '/' + item.imageUrl
+                        "
+                        class="rounded"
+                        style="width: 32px; height: 32px; object-fit: cover"
+                      />
                       <span class="fw-semibold" style="font-size: 0.85rem">{{ item.name }}</span>
                     </div>
                   </td>
-                  <td class="text-center" style="font-size: 0.85rem">NT$ {{ item.price.toLocaleString() }}</td>
+                  <td class="text-center" style="font-size: 0.85rem">
+                    NT$ {{ item.price.toLocaleString() }}
+                  </td>
                   <td class="text-center">
                     <div class="d-flex align-items-center justify-content-center gap-1">
-                      <button class="btn btn-sm btn-outline-secondary" style="padding: 0 6px; font-size: 0.75rem"
-                        @click="updateCartQty(idx, -1)">−</button>
-                      <span class="fw-bold" style="min-width: 24px; text-align: center">{{ item.quantity }}</span>
-                      <button class="btn btn-sm btn-outline-secondary" style="padding: 0 6px; font-size: 0.75rem"
-                        @click="updateCartQty(idx, 1)">+</button>
+                      <button
+                        class="btn btn-sm btn-outline-secondary"
+                        style="padding: 0 6px; font-size: 0.75rem"
+                        @click="updateCartQty(idx, -1)"
+                      >
+                        −
+                      </button>
+                      <span class="fw-bold" style="min-width: 24px; text-align: center">{{
+                        item.quantity
+                      }}</span>
+                      <button
+                        class="btn btn-sm btn-outline-secondary"
+                        style="padding: 0 6px; font-size: 0.75rem"
+                        @click="updateCartQty(idx, 1)"
+                      >
+                        +
+                      </button>
                     </div>
                   </td>
-                  <td class="text-end fw-bold" style="font-size: 0.85rem; color: var(--brand-teal)">NT$ {{ (item.price *
-                    item.quantity).toLocaleString() }}</td>
+                  <td class="text-end fw-bold" style="font-size: 0.85rem; color: var(--brand-teal)">
+                    NT$ {{ (item.price * item.quantity).toLocaleString() }}
+                  </td>
                   <td class="text-center">
-                    <button class="btn btn-sm text-danger" style="padding: 0 4px" @click="removeFromCart(idx)">
+                    <button
+                      class="btn btn-sm text-danger"
+                      style="padding: 0 4px"
+                      @click="removeFromCart(idx)"
+                    >
                       <i class="bi bi-x-lg" style="font-size: 0.7rem"></i>
                     </button>
                   </td>
                 </tr>
               </tbody>
               <tfoot v-if="cart.length > 0">
-                <tr style="border-top: 2px solid #E2E8F0">
+                <tr style="border-top: 2px solid #e2e8f0">
                   <td colspan="3" class="text-end fw-bold" style="font-size: 0.9rem">訂單合計</td>
-                  <td class="text-end fw-bold" style="font-size: 1.1rem; color: var(--brand-teal)">NT$ {{
-                    cartTotal.toLocaleString() }}</td>
+                  <td class="text-end fw-bold" style="font-size: 1.1rem; color: var(--brand-teal)">
+                    NT$ {{ cartTotal.toLocaleString() }}
+                  </td>
                   <td></td>
                 </tr>
               </tfoot>
@@ -1188,8 +1558,11 @@ onUnmounted(() => {
         </div>
         <div class="modal-footer-custom">
           <button class="btn btn-outline-secondary" @click="showCreateModal = false">取消</button>
-          <button class="btn btn-brand" :disabled="creating || !selectedMember || cart.length === 0"
-            @click="handleCreateOrder">
+          <button
+            class="btn btn-brand"
+            :disabled="creating || !selectedMember || cart.length === 0"
+            @click="handleCreateOrder"
+          >
             <span v-if="creating" class="spinner-border spinner-border-sm me-1"></span>
             {{ creating ? '建立中...' : '送出訂單' }}
           </button>
@@ -1200,20 +1573,70 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* 覆寫圓角 — 與 ProductManage 統一 */
+.card-rounded {
+  border-radius: 0.75rem !important;
+}
+
+/* ===== 表格表頭 ===== */
+.table thead th {
+  background: #1b4767;
+  color: white;
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border: none;
+}
+
+/* ===== 狀態標籤 ===== */
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.badge-unpaid {
+  background: #fef3c7;
+  color: #d97706;
+}
+.badge-paid {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.badge-shipped {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+.badge-cancelled {
+  background: #ffe4e6;
+  color: #e11d48;
+}
+.badge-default {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
 /* ===== 表格 ===== */
 table th {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #64748B;
+  color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.75rem 1rem;
-  border-bottom: 2px solid #F1F5F9;
+  border-bottom: 2px solid #f1f5f9;
 }
 
 table td {
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 /* ===== 訂單列 ===== */
@@ -1222,16 +1645,16 @@ table td {
 }
 
 .order-row:hover {
-  background: #F8FAFC !important;
+  background: #f8fafc !important;
 }
 
 .order-row.expanded {
-  background: #F0F9FF !important;
+  background: #f0f9ff !important;
 }
 
 .expand-icon {
   font-size: 0.75rem;
-  color: #94A3B8;
+  color: #94a3b8;
   transition: transform 0.2s ease;
 }
 
@@ -1255,7 +1678,7 @@ table td {
   font-weight: 600;
   padding: 0.25rem 0.6rem;
   border-radius: 0.375rem;
-  background: #F1F5F9;
+  background: #f1f5f9;
   color: #475569;
 }
 
@@ -1265,9 +1688,9 @@ table td {
   font-size: 0.8rem;
   padding: 0.4rem 0.85rem;
   border-radius: 9999px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
   background: white;
-  color: #64748B;
+  color: #64748b;
   transition: all 0.2s ease;
 }
 
@@ -1298,7 +1721,7 @@ table td {
 
 /* ===== 展開明細 ===== */
 .detail-row td {
-  background: #FAFBFC;
+  background: #fafbfc;
 }
 
 .detail-panel {
@@ -1309,7 +1732,7 @@ table td {
 /* ===== 分頁 ===== */
 .pagination-custom .page-link {
   border: none;
-  color: #64748B;
+  color: #64748b;
   font-weight: 600;
   font-size: 0.85rem;
   padding: 0.5rem 0.85rem;
@@ -1319,7 +1742,7 @@ table td {
 }
 
 .pagination-custom .page-link:hover {
-  background: #F0F9FF;
+  background: #f0f9ff;
   color: var(--brand-sky);
 }
 
@@ -1330,7 +1753,7 @@ table td {
 }
 
 .pagination-custom .disabled .page-link {
-  color: #CBD5E1;
+  color: #cbd5e1;
 }
 
 /* ===== Modal ===== */
@@ -1362,7 +1785,7 @@ table td {
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .modal-body-custom {
@@ -1374,7 +1797,7 @@ table td {
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #F1F5F9;
+  border-top: 1px solid #f1f5f9;
 }
 
 /* ===== 動畫 ===== */
@@ -1423,47 +1846,47 @@ table td {
 }
 
 .action-btn-status {
-  background: #F0F9FF;
-  color: var(--brand-sky, #0EA5E9);
-  border: 1px solid #BAE6FD;
+  background: #f0f9ff;
+  color: var(--brand-sky, #0ea5e9);
+  border: 1px solid #bae6fd;
 }
 
 .action-btn-status:hover:not(:disabled) {
-  background: var(--brand-sky, #0EA5E9);
+  background: var(--brand-sky, #0ea5e9);
   color: white;
-  border-color: var(--brand-sky, #0EA5E9);
+  border-color: var(--brand-sky, #0ea5e9);
 }
 
 .action-btn-status:disabled {
-  background: #F1F5F9;
-  color: #CBD5E1;
-  border-color: #E2E8F0;
+  background: #f1f5f9;
+  color: #cbd5e1;
+  border-color: #e2e8f0;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .action-btn-edit {
-  background: #EEF2FF;
-  color: #6366F1;
-  border: 1px solid #C7D2FE;
+  background: #eef2ff;
+  color: #6366f1;
+  border: 1px solid #c7d2fe;
 }
 
 .action-btn-edit:hover {
-  background: #6366F1;
+  background: #6366f1;
   color: white;
-  border-color: #6366F1;
+  border-color: #6366f1;
 }
 
 .action-btn-delete {
-  background: #FEF2F2;
-  color: #EF4444;
-  border: 1px solid #FECACA;
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
 }
 
 .action-btn-delete:hover {
-  background: #EF4444;
+  background: #ef4444;
   color: white;
-  border-color: #EF4444;
+  border-color: #ef4444;
 }
 
 /* ===== 狀態下拉選單 ===== */
@@ -1480,7 +1903,7 @@ table td {
   background: white;
   border-radius: 0.75rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border: 1px solid #F1F5F9;
+  border: 1px solid #f1f5f9;
   padding: 0.35rem;
   z-index: 100;
   min-width: 120px;
@@ -1502,7 +1925,7 @@ table td {
 }
 
 .status-dropdown-item:hover {
-  background: #F8FAFC;
+  background: #f8fafc;
 }
 
 /* ===== 新增訂單 — 會員搜尋 ===== */
@@ -1511,8 +1934,8 @@ table td {
   align-items: center;
   justify-content: space-between;
   padding: 0.6rem 1rem;
-  background: #ECFDF5;
-  border: 1px solid #A7F3D0;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
   border-radius: 0.75rem;
 }
 
@@ -1523,7 +1946,7 @@ table td {
   right: 0;
   margin-top: 4px;
   background: white;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   max-height: 200px;
@@ -1545,12 +1968,12 @@ table td {
 }
 
 .member-dropdown-item:hover {
-  background: #F0F9FF;
+  background: #f0f9ff;
 }
 
 /* ===== 新增訂單 — 購物車 ===== */
 .cart-table-wrap {
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
   overflow: hidden;
 }
@@ -1581,7 +2004,7 @@ table td {
   background: white;
   border-radius: 1rem;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid #F1F5F9;
+  border: 1px solid #f1f5f9;
   overflow: hidden;
   position: sticky;
   top: 1rem;
@@ -1595,11 +2018,11 @@ table td {
 }
 
 .c-order-row:hover {
-  background: #F0F9FF !important;
+  background: #f0f9ff !important;
 }
 
 .c-order-row.c-selected {
-  background: #E0F2FE !important;
+  background: #e0f2fe !important;
   border-left: 3px solid var(--brand-sky);
 }
 
@@ -1608,15 +2031,15 @@ table td {
   align-items: flex-start;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #F1F5F9;
-  background: linear-gradient(135deg, #FAFBFC 0%, #F0F9FF 100%);
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #fafbfc 0%, #f0f9ff 100%);
 }
 
 .c-detail-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 1px solid #F1F5F9;
-  background: #FAFBFC;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafbfc;
 }
 
 .c-tab-btn {
@@ -1624,7 +2047,7 @@ table td {
   padding: 0.55rem 0.25rem;
   border: none;
   background: none;
-  color: #64748B;
+  color: #64748b;
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
@@ -1654,7 +2077,7 @@ table td {
 
 .c-item-row {
   padding: 0.5rem 0;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .c-item-row:last-child {
@@ -1663,15 +2086,15 @@ table td {
 
 .info-card {
   padding: 0.65rem 0.85rem;
-  background: #FAFBFC;
+  background: #fafbfc;
   border-radius: 0.65rem;
-  border: 1px solid #F1F5F9;
+  border: 1px solid #f1f5f9;
 }
 
 .info-label {
   font-size: 0.68rem;
   font-weight: 600;
-  color: #94A3B8;
+  color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin-bottom: 0.2rem;
@@ -1685,7 +2108,7 @@ table td {
 
 .info-sub {
   font-size: 0.72rem;
-  color: #94A3B8;
+  color: #94a3b8;
   margin-top: 0.1rem;
 }
 
@@ -1730,30 +2153,30 @@ table td {
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
 }
 
 .stat-block {
   padding: 1.2rem 1rem;
-  border-right: 1px solid #F1F5F9;
+  border-right: 1px solid #f1f5f9;
   transition: background 0.2s ease;
 }
 
 .stat-block:hover {
-  background: #F8FAFC;
+  background: #f8fafc;
 }
 
 .stat-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #64748B;
+  color: #64748b;
   margin-bottom: 0.5rem;
 }
 
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1E293B;
+  color: #1e293b;
 }
 
 .text-brand {
@@ -1780,7 +2203,7 @@ table td {
 .progress-line {
   width: 100%;
   height: 100%;
-  background: #E2E8F0;
+  background: #e2e8f0;
   border-radius: 2px;
 }
 
@@ -1809,7 +2232,7 @@ table td {
   height: 24px;
   border-radius: 50%;
   background: white;
-  border: 4px solid #E2E8F0;
+  border: 4px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1840,7 +2263,7 @@ table td {
 
 .step-label {
   font-size: 0.75rem;
-  color: #94A3B8;
+  color: #94a3b8;
   font-weight: 600;
   transition: color 0.3s ease;
 }
@@ -1855,7 +2278,7 @@ table td {
 
 .step-time {
   font-size: 0.7rem;
-  color: #94A3B8;
+  color: #94a3b8;
   margin-top: 0.15rem;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -1869,7 +2292,7 @@ table td {
   overflow: hidden;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  background-color: #F8FAFC;
+  background-color: #f8fafc;
 }
 
 .stacked-segment {
@@ -1879,7 +2302,9 @@ table td {
   height: 100%;
   font-size: 0.7rem;
   font-weight: 600;
-  transition: opacity 0.3s ease, filter 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    filter 0.3s ease;
   white-space: nowrap;
   overflow: hidden;
   border-right: 1px solid rgba(255, 255, 255, 0.3);
@@ -1931,7 +2356,7 @@ table td {
   background: white;
   border-radius: 0.75rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
   padding: 0.4rem 0;
   min-width: 200px;
   z-index: 999;
@@ -1952,7 +2377,7 @@ table td {
 }
 
 .export-menu-item:hover {
-  background: #F1F5F9;
+  background: #f1f5f9;
 }
 
 .fade-enter-active,
@@ -1971,14 +2396,14 @@ table td {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.25rem;
-  border-top: 1px solid #F1F5F9;
-  background: #FAFBFC;
+  border-top: 1px solid #f1f5f9;
+  background: #fafbfc;
   border-radius: 0 0 0.75rem 0.75rem;
 }
 
 .table-footer-left {
   font-size: 0.8rem;
-  color: #64748B;
+  color: #64748b;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -1997,7 +2422,7 @@ table td {
 
 .table-footer-right {
   font-size: 0.8rem;
-  color: #64748B;
+  color: #64748b;
   flex: 1;
   text-align: right;
 }
@@ -2021,7 +2446,7 @@ table td {
   height: 16px;
   cursor: pointer;
   border-radius: 4px;
-  border: 1.5px solid #CBD5E1;
+  border: 1.5px solid #cbd5e1;
   transition: all 0.15s;
 }
 
@@ -2036,7 +2461,7 @@ table td {
   align-items: center;
   justify-content: space-between;
   padding: 0.6rem 1.25rem;
-  background: linear-gradient(135deg, #1E293B, #334155);
+  background: linear-gradient(135deg, #1e293b, #334155);
   border-radius: 0.75rem 0.75rem 0 0;
   gap: 0.75rem;
   flex-wrap: wrap;
@@ -2076,7 +2501,7 @@ table td {
 
 .batch-btn-status {
   background: rgba(14, 165, 233, 0.15);
-  color: #7DD3FC;
+  color: #7dd3fc;
 }
 
 .batch-btn-status:hover {
@@ -2085,7 +2510,7 @@ table td {
 
 .batch-btn-export {
   background: rgba(16, 185, 129, 0.15);
-  color: #6EE7B7;
+  color: #6ee7b7;
 }
 
 .batch-btn-export:hover {
@@ -2094,7 +2519,7 @@ table td {
 
 .batch-btn-delete {
   background: rgba(239, 68, 68, 0.15);
-  color: #FCA5A5;
+  color: #fca5a5;
 }
 
 .batch-btn-delete:hover {
@@ -2103,7 +2528,7 @@ table td {
 
 .batch-btn-clear {
   background: rgba(255, 255, 255, 0.1);
-  color: #94A3B8;
+  color: #94a3b8;
 }
 
 .batch-btn-clear:hover {
@@ -2119,7 +2544,7 @@ table td {
   background: white;
   border-radius: 0.6rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
   padding: 0.3rem 0;
   min-width: 160px;
   z-index: 999;
@@ -2140,7 +2565,7 @@ table td {
 }
 
 .batch-status-item:hover {
-  background: #F1F5F9;
+  background: #f1f5f9;
 }
 
 /* 動畫 */

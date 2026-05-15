@@ -131,9 +131,17 @@ function goToCheckout() {
 }
 
 onUnmounted(() => {
-  // 元件卸載時確保 Bootstrap 殘留的 body scroll lock 被清除
+  // 元件卸載時確保 Bootstrap offcanvas 與殘留的 body scroll lock 被清除
+  const el = document.getElementById('cartOffcanvas')
+  if (el && window.bootstrap) {
+    const instance = window.bootstrap.Offcanvas.getInstance(el)
+    if (instance) instance.dispose()
+  }
+  // 移除殘留的 backdrop
+  document.querySelectorAll('.offcanvas-backdrop').forEach(b => b.remove())
   document.body.style.overflow = ''
   document.body.style.paddingRight = ''
+  document.body.classList.remove('offcanvas-open')
 })
 
 // ===================== 商品詳情 Modal =====================
@@ -157,20 +165,6 @@ function openCartFromDetail() {
 <template>
   <div class="browse-page">
 
-    <!-- ====== Navbar ====== -->
-    <nav class="browse-navbar front-navbar">
-      <span class="navbar-brand text-gradient">
-        <i class="bi bi-feather me-2"></i>羽球商城
-      </span>
-      <button
-        class="cart-btn"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#cartOffcanvas"
-      >
-        <i class="bi bi-cart3"></i>
-        <span v-if="cart.count > 0" class="cart-badge">{{ cart.count }}</span>
-      </button>
-    </nav>
 
     <!-- ====== Hero ====== -->
     <div class="browse-hero">

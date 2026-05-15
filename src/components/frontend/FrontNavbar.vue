@@ -10,10 +10,13 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { memberApi } from '@/api/member'
+import { useCartStore } from '@/stores/cart'
 
 const router = useRouter()
 const route = useRoute()
-const notificationStore = useNotificationStore()
+// TODO: 等通知 store 建立後再啟用
+// const notificationStore = useNotificationStore()
+const cart = useCartStore()
 
 const isLoggedIn = ref(false)
 const memberName = ref('會員')
@@ -35,13 +38,13 @@ function handleClickOutside(e) {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  if (isLoggedIn.value) {
-    notificationStore.connect()
-  }
+  // if (isLoggedIn.value) {
+  //   notificationStore.connect()
+  // }
 })
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
-  notificationStore.disconnect()
+  // notificationStore.disconnect()
 })
 
 // 每次切換路由時重新讀取 localStorage
@@ -50,11 +53,11 @@ function checkLoginState() {
   const wasLoggedIn = isLoggedIn.value
   isLoggedIn.value = !!token
   
-  if (isLoggedIn.value && !wasLoggedIn) {
-    notificationStore.connect()
-  } else if (!isLoggedIn.value && wasLoggedIn) {
-    notificationStore.disconnect()
-  }
+  // if (isLoggedIn.value && !wasLoggedIn) {
+  //   notificationStore.connect()
+  // } else if (!isLoggedIn.value && wasLoggedIn) {
+  //   notificationStore.disconnect()
+  // }
   
   try {
     const info = JSON.parse(localStorage.getItem('memberInfo'))
@@ -85,7 +88,7 @@ async function handleLogout() {
   localStorage.removeItem('memberInfo')
   isLoggedIn.value = false
   showDropdown.value = false
-  notificationStore.disconnect()
+  // notificationStore.disconnect()
   router.push('/login')
 }
 </script>
@@ -132,7 +135,7 @@ async function handleLogout() {
         </ul>
 
         <!-- 右側區塊 -->
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2">
           <!-- 未登入：顯示登入按鈕 -->
           <template v-if="!isLoggedIn">
             <RouterLink to="/login" class="btn btn-brand btn-sm">
@@ -140,40 +143,9 @@ async function handleLogout() {
             </RouterLink>
           </template>
 
-          <!-- 已登入：姓名 + 下拉選單 -->
+          <!-- 已登入：姓名 + 下拉選單 + 購物車 -->
           <template v-else>
-            <!-- 小鈴鐺通知 -->
-            <div class="dropdown me-2">
-              <button class="btn btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                <i class="bi bi-bell"></i>
-                <span v-if="notificationStore.unreadCount > 0" class="notification-dot"></span>
-              </button>
-              
-              <ul class="dropdown-menu dropdown-menu-end shadow-sm notification-menu">
-                <li><h6 class="dropdown-header">系統通知 ({{ notificationStore.unreadCount }})</h6></li>
-                
-                <li v-if="notificationStore.unreadCount === 0">
-                  <span class="dropdown-item text-muted text-center py-3">目前沒有新通知</span>
-                </li>
-                
-                <div class="notification-list">
-                  <li v-for="n in notificationStore.notifications" :key="n.id">
-                    <div class="dropdown-item notification-item">
-                      <strong class="d-block text-truncate">{{ n.title }}</strong>
-                      <p class="mb-1 text-muted small text-wrap">{{ n.content }}</p>
-                      <small class="text-secondary">{{ new Date(n.time).toLocaleString() }}</small>
-                    </div>
-                  </li>
-                </div>
-                
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                  <button class="dropdown-item text-center text-primary py-2 fw-bold" @click="notificationStore.clearAll()">
-                    全部標示為已讀
-                  </button>
-                </li>
-              </ul>
-            </div>
+            <!-- TODO: 小鈴鐺通知（等 notificationStore 建立後再啟用）-->
 
             <div class="user-dropdown" style="position: relative;">
               <button
@@ -204,6 +176,17 @@ async function handleLogout() {
                 </li>
               </ul>
             </div>
+
+            <!-- 購物車圖示（右側彈跳視窗） -->
+            <button
+              class="navbar-cart-btn"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#cartOffcanvas"
+              title="購物車"
+            >
+              <i class="bi bi-cart3"></i>
+              <span v-if="cart.count > 0" class="cart-count-badge">{{ cart.count }}</span>
+            </button>
           </template>
         </div>
       </div>
@@ -305,5 +288,46 @@ async function handleLogout() {
 .notification-item:active {
   background-color: transparent;
   color: inherit;
+}
+
+/* 購物車數量 badge */
+.cart-count-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #EF4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* 導覽列購物車按鈕（邊框樣式） */
+.navbar-cart-btn {
+  position: relative;
+  background: transparent;
+  border: 2px solid var(--brand-teal);
+  border-radius: 0.6rem;
+  color: var(--brand-teal);
+  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
+  margin-left: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.navbar-cart-btn:hover {
+  background: var(--brand-teal);
+  color: white;
 }
 </style>

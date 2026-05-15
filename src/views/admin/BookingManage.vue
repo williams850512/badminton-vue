@@ -83,12 +83,12 @@ function statusText(status) {
 
 function statusClass(status) {
   const map = {
-    CONFIRMED: 'bg-success',
-    COMPLETED: 'bg-primary',
-    CANCELLED: 'bg-secondary',
-    NO_SHOW: 'bg-warning text-dark',
+    CONFIRMED: 'badge-active',
+    COMPLETED: 'badge-completed',
+    CANCELLED: 'badge-inactive',
+    NO_SHOW: 'badge-warning',
   }
-  return map[status] || 'bg-secondary'
+  return map[status] || 'badge-default'
 }
 
 // ========== 變更狀態 ==========
@@ -312,12 +312,12 @@ const today = computed(() => {
   </div>
 
   <!-- 預約資料表格 -->
-  <div class="card card-rounded shadow-sm border-0">
+  <div class="card card-rounded shadow-sm border-0 overflow-hidden">
     <div class="card-body p-0">
       <table class="table table-hover mb-0">
         <thead>
-          <tr style="background: var(--brand-dark); color: white">
-            <th class="ps-4">ID</th>
+          <tr>
+            <th class="ps-4">編號</th>
             <th>會員</th>
             <th>球場</th>
             <th>日期</th>
@@ -362,9 +362,9 @@ const today = computed(() => {
             </td>
             <td>
               <!-- 狀態變更下拉選單 -->
-              <div class="btn-group btn-group-sm">
+              <div class="dropdown">
                 <button
-                  class="btn btn-outline-secondary dropdown-toggle"
+                  class="btn btn-sm action-btn action-btn-status dropdown-toggle"
                   data-bs-toggle="dropdown"
                   title="變更狀態"
                 >
@@ -554,3 +554,71 @@ const today = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 覆寫圓角 — 與 ProductManage 統一 */
+.card-rounded {
+  border-radius: 0.75rem !important;
+}
+
+/* ===== 表格表頭 ===== */
+.table thead th {
+  background: #1b4767;
+  color: white;
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border: none;
+}
+
+/* ===== 狀態標籤 ===== */
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.badge-completed {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.badge-inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.badge-warning {
+  background: #fef9c3;
+  color: #ca8a04;
+}
+.badge-default {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* ===== 操作按鈕 ===== */
+.action-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.action-btn-status {
+  background: #f0f9ff;
+  color: var(--brand-sky, #0ea5e9);
+  border: 1px solid #bae6fd;
+}
+.action-btn-status:hover {
+  background: var(--brand-sky, #0ea5e9);
+  color: white;
+  border-color: var(--brand-sky, #0ea5e9);
+}
+</style>

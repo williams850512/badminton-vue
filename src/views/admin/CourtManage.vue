@@ -57,11 +57,11 @@ function statusText(status) {
 
 function statusClass(status) {
   const map = {
-    ACTIVE: 'bg-success',
-    INACTIVE: 'bg-secondary',
-    MAINTENANCE: 'bg-warning text-dark',
+    ACTIVE: 'badge-active',
+    INACTIVE: 'badge-inactive',
+    MAINTENANCE: 'badge-maintenance',
   }
-  return map[status] || 'bg-secondary'
+  return map[status] || 'badge-default'
 }
 
 // ========== 刪除球場 ==========
@@ -155,12 +155,12 @@ async function saveCourt() {
   </div>
 
   <!-- 球場資料表格 -->
-  <div class="card card-rounded shadow-sm border-0">
+  <div class="card card-rounded shadow-sm border-0 overflow-hidden">
     <div class="card-body p-0">
       <table class="table table-hover mb-0">
         <thead>
-          <tr style="background: var(--brand-dark); color: white">
-            <th class="ps-4">ID</th>
+          <tr>
+            <th class="ps-4">編號</th>
             <th>球場名稱</th>
             <th>所屬場館</th>
             <th>狀態</th>
@@ -203,16 +203,16 @@ async function saveCourt() {
               </span>
             </td>
             <td>
-              <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-primary" title="編輯" @click="openEditModal(court)">
+              <div class="d-flex gap-1">
+                <button class="btn btn-sm action-btn action-btn-edit" title="編輯" @click="openEditModal(court)">
                   <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-outline-danger" title="刪除" @click="deleteCourt(court)">
-                  <i class="bi bi-trash"></i>
+                <button class="btn btn-sm action-btn action-btn-delete" title="刪除" @click="deleteCourt(court)">
+                  <i class="bi bi-trash3"></i>
                 </button>
-                <div class="btn-group btn-group-sm">
+                <div class="dropdown">
                   <button
-                    class="btn btn-outline-secondary dropdown-toggle"
+                    class="btn btn-sm action-btn action-btn-status dropdown-toggle"
                     data-bs-toggle="dropdown"
                     title="變更狀態"
                   >
@@ -263,7 +263,12 @@ async function saveCourt() {
           <a class="page-link" href="#" @click.prevent="goToPage(currentPage - 1)">‹</a>
         </li>
         <!-- 頁碼 -->
-        <li class="page-item" v-for="p in totalPages" :key="p" :class="{ active: p === currentPage }">
+        <li
+          class="page-item"
+          v-for="p in totalPages"
+          :key="p"
+          :class="{ active: p === currentPage }"
+        >
           <a class="page-link" href="#" @click.prevent="goToPage(p)">{{ p }}</a>
         </li>
         <!-- 下一頁 -->
@@ -312,3 +317,87 @@ async function saveCourt() {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 覆寫圓角 — 與 ProductManage 統一 */
+.card-rounded {
+  border-radius: 0.75rem !important;
+}
+
+/* ===== 表格表頭 ===== */
+.table thead th {
+  background: #1b4767;
+  color: white;
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border: none;
+}
+
+/* ===== 狀態標籤 ===== */
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge-active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.badge-inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.badge-maintenance {
+  background: #fef9c3;
+  color: #ca8a04;
+}
+.badge-default {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* ===== 操作按鈕 ===== */
+.action-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.action-btn-edit {
+  background: #eef2ff;
+  color: #6366f1;
+  border: 1px solid #c7d2fe;
+}
+.action-btn-edit:hover {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+.action-btn-delete {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+.action-btn-delete:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+.action-btn-status {
+  background: #f0f9ff;
+  color: var(--brand-sky, #0ea5e9);
+  border: 1px solid #bae6fd;
+}
+.action-btn-status:hover {
+  background: var(--brand-sky, #0ea5e9);
+  color: white;
+  border-color: var(--brand-sky, #0ea5e9);
+}
+</style>
