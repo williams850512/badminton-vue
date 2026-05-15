@@ -39,17 +39,13 @@ api.interceptors.request.use(
     // ✅ 成功的情況：請求正常送出前
 
     // 自動附加 JWT Token（根據路徑判斷用管理員或會員 Token）
-    const isAdminApi = config.url?.startsWith('/admins')
-    const isAnnouncementApi = config.url?.startsWith('/announcements')
-    let token
-    if (isAdminApi) {
-      token = localStorage.getItem('adminToken')
-    } else if (isAnnouncementApi) {
-      // 公告 API：優先用管理員 Token（後台 CRUD），沒有則用會員 Token（前台瀏覽）
-      token = localStorage.getItem('adminToken') || localStorage.getItem('memberToken')
-    } else {
-      token = localStorage.getItem('memberToken') || localStorage.getItem('adminToken')
-    }
+    const url = config.url || ''
+    const isAdminApi = url.startsWith('/admins') || url.includes('/api/admins')
+    
+    const token = isAdminApi
+      ? localStorage.getItem('adminToken')
+      : (localStorage.getItem('memberToken') || localStorage.getItem('adminToken'))
+      
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
