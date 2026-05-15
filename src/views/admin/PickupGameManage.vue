@@ -108,14 +108,36 @@ watch(() => editGame.value?.startTime, (newVal, oldVal) => {
   }
 })
 
-// 性別防呆計算屬性
+// 🌟 性別衝突「軟性警告」（後台不鎖死，僅提示）
 const isNewGameHostMale = computed(() => {
   if (!selectedMember.value) return false;
   return selectedMember.value.gender === 'MALE' || selectedMember.value.gender === '男';
 });
+const isNewGameHostFemale = computed(() => {
+  if (!selectedMember.value) return false;
+  return selectedMember.value.gender === 'FEMALE' || selectedMember.value.gender === '女';
+});
+const isNewGameGenderConflict = computed(() => {
+  const g = newGame.value.requiredGender
+  if (isNewGameHostMale.value && g === 'FEMALE') return true
+  if (isNewGameHostFemale.value && g === 'MALE') return true
+  return false
+});
+
 const isEditGameHostMale = computed(() => {
   if (!editGame.value || !editGame.value.host) return false;
   return editGame.value.host.gender === 'MALE' || editGame.value.host.gender === '男';
+});
+const isEditGameHostFemale = computed(() => {
+  if (!editGame.value || !editGame.value.host) return false;
+  return editGame.value.host.gender === 'FEMALE' || editGame.value.host.gender === '女';
+});
+const isEditGameGenderConflict = computed(() => {
+  if (!editGame.value) return false
+  const g = editGame.value.requiredGender
+  if (isEditGameHostMale.value && g === 'FEMALE') return true
+  if (isEditGameHostFemale.value && g === 'MALE') return true
+  return false
 });
 
 // ============================================================
@@ -135,7 +157,7 @@ const {
 // 🔍 Step 3: 初始化篩選 + 排序 + 分頁層
 // ============================
 const {
-  searchQuery, statusFilter, sortBy,
+  searchQuery, statusFilter, filterGender, sortBy,
   currentPage, pageSize, selectedIds, expandedGameId,
   isRefreshing,
   toggleSelectAll, toggleSignups: doToggleSignups,
@@ -278,10 +300,12 @@ onMounted(() => {
                 <select class="form-select" v-model="editGame.requiredGender">
                   <option value="ALL">不限</option>
                   <option value="MALE">限男性</option>
-                  <option value="FEMALE" :disabled="isEditGameHostMale">
-                    限女性 {{ isEditGameHostMale ? '(主揪為男性)' : '' }}
-                  </option>
+                  <option value="FEMALE">限女性</option>
                 </select>
+                <div v-if="isEditGameGenderConflict" class="alert alert-warning d-flex align-items-start mt-2 py-2 px-3 mb-0" style="font-size: 0.82rem;">
+                  <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0"></i>
+                  <span>⚠️ 系統提示：您選擇的性別限制與主揪性別衝突。主揪預設會佔用一個名額，請確認此特例操作是否正確。</span>
+                </div>
               </div>
             </form>
           </div>
@@ -328,47 +352,57 @@ onMounted(() => {
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
-    <!-- 📅 日期選擇 + 排序（左右分區） -->
+    <!-- 📅 日期選擇 + 性別條件篩選 + 排序（左右分區） -->
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-      <!-- ← 左側：日期篩選（輸入區） -->
-      <div style="position: relative">
-        <button
-          class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
-          @click="openDatePanel"
-        >
-          <i class="bi bi-calendar3"></i>
-          {{ datePresetLabel }}
-          <i class="bi bi-chevron-down" style="font-size: 0.7em"></i>
-        </button>
-        <!-- 彈出面板 -->
-        <div v-if="showDatePanel" class="date-panel shadow-lg">
-          <div class="d-flex">
-            <!-- 左側：快捷選項 -->
-            <div class="date-panel-presets">
-              <button class="date-preset-btn" @click="setDateRange('today')">今天</button>
-              <button class="date-preset-btn" @click="setDateRange('yesterday')">昨天</button>
-              <button class="date-preset-btn" @click="setDateRange('thisWeek')">本週</button>
-              <button class="date-preset-btn" @click="setDateRange('lastWeek')">上週</button>
-              <button class="date-preset-btn" @click="setDateRange('thisMonth')">本月</button>
-              <button class="date-preset-btn" @click="setDateRange('lastMonth')">上月</button>
-              <button class="date-preset-btn" @click="setDateRange('all')">全部</button>
+      <!-- ← 左側：日期篩選 + 性別篩選 -->
+      <div class="d-flex align-items-center gap-2">
+        <div style="position: relative">
+          <button
+            class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
+            @click="openDatePanel"
+          >
+            <i class="bi bi-calendar3"></i>
+            {{ datePresetLabel }}
+            <i class="bi bi-chevron-down" style="font-size: 0.7em"></i>
+          </button>
+          
+          <!-- 彈出面板 -->
+          <div v-if="showDatePanel" class="date-panel shadow-lg">
+            <div class="d-flex">
+              <!-- 左側：快捷選項 -->
+              <div class="date-panel-presets">
+                <button class="date-preset-btn" @click="setDateRange('today')">今天</button>
+                <button class="date-preset-btn" @click="setDateRange('yesterday')">昨天</button>
+                <button class="date-preset-btn" @click="setDateRange('thisWeek')">本週</button>
+                <button class="date-preset-btn" @click="setDateRange('lastWeek')">上週</button>
+                <button class="date-preset-btn" @click="setDateRange('thisMonth')">本月</button>
+                <button class="date-preset-btn" @click="setDateRange('lastMonth')">上月</button>
+                <button class="date-preset-btn" @click="setDateRange('all')">全部</button>
+              </div>
+              <!-- 右側：手動日期輸入 -->
+              <div class="date-panel-inputs">
+                <label class="form-label small text-muted mb-1">開始日期</label>
+                <input type="date" class="form-control form-control-sm mb-3" v-model="tempDateFrom" />
+                <label class="form-label small text-muted mb-1">結束日期</label>
+                <input type="date" class="form-control form-control-sm" v-model="tempDateTo" />
+              </div>
             </div>
-            <!-- 右側：手動日期輸入 -->
-            <div class="date-panel-inputs">
-              <label class="form-label small text-muted mb-1">開始日期</label>
-              <input type="date" class="form-control form-control-sm mb-3" v-model="tempDateFrom" />
-              <label class="form-label small text-muted mb-1">結束日期</label>
-              <input type="date" class="form-control form-control-sm" v-model="tempDateTo" />
+            <!-- 底部按鈕 -->
+            <div class="d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
+              <button class="btn btn-sm btn-outline-secondary" @click="cancelDatePanel">取消</button>
+              <button class="btn btn-sm btn-primary" @click="applyDateRange">套用</button>
             </div>
           </div>
-          <!-- 底部按鈕 -->
-          <div class="d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
-            <button class="btn btn-sm btn-outline-secondary" @click="cancelDatePanel">取消</button>
-            <button class="btn btn-sm btn-primary" @click="applyDateRange">套用</button>
-          </div>
+          <!-- 遮罩層 -->
+          <div v-if="showDatePanel" class="date-panel-backdrop" @click="cancelDatePanel"></div>
         </div>
-        <!-- 遮罩層 -->
-        <div v-if="showDatePanel" class="date-panel-backdrop" @click="cancelDatePanel"></div>
+        
+        <!-- 🚻 性別條件篩選 -->
+        <select class="form-select form-select-sm" v-model="filterGender" style="width: 140px;">
+          <option value="all">全部 (不限)</option>
+          <option value="male">限男性</option>
+          <option value="female">限女性</option>
+        </select>
       </div>
 
       <!-- → 右側：排序 + 重新整理（操作區） -->
@@ -490,6 +524,7 @@ onMounted(() => {
             <th>時間</th>
             <th>人數</th>
             <th>程度</th>
+            <th>性別限制</th>
             <th>狀態</th>
             <th>操作</th>
           </tr>
@@ -546,6 +581,15 @@ onMounted(() => {
                 >
                   {{ skillMap[game.skillLevel] }}
                 </span>
+              </td>
+              <td>
+                <span v-if="game.requiredGender === 'MALE'" class="badge bg-light text-secondary border border-secondary-subtle">
+                  限男
+                </span>
+                <span v-else-if="game.requiredGender === 'FEMALE'" class="badge bg-light text-secondary border border-secondary-subtle">
+                  限女
+                </span>
+                <span v-else class="text-muted small">不限</span>
               </td>
               <td>
                 <span
@@ -872,10 +916,12 @@ onMounted(() => {
                 <select class="form-select" v-model="newGame.requiredGender">
                   <option value="ALL">不限</option>
                   <option value="MALE">限男性</option>
-                  <option value="FEMALE" :disabled="isNewGameHostMale">
-                    限女性 {{ isNewGameHostMale ? '(主揪為男性，無法開純女團)' : '' }}
-                  </option>
+                  <option value="FEMALE">限女性</option>
                 </select>
+                <div v-if="isNewGameGenderConflict" class="alert alert-warning d-flex align-items-start mt-2 py-2 px-3 mb-0" style="font-size: 0.82rem;">
+                  <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0"></i>
+                  <span>⚠️ 系統提示：您選擇的性別限制與主揪性別衝突。主揪預設會佔用一個名額，請確認此特例操作是否正確。</span>
+                </div>
               </div>
               </template>
             </form>

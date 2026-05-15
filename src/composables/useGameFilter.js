@@ -27,6 +27,7 @@ export function useGameFilter(pickupGames, getDisplayStatus, dateFrom, dateTo) {
   // ============================
   const searchQuery = ref('')      // 搜尋關鍵字
   const statusFilter = ref('ALL') // 狀態篩選（ALL / OPEN / FULL / CLOSED / CANCELLED）
+  const filterGender = ref('all') // 性別條件篩選 (all, none, male, female)
   const sortBy = ref('default')   // 排序方式
   const currentPage = ref(1)      // 目前頁碼
   const pageSize = ref(10)        // 每頁筆數
@@ -67,6 +68,7 @@ export function useGameFilter(pickupGames, getDisplayStatus, dateFrom, dateTo) {
     isRefreshing.value = true
     searchQuery.value = ''
     statusFilter.value = 'ALL'
+    filterGender.value = 'all'
     dateFrom.value = ''
     dateTo.value = ''
     sortBy.value = 'default'
@@ -119,6 +121,13 @@ export function useGameFilter(pickupGames, getDisplayStatus, dateFrom, dateTo) {
     if (statusFilter.value !== 'ALL') {
       result = result.filter((game) => getDisplayStatus(game) === statusFilter.value)
     }
+    // 性別限制篩選
+    if (filterGender.value !== 'all') {
+      let targetGender = 'ALL' // none
+      if (filterGender.value === 'male') targetGender = 'MALE'
+      if (filterGender.value === 'female') targetGender = 'FEMALE'
+      result = result.filter((game) => game.requiredGender === targetGender)
+    }
     // 排序
     if (sortBy.value === 'default') {
       // 🌟 預設排序：開放中 > 已額滿 > 已結束 > 已取消。同狀態再按日期新到舊
@@ -154,7 +163,7 @@ export function useGameFilter(pickupGames, getDisplayStatus, dateFrom, dateTo) {
   })
 
   // 任何篩選條件改變時，自動回到第一頁
-  watch([searchQuery, statusFilter, pageSize, dateFrom, dateTo, sortBy], () => {
+  watch([searchQuery, statusFilter, filterGender, pageSize, dateFrom, dateTo, sortBy], () => {
     currentPage.value = 1
   })
 
@@ -164,6 +173,7 @@ export function useGameFilter(pickupGames, getDisplayStatus, dateFrom, dateTo) {
   return {
     searchQuery,
     statusFilter,
+    filterGender,
     sortBy,
     currentPage,
     pageSize,
