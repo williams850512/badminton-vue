@@ -22,7 +22,6 @@ const router = useRouter()
 const { requestPayment } = useLinePay()
 const cart = useCartStore()
 const isSubmitting = ref(false)
-const isEmpty = computed(() => cart.items.length === 0)
 const showCreditCardModal = ref(false)
 
 // 表單資料
@@ -45,7 +44,7 @@ const cardLogos = [
 ]
 
 onMounted(() => {
-  if (isEmpty.value) {
+  if (cart.items.length === 0) {
     alert('購物車是空的，請先加入商品！')
     router.push('/products')
   }
@@ -54,7 +53,7 @@ onMounted(() => {
 // 送出訂單
 async function handleSubmit() {
   if (isSubmitting.value) return
-  if (isEmpty.value) return
+  if (cart.items.length === 0) return
 
   if (paymentType.value === 'CREDIT_CARD') {
     // 彈出虛擬刷卡機
@@ -258,7 +257,7 @@ async function processOrder() {
 
             <!-- 下單按鈕 -->
             <div class="order-submit-wrap">
-              <button @click="handleSubmit" class="submit-btn" :disabled="isSubmitting || isEmpty">
+              <button @click="handleSubmit" class="submit-btn" :disabled="isSubmitting || cart.items.length === 0">
                 <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
                 {{ isSubmitting ? '訂單處理中...' : '確認下單' }}
               </button>
