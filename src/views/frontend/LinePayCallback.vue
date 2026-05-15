@@ -2,10 +2,12 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useLinePay } from '@/composables/useLinePay'
+import { useCartStore } from '@/stores/cart'
 
 const route = useRoute()
 const router = useRouter()
 const { confirmPayment, isLoading } = useLinePay()
+const cart = useCartStore()
 
 const statusMsg = ref('正在與 LINE Pay 進行最終核對...')
 const isError = ref(false)
@@ -33,6 +35,10 @@ onMounted(async () => {
 
     if (result.success) {
       statusMsg.value = '付款成功！即將前往訂單頁面...'
+      
+      // 清除購物車
+      cart.clear()
+      
       // 清除暫存
       localStorage.removeItem(`linePay_tid_${orderId}`)
       localStorage.removeItem(`linePay_amt_${orderId}`)
