@@ -5,6 +5,9 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { productApi } from '@/api/product'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { useExport } from '@/composables/useExport'
+
+const { exportData } = useExport()
 
 // ===================== 資料狀態 =====================
 const products = ref([])
@@ -202,6 +205,27 @@ function formatPrice(val) {
   return val != null ? `NT$ ${Number(val).toLocaleString()}` : 'NT$ 0'
 }
 
+// ===================== 匯出 =====================
+// 把目前「篩選後」的商品轉成易讀欄位（中文標題、分類/狀態轉中文）再交給匯出工具
+function buildExportRows() {
+  return filteredProducts.value.map((p) => ({
+    編號: p.productId,
+    商品名稱: p.productName,
+    品牌: p.brand || '',
+    分類: categoryMap[p.category] || p.category,
+    價格: p.price ?? 0,
+    庫存: p.stockQty ?? 0,
+    狀態: statusMap[p.status]?.label || p.status,
+    行銷標籤: p.marketingTag || '',
+    規格: p.spec || '',
+    商品描述: p.description || '',
+  }))
+}
+
+function handleExport(format) {
+  exportData(buildExportRows(), format, '商品清單')
+}
+
 onMounted(loadProducts)
 
 const defaultImage = 'http://localhost:8080/images/products/default.png'
@@ -242,17 +266,17 @@ function onImageError(e) {
             </div>
           </div>
           <!-- 分類篩選 -->
-          <div class="col-md-2">
+          <div class="col">
             <label class="form-label small fw-semibold text-secondary">分類</label>
-            <select v-model="filterCategory" class="form-select" @change="onFilterChange">
+            <select v-model="filterCategory" class="form-select filter-select" @change="onFilterChange">
               <option value="">全部分類</option>
               <option v-for="[val, label] in categoryOptions" :key="val" :value="val">{{ label }}</option>
             </select>
           </div>
           <!-- 狀態篩選 -->
-          <div class="col-md-2">
+          <div class="col">
             <label class="form-label small fw-semibold text-secondary">狀態</label>
-            <select v-model="filterStatus" class="form-select" @change="onFilterChange">
+            <select v-model="filterStatus" class="form-select filter-select" @change="onFilterChange">
               <option value="">全部狀態</option>
               <option value="ACTIVE">上架中</option>
               <option value="INACTIVE">已下架</option>
@@ -260,18 +284,45 @@ function onImageError(e) {
             </select>
           </div>
           <!-- 標籤篩選 -->
-          <div class="col-md-2">
+          <div class="col">
             <label class="form-label small fw-semibold text-secondary">標籤</label>
-            <select v-model="filterTag" class="form-select" @change="onFilterChange">
+            <select v-model="filterTag" class="form-select filter-select" @change="onFilterChange">
               <option value="">全部標籤</option>
               <option value="促銷">促銷</option>
               <option value="精選">精選</option>
               <option value="熱銷">熱銷</option>
             </select>
           </div>
-          <!-- 新增按鈕 -->
-          <div class="col-md-3 text-end">
-            <button class="btn btn-brand btn-brand-admin" @click="openCreate">
+          <!-- 匯出 + 新增按鈕 -->
+          <div class="col-12 col-md-auto d-flex justify-content-end align-items-center gap-2 ms-md-auto">
+            <div class="dropdown flex-shrink-0">
+              <button
+                class="btn btn-outline-secondary btn-brand-admin dropdown-toggle w-auto text-nowrap"
+                data-bs-toggle="dropdown"
+                :disabled="filteredProducts.length === 0"
+                title="匯出目前篩選結果"
+              >
+                <i class="bi bi-download me-1"></i>匯出
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <button class="dropdown-item" @click="handleExport('EXCEL')">
+                    <i class="bi bi-file-earmark-excel me-2 text-success"></i>Excel
+                  </button>
+                </li>
+                <li>
+                  <button class="dropdown-item" @click="handleExport('JSON')">
+                    <i class="bi bi-filetype-json me-2 text-secondary"></i>JSON
+                  </button>
+                </li>
+                <li>
+                  <button class="dropdown-item" @click="handleExport('PDF')">
+                    <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>PDF / 列印
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <button class="btn btn-brand btn-brand-admin w-auto text-nowrap flex-shrink-0" @click="openCreate">
               <i class="bi bi-plus-lg me-1"></i>新增商品
             </button>
           </div>
@@ -606,6 +657,11 @@ function onImageError(e) {
 }
 .btn-brand-admin {
   border-radius: 0.5rem;
+}
+
+/* ===== 篩選下拉選單寬度（原本欄寬的 0.6） ===== */
+.filter-select {
+  width: 60%;
 }
 
 /* ===== 列表表格 ===== */

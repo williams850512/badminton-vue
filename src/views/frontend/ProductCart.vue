@@ -1,6 +1,8 @@
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
+import { memberApi } from '@/api/member'
 
 const router = useRouter()
 const cart = useCartStore()
@@ -14,6 +16,66 @@ function shippingFee() {
 
 function grandTotal() {
   return cart.total + shippingFee()
+}
+
+function atStockMax(item) {
+  return Number.isFinite(item.stock) && item.qty >= item.stock
+}
+
+// ===================== 登入檢查 + 彈跳登入視窗 =====================
+const showLoginModal = ref(false)
+const loginUsername = ref('')
+const loginPassword = ref('')
+const loginError = ref('')
+const loginLoading = ref(false)
+const showPassword = ref(false)
+
+function isLoggedIn() {
+  return !!localStorage.getItem('memberToken')
+}
+
+// 「前往結帳」：已登入直接結帳，未登入先彈登入視窗
+function goCheckout() {
+  if (isLoggedIn()) {
+    router.push('/checkout')
+  } else {
+    loginError.value = ''
+    showLoginModal.value = true
+  }
+}
+
+function closeLoginModal() {
+  showLoginModal.value = false
+}
+
+function fillTestAccount() {
+  loginUsername.value = 'chen.weijie'
+  loginPassword.value = 'pass123'
+}
+
+// 視窗內登入：寫入與 MemberLogin 相同的 localStorage key，成功後自動接著去結帳
+async function submitLogin() {
+  if (!loginUsername.value.trim() || !loginPassword.value.trim()) {
+    loginError.value = '請輸入帳號和密碼'
+    return
+  }
+  loginLoading.value = true
+  loginError.value = ''
+  try {
+    const res = await memberApi.login(loginUsername.value.trim(), loginPassword.value)
+    localStorage.setItem('memberToken', res.token)
+    localStorage.setItem('memberInfo', JSON.stringify(res.member))
+    showLoginModal.value = false
+    router.push('/checkout')
+  } catch (err) {
+    if (err.response?.status === 401) {
+      loginError.value = '帳號或密碼錯誤，請重新輸入'
+    } else {
+      loginError.value = '系統連線異常，請稍後再試'
+    }
+  } finally {
+    loginLoading.value = false
+  }
 }
 </script>
 
@@ -83,7 +145,7 @@ function grandTotal() {
                   <i class="bi bi-dash"></i>
                 </button>
                 <span class="qty-num">{{ item.qty }}</span>
-                <button class="qty-btn" @click="cart.increase(item.id)">
+                <button class="qty-btn" :disabled="atStockMax(item)" @click="cart.increase(item.id)">
                   <i class="bi bi-plus"></i>
                 </button>
               </div>
@@ -150,7 +212,7 @@ function grandTotal() {
               <span class="summary-total-price">${{ grandTotal().toLocaleString() }}</span>
             </div>
 
-            <button class="checkout-btn" @click="router.push('/checkout')">
+            <button class="checkout-btn" @click="goCheckout">
               <i class="bi bi-credit-card me-2"></i>前往結帳
             </button>
 
@@ -179,6 +241,73 @@ function grandTotal() {
         <i class="bi bi-arrow-repeat trust-icon"></i>
         <p class="trust-title">七天鑑賞</p>
         <p class="trust-desc">不滿意七天內隨時退換</p>
+      </div>
+    </div>
+
+    <!-- ====== 登入彈窗（未登入按「前往結帳」時出現） ====== -->
+    <div v-if="showLoginModal" class="login-modal-overlay" @click.self="closeLoginModal">
+      <div class="login-modal">
+        <button class="login-modal-close" @click="closeLoginModal" aria-label="關閉">
+          <i class="bi bi-x-lg"></i>
+        </button>
+
+        <div class="login-modal-header">
+          <div class="login-modal-icon">
+            <i class="bi bi-feather"></i>
+          </div>
+          <h3 class="login-modal-title">登入後即可結帳</h3>
+          <p class="login-modal-sub">登入會員帳號以繼續完成訂單</p>
+        </div>
+
+        <div v-if="loginError" class="login-modal-error">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ loginError }}
+        </div>
+
+        <form @submit.prevent="submitLogin">
+          <div class="login-field">
+            <label class="login-label">帳號</label>
+            <input
+              v-model="loginUsername"
+              type="text"
+              class="login-input"
+              placeholder="請輸入您的帳號"
+              autocomplete="off"
+            />
+          </div>
+          <div class="login-field">
+            <label class="login-label">密碼</label>
+            <div class="login-pwd-wrap">
+              <input
+                v-model="loginPassword"
+                :type="showPassword ? 'text' : 'password'"
+                class="login-input"
+                placeholder="請輸入您的密碼"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="login-pwd-toggle"
+                @click="showPassword = !showPassword"
+                tabindex="-1"
+              >
+                <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="login-submit-btn" :disabled="loginLoading">
+            <span v-if="loginLoading" class="spinner-border spinner-border-sm me-2"></span>
+            {{ loginLoading ? '登入中...' : '登入並繼續結帳' }}
+          </button>
+          <button type="button" class="login-test-btn" @click="fillTestAccount">
+            <i class="bi bi-lightning-fill me-1"></i>帶入測試帳號
+          </button>
+        </form>
+
+        <div class="login-modal-footer">
+          還不是會員？
+          <a href="#" class="login-register-link" @click.prevent="router.push('/register')">立即註冊</a>
+        </div>
       </div>
     </div>
 
@@ -399,6 +528,15 @@ function grandTotal() {
   color: var(--brand-sky);
   background: #F0F9FF;
 }
+.qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.qty-btn:disabled:hover {
+  border-color: #E2E8F0;
+  color: #475569;
+  background: white;
+}
 .qty-num {
   font-size: 0.95rem;
   font-weight: 700;
@@ -591,4 +729,155 @@ function grandTotal() {
   .item-subtotal::before { content: '小計：'; color: #94A3B8; font-size: 0.75rem; }
   .item-remove { justify-self: end; }
 }
+
+/* ===== 登入彈窗 ===== */
+.login-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.login-modal {
+  position: relative;
+  background: white;
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem 1.75rem 1.75rem;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+  animation: loginFadeUp 0.25s ease;
+}
+@keyframes loginFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.login-modal-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.login-modal-close:hover { color: var(--brand-dark); }
+.login-modal-header { text-align: center; margin-bottom: 1.25rem; }
+.login-modal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.4rem;
+  margin: 0 auto 0.75rem;
+}
+.login-modal-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--brand-dark);
+  margin: 0 0 0.25rem;
+}
+.login-modal-sub {
+  font-size: 0.82rem;
+  color: #94A3B8;
+  margin: 0;
+}
+.login-modal-error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  font-size: 0.82rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+.login-field { margin-bottom: 0.85rem; }
+.login-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748B;
+  margin-bottom: 0.35rem;
+}
+.login-input {
+  width: 100%;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--brand-dark);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.login-input:focus {
+  border-color: var(--brand-teal);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+.login-pwd-wrap { position: relative; }
+.login-pwd-wrap .login-input { padding-right: 42px; }
+.login-pwd-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 0.35rem;
+  line-height: 1;
+}
+.login-submit-btn {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
+  color: white;
+  border: none;
+  border-radius: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.login-submit-btn:hover:not(:disabled) { opacity: 0.9; }
+.login-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.login-test-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.55rem;
+  background: white;
+  border: 2px dashed #E2E8F0;
+  border-radius: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.login-test-btn:hover { border-color: var(--brand-teal); color: var(--brand-teal); }
+.login-modal-footer {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.82rem;
+  color: #94A3B8;
+}
+.login-register-link {
+  color: var(--brand-teal);
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 0.25rem;
+}
+.login-register-link:hover { text-decoration: underline; }
 </style>
