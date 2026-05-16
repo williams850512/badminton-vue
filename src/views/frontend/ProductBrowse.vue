@@ -64,6 +64,12 @@ const modalSubtotal = computed(() =>
   modal.value.product ? Number(modal.value.product.price) * modal.value.qty : 0
 )
 
+const modalStock = computed(() => {
+  const s = modal.value.product?.stockQty
+  return s == null || s === '' ? Infinity : Number(s)
+})
+const modalAtMax = computed(() => modal.value.qty >= modalStock.value)
+
 // 推薦商品：
 // 先決條件：排除購物車已選 & 當前商品 & 零庫存
 // 奇數位（1,3,5...）= 同類別，庫存高→低
@@ -114,6 +120,10 @@ function modalDecreaseQty() {
   if (modal.value.qty > 1) modal.value.qty--
 }
 
+function modalIncreaseQty() {
+  if (modal.value.qty < modalStock.value) modal.value.qty++
+}
+
 function addToCart() {
   cart.add(modal.value.product, modal.value.qty)
   closeModal()
@@ -147,6 +157,15 @@ onUnmounted(() => {
 // ===================== 商品詳情 Modal =====================
 const detailModal = ref({ show: false, product: null })
 
+const marketingBadge = computed(() => {
+  const map = {
+    精選: { label: '天晴精選', cls: 'mtag-featured' },
+    熱銷: { label: '熱銷首選', cls: 'mtag-hot' },
+    促銷: { label: '降價促銷', cls: 'mtag-sale' },
+  }
+  return map[detailModal.value.product?.marketingTag] || null
+})
+
 function openDetailModal(product) {
   detailModal.value = { show: true, product }
 }
@@ -175,7 +194,7 @@ function openCartFromDetail() {
 
     <!-- ====== 商品 Grid ====== -->
     <div class="browse-container">
-      <h2 class="section-title">所有商品</h2>
+      <h2 class="section-title">{{ filterCategory ? (categoryMap[filterCategory] || filterCategory) : '所有商品' }}</h2>
 
       <!-- 類別篩選按鈕 -->
       <div v-if="products.length > 0" class="category-filter">
@@ -233,8 +252,6 @@ function openCartFromDetail() {
 
               <!-- 左上角類別標籤 -->
               <span class="badge-teal img-category-badge">{{ categoryMap[product.category] || product.category }}</span>
-              <!-- 行銷標籤 -->
-              <span v-if="product.marketingTag" class="marketing-tag-badge">{{ product.marketingTag }}</span>
 
               <!-- 右上角庫存 badge -->
               <span v-if="product.stockQty === 0" class="stock-badge stock-badge--empty">缺貨中</span>
@@ -244,8 +261,14 @@ function openCartFromDetail() {
               <div v-if="product.stockQty === 0" class="img-stock-banner img-stock-banner--empty">
                 <i class="bi bi-clock-history me-1"></i>熱銷完售，補貨中
               </div>
-              <div v-else-if="product.stockQty < 15" class="img-stock-banner img-stock-banner--low">
+              <div v-else-if="product.marketingTag === '熱銷'" class="img-stock-banner img-stock-banner--low">
                 <i class="bi bi-fire me-1"></i>熱銷中
+              </div>
+              <div v-else-if="product.marketingTag === '精選'" class="img-stock-banner img-stock-banner--featured">
+                <i class="bi bi-star-fill me-1"></i>精選推薦
+              </div>
+              <div v-else-if="product.marketingTag === '促銷'" class="img-stock-banner img-stock-banner--sale">
+                <i class="bi bi-tag-fill me-1"></i>限時特惠
               </div>
             </div>
 
@@ -358,16 +381,19 @@ function openCartFromDetail() {
                 class="detail-modal-img"
                 @error="onImageError"
               />
-              <!-- 庫存 badge -->
-              <span v-if="detailModal.product?.stockQty === 0" class="stock-badge stock-badge--empty detail-img-badge">缺貨中</span>
-              <span v-else-if="detailModal.product?.stockQty < 5" class="stock-badge stock-badge--low detail-img-badge">少量庫存</span>
             </div>
 
             <!-- 右：商品資訊 -->
             <div class="detail-modal-info">
-              <span class="badge-teal detail-category-badge tracking-wide mb-2 d-inline-block">
-                {{ categoryMap[detailModal.product?.category] || detailModal.product?.category }}
-              </span>
+              <div class="detail-category-row">
+                <span class="badge-teal detail-category-badge tracking-wide d-inline-block">
+                  {{ categoryMap[detailModal.product?.category] || detailModal.product?.category }}
+                </span>
+                <span v-if="marketingBadge" class="detail-marketing-badge" :class="marketingBadge.cls">
+                  {{ marketingBadge.label }}
+                </span>
+                <span v-if="detailModal.product?.stockQty === 0" class="stock-badge stock-badge--empty detail-row-stock">缺貨中</span>
+              </div>
               <p class="detail-modal-brand">{{ detailModal.product?.brand }}</p>
               <h4 class="detail-modal-name">{{ detailModal.product?.productName }}</h4>
               <p class="detail-modal-price">${{ Number(detailModal.product?.price).toLocaleString() }}</p>
@@ -380,7 +406,7 @@ function openCartFromDetail() {
 
               <!-- 商品描述 -->
               <div v-if="detailModal.product?.description" class="detail-modal-desc-wrap">
-                <p class="detail-modal-desc-label">商品描述</p>
+                <p class="detail-modal-desc-label">商品介紹</p>
                 <p class="detail-modal-desc">{{ detailModal.product?.description }}</p>
               </div>
 
@@ -442,8 +468,9 @@ function openCartFromDetail() {
               <div class="qty-control">
                 <button class="qty-btn" @click="modalDecreaseQty"><i class="bi bi-dash"></i></button>
                 <span class="qty-num">{{ modal.qty }}</span>
-                <button class="qty-btn" @click="modal.qty++"><i class="bi bi-plus"></i></button>
+                <button class="qty-btn" :disabled="modalAtMax" @click="modalIncreaseQty"><i class="bi bi-plus"></i></button>
               </div>
+              <span v-if="modalAtMax && modalStock !== Infinity" class="cart-modal-qty-max">已達庫存上限</span>
             </div>
             <p class="cart-modal-subtotal">NT${{ modalSubtotal.toLocaleString() }}</p>
           </div>
@@ -643,22 +670,6 @@ function openCartFromDetail() {
   color: #D97706;
 }
 
-/* 行銷標籤（圖片左下角） */
-.marketing-tag-badge {
-  position: absolute;
-  bottom: 0.5rem;
-  left: 0.5rem;
-  z-index: 2;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
-  background: #EA580C;
-  color: white;
-  letter-spacing: 0.04em;
-  line-height: 1.2;
-}
-
 /* 左上角類別標籤（圖片疊層） */
 .img-category-badge {
   position: absolute;
@@ -708,6 +719,20 @@ function openCartFromDetail() {
   color: #B45309;
   font-weight: 700;
   letter-spacing: 0.05em;
+}
+.img-stock-banner--featured {
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.72), rgba(13, 148, 136, 0.72));
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.img-stock-banner--sale {
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.8), rgba(220, 38, 38, 0.8));
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
 .product-img {
   width: 100%;
@@ -893,6 +918,15 @@ function openCartFromDetail() {
   border-color: var(--brand-sky);
   color: var(--brand-sky);
 }
+.qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.qty-btn:disabled:hover {
+  background: white;
+  border-color: #E2E8F0;
+  color: #475569;
+}
 .qty-num {
   font-size: 0.9rem;
   font-weight: 700;
@@ -962,17 +996,37 @@ function openCartFromDetail() {
 }
 
 .detail-category-badge {
-  font-size: 0.88rem;
+  font-size: 1.0rem;
   font-weight: 500;
   letter-spacing: 0.05em;
+  line-height: 1.2;
 }
+.detail-category-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.detail-marketing-badge {
+  font-size: 1.0rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+.mtag-featured { background: #E0F2FE; color: #0369A1; }
+.mtag-hot { background: #FEF3C7; color: #B45309; }
+.mtag-sale { background: #FEE2E2; color: #DC2626; }
 
 /* ===== 商品詳情 Modal ===== */
 .detail-modal {
   background: white;
   border-radius: var(--brand-card-radius);
   width: 100%;
-  max-width: 760px;
+  max-width: 900px;
   max-height: 90vh;
   overflow-y: auto;
   padding: 2rem 2rem 2rem;
@@ -996,9 +1050,8 @@ function openCartFromDetail() {
 }
 .detail-modal-img-wrap {
   position: relative;
-  width: 240px;
-  height: 240px;
-  flex-shrink: 0;
+  flex: 0 0 60%;
+  aspect-ratio: 1 / 1;
   border-radius: 0.75rem;
   background: var(--brand-bg);
   border: 1px solid #E2E8F0;
@@ -1010,10 +1063,14 @@ function openCartFromDetail() {
   object-fit: contain;
   padding: 0.75rem;
 }
-.detail-img-badge {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+.detail-row-stock {
+  position: static;
+  margin-left: auto;
+  font-size: 1.0rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid transparent;
+  letter-spacing: 0.05em;
 }
 .detail-modal-info {
   flex: 1;
@@ -1088,7 +1145,7 @@ function openCartFromDetail() {
 @media (max-width: 575.98px) {
   .detail-modal { padding: 1.5rem 1.25rem; }
   .detail-modal-body { flex-direction: column; gap: 1.25rem; }
-  .detail-modal-img-wrap { width: 100%; height: 220px; }
+  .detail-modal-img-wrap { flex: none; width: 100%; height: 220px; aspect-ratio: auto; }
 }
 
 /* ===== 規格（純文字顯示） ===== */
@@ -1213,6 +1270,12 @@ function openCartFromDetail() {
   color: #94A3B8;
   font-weight: 600;
   letter-spacing: 0.03em;
+}
+.cart-modal-qty-max {
+  font-size: 0.68rem;
+  color: #EF4444;
+  font-weight: 600;
+  margin-top: 0.2rem;
 }
 .cart-modal-subtotal {
   font-size: 1.05rem;

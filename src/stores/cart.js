@@ -31,24 +31,36 @@ export const useCartStore = defineStore('cart', () => {
   const total = computed(() => items.value.reduce((sum, i) => sum + i.price * i.qty, 0))
   const count = computed(() => items.value.reduce((sum, i) => sum + i.qty, 0))
 
+  // 取庫存上限；缺值/壞值回傳 Infinity（視為不限制，避免髒資料把數量歸零）
+  function stockCap(raw) {
+    if (raw == null || raw === '') return Infinity
+    const n = Number(raw)
+    return Number.isFinite(n) && n >= 0 ? n : Infinity
+  }
+
   function add(product, qty = 1) {
+    const cap = stockCap(product.stockQty)
     const existing = items.value.find((i) => i.id === product.productId)
     if (existing) {
-      existing.qty += qty
+      existing.stock = cap
+      existing.qty = Math.min(existing.qty + qty, cap)
     } else {
       items.value.push({
         id: product.productId,
         name: product.productName,
         price: Number(product.price),
         imageUrl: product.imageUrl,
-        qty,
+        stock: cap,
+        qty: Math.min(qty, cap),
       })
     }
   }
 
   function increase(id) {
     const item = items.value.find((i) => i.id === id)
-    if (item) item.qty++
+    if (!item) return
+    const cap = Number.isFinite(item.stock) ? item.stock : Infinity
+    if (item.qty < cap) item.qty++
   }
 
   function decrease(id) {
