@@ -6,12 +6,13 @@
  * - 下方：個人資料表單（姓名、性別不可改）
  */
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { memberApi } from '@/api/member'
 import { bookingApi } from '@/api/booking'
 import { orderApi } from '@/api/order'
 
 const router = useRouter()
+const route = useRoute()
 
 const member = ref(null)
 const isLoading = ref(true)
@@ -99,19 +100,21 @@ const menuItems = [
   { id: 'orders', label: '歷史消費訂單', icon: 'bi-bag-check' },
 ]
 
-// 監聽頁籤切換，若是訂單頁且還沒抓過資料就抓一次
-watch(activeTab, (newTab) => {
-  if (newTab === 'orders' && orders.value.length === 0) {
-    fetchOrders()
-  }
+// 監聽網址頁籤變化
+watch(() => route.query.tab, (newTab) => {
+  if (newTab) switchTab(newTab)
 })
 
 async function fetchOrders() {
-  if (!member.value?.memberId) return
+  if (!member.value?.memberId) {
+    loadingOrders.value = false
+    return
+  }
   loadingOrders.value = true
   try {
     const data = await orderApi.findByMemberId(member.value.memberId)
-    orders.value = data.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
+    // 確保 data 是陣列，避免 slice 報錯
+    orders.value = Array.isArray(data) ? data.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)) : []
 
     // 為了顯示代表圖，預抓前 5 筆的明細
     const prefetchCount = Math.min(orders.value.length, 5)
@@ -183,6 +186,11 @@ onMounted(async () => {
       birthday: data.birthday || '',
       phone: data.phone || '',
       email: data.email || '',
+    }
+    
+    // 初始頁籤
+    if (route.query.tab) {
+      switchTab(route.query.tab)
     }
   } catch (err) {
     if (err.response?.status === 401) {
@@ -315,6 +323,9 @@ function switchTab(tabId) {
   activeTab.value = tabId
   if (tabId === 'bookings') {
     loadBookings()
+  }
+  if (tabId === 'orders' && orders.value.length === 0) {
+    fetchOrders()
   }
 }
 
@@ -790,8 +801,133 @@ async function handleAvatarUpload(event) {
                     </div>
 
                     <div v-else class="order-list">
+                      <!-- 最新一筆訂單高亮 -->
+                      <div v-if="orders.length > 0" class="latest-order-card p-4 rounded-4 mb-4 cursor-pointer" style="background: linear-gradient(135deg, #F0FDFA 0%, #FFFFFF 100%); border: 2px solid #5EEAD4; transition: all 0.3s;" @click="toggleExpand(orders[0].orderId)">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                          <div>
+                            <div class="small fw-bold mb-1" style="color: #0D9488;"><i class="bi bi-stars me-1"></i>最新一筆訂單</div>
+                            <h4 class="fw-800 mb-0">#{{ orders[0].orderId }}</h4>
+                          </div>
+                          <span class="badge rounded-pill px-3 py-2" :style="{ backgroundColor: statusMap[orders[0].status]?.bg, color: statusMap[orders[0].status]?.color }">
+                            {{ statusMap[orders[0].status]?.label }}
+                          </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                          <div class="d-flex align-items-center gap-4">
+                            <div class="fw-bold" style="font-size: 1.25rem; color: #0D9488;">NT$ {{ orders[0].totalAmount.toLocaleString() }}</div>
+                            <router-link :to="'/my-orders?orderId=' + orders[0].orderId" class="btn btn-sm rounded-pill px-3 shadow-sm" style="background: #0D9488; color: white; border: none; font-size: 0.85rem;" @click.stop>訂單詳情</router-link>
+                          </div>
+                          <i class="bi fs-5" style="color: #0D9488;" :class="expandedId === orders[0].orderId ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                        </div>
+
+                        <!-- 展開內容：明細與進度條 -->
+                        <div
+                          v-if="expandedId === orders[0].orderId"
+                          class="order-expanded-content mt-3 pt-3 border-top animate__animated animate__fadeIn"
+                          style="border-color: rgba(94, 234, 212, 0.3) !important;"
+                        >
+                          <!-- 進度條 (Mini 版) -->
+                          <div class="progress-tracker-mini mb-4">
+                            <div class="progress-lines-wrap">
+                              <div class="progress-line-bg"></div>
+                              <div
+                                class="progress-line-fill"
+                                :style="{
+                                  width: getProgressWidth(orders[0].status),
+                                  backgroundColor: 'var(--brand-sky)',
+                                }"
+                              ></div>
+                            </div>
+                            <div
+                              v-for="step in progressSteps"
+                              :key="step"
+                              class="progress-step-mini"
+                              :class="{
+                                active: isStepActive(orders[0].status, step),
+                                current: orders[0].status === step && step !== 'COMPLETED',
+                              }"
+                            >
+                              <div
+                                class="step-dot"
+                                :style="
+                                  isStepActive(orders[0].status, step)
+                                    ? {
+                                        borderColor: 'var(--brand-sky)',
+                                        backgroundColor:
+                                          orders[0].status === step && step !== 'COMPLETED'
+                                            ? 'white'
+                                            : 'var(--brand-sky)',
+                                      }
+                                    : {}
+                                "
+                              >
+                                <!-- 如果是當前狀態：秀出專屬圖示 -->
+                                <i
+                                  v-if="orders[0].status === step && step !== 'COMPLETED'"
+                                  :class="['bi', statusMap[step]?.icon]"
+                                  :style="{ color: 'var(--brand-sky)', fontSize: '0.85rem' }"
+                                ></i>
+                                <!-- 如果是已完成狀態：秀出打勾 -->
+                                <i
+                                  v-else-if="isStepActive(orders[0].status, step)"
+                                  class="bi bi-check-lg"
+                                  style="color: white; font-size: 1rem"
+                                ></i>
+                              </div>
+                              <div class="step-text">{{ statusMap[step].label }}</div>
+                              <div class="step-time">{{ getStepTime(orders[0], step) }}</div>
+                            </div>
+                          </div>
+
+                          <!-- 商品明细 -->
+                          <div v-if="loadingItems === orders[0].orderId" class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-info"></div>
+                          </div>
+                          <div v-else class="expanded-items-list px-2">
+                            <div
+                              v-for="item in orderItems[orders[0].orderId]"
+                              :key="item.itemId"
+                              class="d-flex align-items-center gap-3 mb-2 py-2 border-bottom-dashed"
+                            >
+                              <img
+                                :src="
+                                  item.product?.imageUrl?.startsWith('/')
+                                    ? item.product.imageUrl
+                                    : '/' + item.product.imageUrl
+                                "
+                                class="rounded-2"
+                                style="
+                                  width: 54px;
+                                  height: 54px;
+                                  object-fit: scale-down;
+                                  background: #fff;
+                                  border: 1.5px solid #f1f5f9;
+                                  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+                                "
+                              />
+                              <div class="flex-grow-1">
+                                <div class="fw-semibold" style="font-size: 0.88rem; color: #1E293B;">
+                                  {{ item.product?.productName }}
+                                </div>
+                                <div class="text-muted" style="font-size: 0.75rem">
+                                  NT$ {{ item.unitPrice.toLocaleString() }} x {{ item.quantity }}
+                                </div>
+                              </div>
+                              <div
+                                class="fw-bold"
+                                style="font-size: 0.88rem; color: var(--brand-dark)"
+                              >
+                                NT$ {{ (item.unitPrice * item.quantity).toLocaleString() }}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <h6 v-if="orders.length > 1" class="text-secondary small fw-bold mb-3">更早之前的訂單</h6>
+
                       <div
-                        v-for="order in orders"
+                        v-for="order in orders.slice(1)"
                         :key="order.orderId"
                         class="order-item-row p-3 mb-3 border rounded-3"
                         :class="{ 'is-expanded': expandedId === order.orderId }"
