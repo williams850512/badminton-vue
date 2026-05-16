@@ -64,7 +64,7 @@ const isWeekend = (dateStr) => {
 // --------------------
 const availableGames = computed(() => {
   const todayStr = getTodayStr()
-  
+
   // 🌟 基本過濾：過濾掉已取消、已結束，且【只顯示今天或未來且尚未結束的場次】
   const now = new Date()
   let result = pickupGames.value.filter(game => {
@@ -155,14 +155,14 @@ const paginatedGames = computed(() => {
 // 切換頁面函式
 const changePage = async (pageNumber) => {
   if (pageNumber < 1 || pageNumber > totalPages.value) return
-  
+
   // 1. 將新頁碼更新到網址上 (這樣上一頁/下一頁才會記住)
   router.push({ query: { ...route.query, page: pageNumber, size: itemsPerPage.value } })
   currentPage.value = pageNumber
-  
+
   // 2. 呼叫後端 API 抓取最新資料
   await fetchGames()
-  
+
   // 3. 平滑回頂部
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -232,7 +232,7 @@ const handleOpenQuickView = (game) => {
   quickViewGame.value = game
   selectedLevel.value = ''
   isAgreed.value = false // 每次打開時重置同意狀態
-  
+
   const modalEl = document.getElementById('quickViewModal')
   if (modalEl) {
     quickViewModalInstance = Modal.getInstance(modalEl) || new Modal(modalEl)
@@ -254,35 +254,52 @@ const confirmSignup = async () => {
     alert('請先選擇報名程度')
     return
   }
-  
+
   // 🌟 性別防呆檢查
   const memberInfo = JSON.parse(localStorage.getItem('memberInfo')) || {}
   const reqGender = quickViewGame.value.requiredGender || quickViewGame.value.genderLimit
-  
+
   if (reqGender === 'FEMALE' && memberInfo.gender !== 'FEMALE' && memberInfo.gender !== '女') {
-    Swal.fire({ 
-      icon: 'error', 
-      title: '資格不符', 
-      text: '不好意思，本場次為主揪設定之女性專屬場次喔！', 
+    Swal.fire({
+      icon: 'error',
+      title: '資格不符',
+      text: '不好意思，本場次為主揪設定之女性專屬場次喔！',
       confirmButtonColor: '#ec4899', // 使用粉色符合女團氛圍
       confirmButtonText: '我知道了'
     })
     return
   }
   if (reqGender === 'MALE' && memberInfo.gender !== 'MALE' && memberInfo.gender !== '男') {
-    Swal.fire({ 
-      icon: 'error', 
-      title: '資格不符', 
-      text: '不好意思，本場次為主揪設定之男性專屬場次喔！', 
+    Swal.fire({
+      icon: 'error',
+      title: '資格不符',
+      text: '不好意思，本場次為主揪設定之男性專屬場次喔！',
       confirmButtonColor: '#0ea5e9',
       confirmButtonText: '我知道了'
     })
     return
   }
 
+    // 程度防呆
+  const levelRank = { BEGINNER: 1, INTERMEDIATE: 2, ADVANCED: 3 }
+  const reqLevel = quickViewGame.value?.skillLevel
+
+  if (reqLevel && reqLevel !== 'ALL' && levelRank[selectedLevel.value] < levelRank[reqLevel]) {
+    const levelName = { BEGINNER: '初級', INTERMEDIATE: '中級', ADVANCED: '高級' }
+    Swal.fire({
+      icon: 'error',
+      title: '程度不符',
+      text: `本場次最低程度要求為「${levelName[reqLevel]}」，您選擇的程度不符合資格！`,
+      confirmButtonColor: '#0ea5e9',
+      confirmButtonText: '我知道了'
+    })
+    return
+  }
+
+
   const currentMemberId = memberInfo.memberId || 1 // 假資料：目前登入的會員 ID
   await joinPickupGame(quickViewGame.value.gameId, currentMemberId)
-  
+
   if (quickViewModalInstance) {
     quickViewModalInstance.hide()
   }
@@ -311,7 +328,7 @@ const cancelMySignup = async () => {
       // 我們透過後端新增加的 API：DELETE /api/pickup-game-signups/member/{memberId}/game/{gameId} 來取消報名
       // 因為需要 import axios，所以如果前面沒有 import，請直接使用全域或 api instance
       // 由於 usePickupGameApi 沒有匯出，這裡直接使用 api / axios
-      const { data } = await api.delete(`/pickup-game-signups/member/${currentMemberId}/game/${quickViewGame.value.gameId}`)
+      await api.delete(`/pickup-game-signups/member/${currentMemberId}/game/${quickViewGame.value.gameId}`)
 
       Swal.fire({
         icon: 'success',
@@ -323,7 +340,7 @@ const cancelMySignup = async () => {
       if (quickViewModalInstance) {
         quickViewModalInstance.hide()
       }
-      
+
       // 重新取得資料以更新 UI
       await fetchGames()
       await fetchMyRegisteredGames(currentMemberId)
@@ -392,16 +409,16 @@ const handleManageGame = (game) => {
         <div class="text-secondary opacity-25 mx-1">|</div>
 
         <!-- 選擇日期 (自訂) -->
-        <div 
+        <div
           class="btn btn-sm rounded-pill px-3 border-0 transition-all position-relative overflow-hidden mb-0 d-flex align-items-center"
           :class="!['全部','今天','明天','本週末'].includes(selectedDateFilter) ? 'bg-white shadow-sm fw-bold text-dark' : 'text-secondary'"
           style="cursor: pointer;"
         >
           <i class="bi bi-calendar3 me-2" style="color: #65a30d;"></i>
           <span>{{ !['全部','今天','明天','本週末'].includes(selectedDateFilter) ? '📅 ' + selectedDateFilter : '選擇日期' }}</span>
-          <input 
-            type="date" 
-            class="position-absolute top-0 start-0 opacity-0 w-100 h-100 date-input-overlay" 
+          <input
+            type="date"
+            class="position-absolute top-0 start-0 opacity-0 w-100 h-100 date-input-overlay"
             v-model="selectedDateFilter"
             @click="$event.target.showPicker?.()"
           />
@@ -415,8 +432,8 @@ const handleManageGame = (game) => {
       </div>
 
       <!-- 🌟 發起揪團按鈕 -->
-      <button 
-        class="btn rounded-pill px-4 text-white fw-bold shadow-sm flex-shrink-0" 
+      <button
+        class="btn rounded-pill px-4 text-white fw-bold shadow-sm flex-shrink-0"
         style="background-color: #0ea5e9;"
         @click="createModalRef.showModal()"
       >
@@ -424,16 +441,16 @@ const handleManageGame = (game) => {
       </button>
 
       <!-- 3. 進階篩選 (觸發 Offcanvas) -->
-      <button 
-        class="btn rounded-pill px-4 bg-white hover-bg-light flex-shrink-0 position-relative" 
+      <button
+        class="btn rounded-pill px-4 bg-white hover-bg-light flex-shrink-0 position-relative"
         style="border: 1px solid #e2e8f0;"
-        data-bs-toggle="offcanvas" 
+        data-bs-toggle="offcanvas"
         data-bs-target="#advancedFilterOffcanvas"
       >
         <i class="bi bi-sliders me-2 text-dark"></i>
         <span class="text-dark fw-medium">進階篩選</span>
         <!-- 有套用進階篩選時的提示小紅點 -->
-        <span v-if="advancedFilters.levels.length || advancedFilters.hasAvailableSlotsOnly || advancedFilters.timeOfDay" 
+        <span v-if="advancedFilters.levels.length || advancedFilters.hasAvailableSlotsOnly || advancedFilters.timeOfDay"
               class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle">
           <span class="visually-hidden">Active filters</span>
         </span>
@@ -461,7 +478,7 @@ const handleManageGame = (game) => {
 
       <!-- 🌟 分頁導覽列 (Pagination) 包含資訊列與選擇器 -->
       <div v-if="availableGames.length > 0" class="d-flex justify-content-between align-items-center mt-5 bg-white p-3 rounded-pill shadow-sm" style="border: 1px solid #e2e8f0;">
-        
+
         <!-- 左側：資料筆數資訊 -->
         <div class="text-secondary fw-medium ps-3" style="font-size: 0.95rem;">
           共 {{ availableGames.length }} 筆 · 第 {{ currentPage }} / {{ totalPages }} 頁
@@ -476,22 +493,22 @@ const handleManageGame = (game) => {
                 <i class="bi bi-chevron-left"></i>
               </button>
             </li>
-            
+
             <!-- 頁碼數字 -->
-            <li 
-              v-for="page in totalPages" 
-              :key="page" 
+            <li
+              v-for="page in totalPages"
+              :key="page"
               class="page-item"
             >
-              <button 
-                class="page-link border-0 fw-bold mx-1 rounded" 
+              <button
+                class="page-link border-0 fw-bold mx-1 rounded"
                 :class="page === currentPage ? 'bg-primary text-white' : 'text-secondary'"
                 @click="changePage(page)"
               >
                 {{ page }}
               </button>
             </li>
-            
+
             <!-- 下一頁 -->
             <li class="page-item" :class="{ disabled: currentPage === totalPages }">
               <button class="page-link border-0 text-secondary" @click="changePage(currentPage + 1)">
@@ -505,8 +522,8 @@ const handleManageGame = (game) => {
         <!-- 右側：每頁筆數下拉選單 -->
         <div class="d-flex align-items-center pe-3">
           <span class="text-secondary me-2" style="font-size: 0.95rem;">每頁</span>
-          <select 
-            class="form-select form-select-sm border-0 shadow-none bg-light text-primary fw-bold cursor-pointer" 
+          <select
+            class="form-select form-select-sm border-0 shadow-none bg-light text-primary fw-bold cursor-pointer"
             style="width: 70px;"
             :value="itemsPerPage"
             @change="changePageSize"
@@ -532,7 +549,7 @@ const handleManageGame = (game) => {
         <button type="button" id="closeOffcanvasBtn" class="btn-close shadow-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
       <div class="offcanvas-body">
-        
+
         <!-- 程度 -->
         <div class="mb-4">
           <h6 class="fw-bold mb-3">打球程度</h6>
@@ -603,7 +620,7 @@ const handleManageGame = (game) => {
           </div>
         </div>
       </div>
-      
+
       <!-- 底部按鈕 -->
       <div class="offcanvas-footer border-top p-3 d-flex gap-2 bg-light">
         <button class="btn btn-light border flex-grow-1 fw-bold" @click="clearAdvancedFilters">清除條件</button>
@@ -695,6 +712,7 @@ const handleManageGame = (game) => {
             <div class="d-flex align-items-baseline gap-1 mb-3 pb-3" style="border-bottom: 1px solid #f1f5f9;">
               <span class="fw-bold fs-5" style="color: #0ea5e9;">NT$ {{ quickViewGame.feePerPerson || 0 }}</span>
               <span class="text-secondary small">/ 人</span>
+              <span class="text-muted small ms-1">(預估費用，依現場人數微調)</span>
             </div>
 
             <template v-if="!isQuickViewRegistered">
@@ -723,7 +741,7 @@ const handleManageGame = (game) => {
                 </label>
               </div>
             </template>
-            
+
             <template v-else>
               <!-- 🌟 已報名的行前資訊與管理 (已報名時顯示) -->
               <div class="p-3 bg-light rounded-3 border mb-1">
@@ -742,16 +760,16 @@ const handleManageGame = (game) => {
             <button type="button" class="btn btn-light fw-bold flex-grow-1 border rounded-pill" @click="goToDetails">
               <i class="bi bi-arrow-right-circle me-1"></i>查看完整詳情
             </button>
-            
+
             <template v-if="!isQuickViewRegistered">
-              <button type="button" class="btn fw-bold text-white shadow-sm flex-grow-1 rounded-pill qv-btn-submit" 
+              <button type="button" class="btn fw-bold text-white shadow-sm flex-grow-1 rounded-pill qv-btn-submit"
                       @click="confirmSignup"
                       :disabled="!isAgreed || quickViewGame?.currentPlayers >= quickViewGame?.maxPlayers">
                 {{ quickViewGame?.currentPlayers >= quickViewGame?.maxPlayers ? '已滿團' : '⚡ 確認報名' }}
               </button>
             </template>
             <template v-else>
-              <button type="button" class="btn btn-outline-danger fw-bold flex-grow-1 rounded-pill" 
+              <button type="button" class="btn btn-outline-danger fw-bold flex-grow-1 rounded-pill"
                       @click="cancelMySignup">
                 <i class="bi bi-x-circle-fill me-1"></i>退出揪團
               </button>
