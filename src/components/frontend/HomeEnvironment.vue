@@ -142,7 +142,7 @@ onUnmounted(() => {
 <style scoped>
 /* ===== 整體偏移 ===== */
 .env-section {
-  margin-left: -15rem;
+  margin-left: -11rem;
 }
 
 /* ===== Flexbox 佈局（不受 12 欄限制） ===== */
@@ -157,7 +157,7 @@ onUnmounted(() => {
 }
 
 .env-col-right {
-  flex: 0 0 70%; /* 右側自動填滿剩餘空間 */
+  flex: 0 0 60%; /* 右側自動填滿剩餘空間 */
 }
 
 /* 手機版改為上下排列 */

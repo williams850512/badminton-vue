@@ -297,7 +297,7 @@ const today = computed(() => {
         class="form-control"
         style="width: 200px"
         v-model="searchKeyword"
-        placeholder="搜尋會員/球場..."
+        placeholder="搜尋會員、電話、球場、日期..."
         @keyup.enter="searchBookings"
       />
       <button class="btn btn-outline-secondary" @click="searchBookings">
@@ -352,7 +352,13 @@ const today = computed(() => {
           <!-- 正常渲染資料 -->
           <tr v-for="b in pagedBookings" :key="b.bookingId" v-else>
             <td class="ps-4">{{ b.bookingId }}</td>
-            <td>{{ b.member?.fullName || '-' }}</td>
+            <td>
+              <div class="fw-bold">{{ b.member?.fullName || '-' }}</div>
+              <div class="text-muted small">
+                <i class="bi bi-telephone me-1"></i>
+                {{ b.member?.phone || '未提供電話' }}
+              </div>
+            </td>
             <td>{{ b.court?.courtName || '-' }}</td>
             <td>{{ b.bookingDate }}</td>
             <td>{{ b.startTime }} ~ {{ b.endTime }}</td>

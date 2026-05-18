@@ -170,6 +170,7 @@ function excerpt(text) {
                 <div class="info-value">
                   <span class="pay-tag">現金</span>
                   <span class="pay-tag">信用卡</span>
+                  <span class="pay-tag">轉帳</span>
                   <span class="pay-tag">LINE Pay</span>
                 </div>
               </div>

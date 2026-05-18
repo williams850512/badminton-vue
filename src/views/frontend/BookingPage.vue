@@ -14,6 +14,29 @@ const memberStore = useMemberStore()
 const { requestPayment } = useLinePay()
 const showAuthModal = ref(false)
 
+// 自訂提示 Modal
+const modalVisible = ref(false)
+const modalType = ref('success') // 'success' | 'error' | 'warning'
+const modalTitle = ref('')
+const modalMessage = ref('')
+const modalCallback = ref(null)
+
+function showModal(type, title, message, callback = null) {
+  modalType.value = type
+  modalTitle.value = title
+  modalMessage.value = message
+  modalCallback.value = callback
+  modalVisible.value = true
+}
+
+function closeModal() {
+  modalVisible.value = false
+  if (modalCallback.value) {
+    modalCallback.value()
+    modalCallback.value = null
+  }
+}
+
 const currentStep = ref(1) // 目前步驟 (1/2/3)
 
 // 步驟定義
@@ -133,15 +156,15 @@ function onDateChange() {
 // Step 2 → Step 3：驗證後才前進
 function goToConfirm() {
   if (!selectedCourt.value) {
-    alert('請先選擇球場')
+    showModal('warning', '提示', '請先選擇球場')
     return
   }
   if (!selectedDate.value) {
-    alert('請先選擇日期')
+    showModal('warning', '提示', '請先選擇日期')
     return
   }
   if (selectedSlots.value.length === 0) {
-    alert('請至少選擇一個時段')
+    showModal('warning', '提示', '請至少選擇一個時段')
     return
   }
   // 檢查是否已登入，未登入則彈出 AuthModal
@@ -235,12 +258,23 @@ async function processBooking() {
       })
     } else {
       // 現金 / 轉帳 / 信用卡(已模擬) → 顯示成功
-      alert('預約成功！🎉')
-      resetBookingState()
-      router.push({ path: '/profile', query: { tab: 'bookings' } })
+      showModal('success', '預約成功！', '請準時前往場館報到！', () => {
+        resetBookingState()
+        router.push({ path: '/profile', query: { tab: 'bookings' } })
+      })
     }
   } catch (error) {
-    alert('預約失敗：' + (error.response?.data || error.message))
+    // 從後端回應中提取可讀錯誤訊息
+    const data = error.response?.data
+    let msg = '系統忙碌中，請稍後再試'
+    if (typeof data === 'string') {
+      msg = data
+    } else if (data?.message) {
+      msg = data.message
+    } else if (error.message) {
+      msg = error.message
+    }
+    showModal('error', '預約失敗', msg)
   } finally {
     isSubmitting.value = false
   }
@@ -609,6 +643,28 @@ function resetBookingState() {
       @close="showCreditCardModal = false"
       @payment-success="() => { showCreditCardModal = false; processBooking() }"
     />
+    <!-- 自訂提示 Modal -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="modalVisible" class="custom-modal-overlay" @click.self="closeModal">
+          <div class="custom-modal-card">
+            <!-- Icon -->
+            <div class="modal-icon" :class="modalType">
+              <i v-if="modalType === 'success'" class="bi bi-check-lg"></i>
+              <i v-else-if="modalType === 'error'" class="bi bi-x-lg"></i>
+              <i v-else class="bi bi-exclamation-lg"></i>
+            </div>
+            <!-- 文字 -->
+            <h4 class="modal-title">{{ modalTitle }}</h4>
+            <p class="modal-message">{{ modalMessage }}</p>
+            <!-- 按鈕 -->
+            <button class="btn-modal-confirm" :class="modalType" @click="closeModal">
+              {{ modalType === 'success' ? '太棒了' : '我知道了' }}
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -786,5 +842,121 @@ function resetBookingState() {
   color: #94a3b8;
   font-size: 0.78rem;
   margin: 0 1px;
+}
+
+/* ===== 自訂提示 Modal ===== */
+.custom-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-modal-card {
+  background: white;
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem 2rem;
+  text-align: center;
+  width: 90%;
+  max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  animation: modalBounceIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalBounceIn {
+  from { opacity: 0; transform: scale(0.85) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  font-size: 2rem;
+}
+
+.modal-icon.success {
+  background: #ECFDF5;
+  color: #10B981;
+  border: 3px solid #A7F3D0;
+}
+
+.modal-icon.error {
+  background: #FEF2F2;
+  color: #EF4444;
+  border: 3px solid #FECACA;
+}
+
+.modal-icon.warning {
+  background: #FFFBEB;
+  color: #F59E0B;
+  border: 3px solid #FDE68A;
+}
+
+.modal-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 0.5rem;
+}
+
+.modal-message {
+  font-size: 0.95rem;
+  color: #64748B;
+  margin-bottom: 1.75rem;
+  line-height: 1.6;
+}
+
+.btn-modal-confirm {
+  display: inline-block;
+  padding: 0.65rem 2.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.03em;
+}
+
+.btn-modal-confirm.success {
+  background: linear-gradient(135deg, #10B981, #34D399);
+  color: white;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.btn-modal-confirm.error {
+  background: linear-gradient(135deg, #EF4444, #F87171);
+  color: white;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+
+.btn-modal-confirm.warning {
+  background: linear-gradient(135deg, var(--brand-teal), var(--brand-sky));
+  color: white;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+}
+
+.btn-modal-confirm:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+/* Transition */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
 }
 </style>
