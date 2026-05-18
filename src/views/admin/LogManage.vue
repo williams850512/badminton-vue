@@ -102,17 +102,29 @@ function getNormalizedAction(log) {
   }
   
   // 3. 新增
-  if (action === 'CREATE') {
+  if (action === 'ADD_ADMIN' || action === 'ADD_MEMBER') {
+    return action
+  }
+  if (action === 'CREATE') { // 兼容舊資料
     return target === 'ADMIN' ? 'ADD_ADMIN' : 'ADD_MEMBER'
   }
   
-  // 4. 修改 (包含 UPDATE_ 開頭的子動作)
-  if (action === 'UPDATE' || action.startsWith('UPDATE_') || action === 'UPDATE_PROFILE') {
+  // 4. 修改 (包含 UPDATE_PROFILE)
+  if (action === 'UPDATE_ADMIN' || action === 'UPDATE_MEMBER') {
+    return action
+  }
+  if (action === 'UPDATE_PROFILE') {
+    return 'UPDATE_ADMIN'
+  }
+  if (action === 'UPDATE' || action.startsWith('UPDATE_')) { // 兼容舊資料
     return target === 'ADMIN' ? 'UPDATE_ADMIN' : 'UPDATE_MEMBER'
   }
   
   // 5. 刪除
-  if (action === 'DELETE') {
+  if (action === 'DELETE_ADMIN' || action === 'DELETE_MEMBER') {
+    return action
+  }
+  if (action === 'DELETE') { // 兼容舊資料
     return target === 'ADMIN' ? 'DELETE_ADMIN' : 'DELETE_MEMBER'
   }
   
@@ -163,7 +175,7 @@ const chartData = computed(() => {
 
   // 排序週數據 (取最近 8 週)
   const sortedWeeks = Object.keys(regByWeek).sort().slice(-8)
-  const actionLabels_sorted = Object.keys(actionCounts).sort((a, b) => actionCounts[b] - actionCounts[a])
+  const actionLabels_sorted = Object.keys(actionCounts).sort((a, b) => actionCounts[a] - actionCounts[b])
 
   return {
     // 各類型操作 (長條圖)
@@ -178,7 +190,10 @@ const chartData = computed(() => {
     },
     // 每週新增會員 (趨勢圖)
     weeklyReg: {
-      labels: sortedWeeks.map(w => w.slice(5) + ' 週'),
+      labels: sortedWeeks.map(w => {
+        const [m, d] = w.slice(5).split('-')
+        return `${parseInt(m)}/${parseInt(d)} 當週`
+      }),
       datasets: [{
         label: '註冊人數',
         data: sortedWeeks.map(w => regByWeek[w]),
@@ -223,19 +238,29 @@ async function loadLogs() {
   try {
     loading.value = true
     const params = {}
-    if (filterAction.value) params.action = filterAction.value
+    // 不在呼叫後端時過濾操作類型，因為後端無法單憑字串區分 Google 註冊，且 UPDATE_ADMIN 也包含 UPDATE_PROFILE
+    // 統一交由下方的 rawLogs.filter 進行前端精確過濾
+
     if (filterStartDate.value) params.startDate = filterStartDate.value
     if (filterEndDate.value) params.endDate = filterEndDate.value
 
+    let rawLogs = []
     if (searchKeyword.value.trim()) {
-      logs.value = await systemLogApi.searchLogs(searchKeyword.value.trim())
+      rawLogs = await systemLogApi.searchLogs(searchKeyword.value.trim())
     } else {
-      logs.value = await systemLogApi.getLogs(params)
+      rawLogs = await systemLogApi.getLogs(params)
     }
     
-    // 隱藏舊的「查詢」紀錄，不顯示在畫面上
+    // 隱藏舊的「查詢」紀錄
     const hiddenActions = ['READ_LIST', 'READ_DETAIL', 'SEARCH']
-    logs.value = logs.value.filter(log => !hiddenActions.includes(log.action))
+    rawLogs = rawLogs.filter(log => !hiddenActions.includes(log.action))
+    
+    // 如果有選擇特定操作類型，進行前端二次精確過濾 (區分 Admin / Member)
+    if (filterAction.value) {
+      logs.value = rawLogs.filter(log => getNormalizedAction(log) === filterAction.value)
+    } else {
+      logs.value = rawLogs
+    }
     
   } catch (error) {
     console.error('載入日誌失敗:', error)
@@ -905,3 +930,4 @@ input[type="date"]::-webkit-datetime-edit-day-field {
   }
 }
 </style>
+

@@ -455,21 +455,21 @@ function handleExport(format) {
             </td>
             <td>
               <div class="d-flex gap-1">
-                <button class="btn btn-sm action-btn action-btn-edit" title="編輯職員" @click="openEditModal(a.adminId)">
+                <button class="btn btn-sm action-btn action-btn-edit" data-tooltip="編輯" @click="openEditModal(a.adminId)">
                   <i class="bi bi-pencil"></i>
                 </button>
                 <button
                   class="btn btn-sm action-btn action-btn-note"
-                  title="備註"
+                  :data-tooltip="a.note || '備註'"
                   @click="openNoteModal(a.adminId, a.fullName || a.username, a.note)"
                 >
                   <i class="bi bi-sticky"></i>
                 </button>
                 <button
                   class="btn btn-sm action-btn action-btn-delete"
+                  data-tooltip="刪除"
                   :class="{ 'btn-disabled': isSelf(a.adminId) }"
                   :disabled="isSelf(a.adminId)"
-                  :title="isSelf(a.adminId) ? '不能刪除自己' : '刪除職員'"
                   @click="!isSelf(a.adminId) && deleteAdmin(a.adminId, a.username)"
                 >
                   <i class="bi bi-trash3"></i>
@@ -477,12 +477,14 @@ function handleExport(format) {
                 <div class="dropdown">
                   <button
                     class="btn btn-sm action-btn action-btn-status dropdown-toggle"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    data-tooltip="編輯帳號狀態"
                     :class="{ 'btn-disabled': isSelf(a.adminId) }"
                     :disabled="isSelf(a.adminId)"
-                    data-bs-toggle="dropdown"
-                    title="變更狀態"
                   >
                     <i class="bi bi-arrow-repeat"></i>
+                    <i class="bi bi-caret-down-fill ms-1" style="font-size: 0.65rem;"></i>
                   </button>
                   <ul v-if="!isSelf(a.adminId)" class="dropdown-menu">
                     <li>
@@ -616,7 +618,7 @@ function handleExport(format) {
           </div>
           <div class="modal-footer">
             <button class="btn-cancel" @click="showModal = false">取消</button>
-            <button class="btn-save" @click="saveAdmin"><i class="bi bi-check-lg"></i> 儲存</button>
+            <button class="btn-save" @click="saveAdmin">儲存</button>
           </div>
         </div>
       </div>
@@ -637,7 +639,7 @@ function handleExport(format) {
           </div>
           <div class="modal-footer">
             <button class="btn-cancel" @click="showNoteModal = false">取消</button>
-            <button class="btn-save" @click="saveNote"><i class="bi bi-check-lg"></i> 儲存</button>
+            <button class="btn-save" @click="saveNote">儲存</button>
           </div>
         </div>
       </div>
@@ -953,6 +955,59 @@ input[type="date"]::-webkit-datetime-edit-day-field {
   border-radius: 0.5rem;
   transition: all 0.2s ease;
   white-space: nowrap;
+  position: relative;
+}
+
+/* Custom Tooltip */
+.action-btn[data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: -5px; /* 向右對齊，避免表格邊緣裁切 */
+  left: auto;
+  transform: scale(0.9);
+  transform-origin: bottom right;
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: normal; /* 允許長備註換行 */
+  width: max-content;
+  max-width: 250px;
+  text-align: left;
+  line-height: 1.4;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.02em;
+}
+
+.action-btn[data-tooltip]::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  right: 12px; /* 箭頭對齊按鈕中心偏右 */
+  left: auto;
+  border-width: 5px 5px 0;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+}
+
+.action-btn[data-tooltip]:hover::before,
+.action-btn[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
 }
 .action-btn-edit {
   background: #eef2ff;

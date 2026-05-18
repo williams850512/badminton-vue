@@ -7,8 +7,10 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { memberApi } from '@/api/member'
+import { useMemberStore } from '@/stores/member'
 
 const router = useRouter()
+const memberStore = useMemberStore()
 
 const form = ref({
   username: '',
@@ -23,6 +25,28 @@ const form = ref({
 const isLoading = ref(false)
 const errorMsg = ref('')
 const showPassword = ref(false)
+
+const registerAvatarFile = ref(null)
+const registerAvatarPreview = ref(null)
+
+function triggerRegisterAvatar() {
+  document.getElementById('registerAvatarInput').click()
+}
+
+function handleRegisterAvatarChange(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    errorMsg.value = '請選擇圖片檔案'
+    return
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    errorMsg.value = '圖片大小不能超過 2MB'
+    return
+  }
+  registerAvatarFile.value = file
+  registerAvatarPreview.value = URL.createObjectURL(file)
+}
 
 // 取得今天的日期字串 (YYYY-MM-DD)，用於限制 HTML 日期選擇器最大值
 const todayDate = new Date().toISOString().split('T')[0]
@@ -46,12 +70,12 @@ async function handleRegister() {
     return
   }
   
-  if (!/^[A-Za-z0-9]{6,12}$/.test(d.username)) {
-    errorMsg.value = '帳號必須為 6-12 碼英數字 (不可包含特殊字元)'
+  if (!/^[A-Za-z0-9]{6,15}$/.test(d.username)) {
+    errorMsg.value = '帳號必須為 6-15 碼英數字 (不可包含特殊字元)'
     return
   }
-  if (d.password.length < 6 || d.password.length > 12) {
-    errorMsg.value = '密碼必須為 6-12 碼英數字'
+  if (d.password.length < 6 || d.password.length > 15) {
+    errorMsg.value = '密碼必須為 6-15 碼英數字'
     return
   }
   if (d.password !== d.confirmPassword) {
@@ -78,9 +102,26 @@ async function handleRegister() {
   errorMsg.value = ''
 
   try {
-    await memberApi.register(d)
-    // 註冊成功，跳到登入頁
-    router.push({ path: '/login', query: { registered: '1' } })
+    const res = await memberApi.register(d)
+    
+    // 後端已改為回傳 { token, member }，註冊即登入
+    memberStore.login(res.token, res.member)
+
+    // 如果有選擇大頭貼，註冊成功後接著上傳
+    if (registerAvatarFile.value) {
+      try {
+        const uploadRes = await memberApi.uploadAvatar(registerAvatarFile.value)
+        const info = JSON.parse(localStorage.getItem('memberInfo') || '{}')
+        info.profilePicture = uploadRes.imageUrl
+        localStorage.setItem('memberInfo', JSON.stringify(info))
+        memberStore.login(res.token, info)
+      } catch (uploadErr) {
+        console.error('註冊時上傳大頭貼失敗', uploadErr)
+      }
+    }
+
+    // 註冊成功並登入後，導向首頁或會員中心
+    router.push({ path: '/profile' })
   } catch (err) {
     // 直接顯示後端回傳的真實錯誤訊息
     const msg = err.response?.data
@@ -103,10 +144,7 @@ async function handleRegister() {
 
           <div class="register-card card-rounded shadow-sm p-3">
             <!-- Header -->
-            <div class="text-center mb-2">
-              <div class="brand-icon-circle mx-auto mb-2">
-                <i class="bi bi-person-plus"></i>
-              </div>
+            <div class="text-center mt-1 mb-4">
               <h2 class="fw-bold text-gradient mb-1">會員註冊</h2>
               <p class="text-muted small tracking-wider mb-0">CREATE YOUR ACCOUNT</p>
             </div>
@@ -119,12 +157,66 @@ async function handleRegister() {
 
             <!-- Form -->
             <form @submit.prevent="handleRegister">
+              
+              <!-- 大頭貼上傳 -->
+              <div class="d-flex flex-column align-items-center mb-3">
+                <div
+                  class="register-avatar-upload"
+                  @click="triggerRegisterAvatar"
+                  title="上傳大頭貼"
+                >
+                  <img
+                    v-if="registerAvatarPreview"
+                    :src="registerAvatarPreview"
+                    alt="預覽"
+                    class="avatar-img"
+                  />
+                  <div v-else class="empty-avatar">
+                    <i class="bi bi-camera-fill"></i>
+                  </div>
+                  <div v-if="registerAvatarPreview" class="avatar-overlay">
+                    <i class="bi bi-camera-fill"></i>
+                    <span>編輯</span>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  id="registerAvatarInput"
+                  accept="image/*"
+                  class="d-none"
+                  @change="handleRegisterAvatarChange"
+                />
+                <span class="fw-semibold small text-secondary mt-2">請上傳大頭貼</span>
+              </div>
+              <div class="row mb-2">
+                <div class="col-7">
+                  <label class="form-label fw-semibold small text-secondary">
+                    姓名
+                  </label>
+                  <input v-model="form.fullName" type="text" class="form-control rounded-3"
+                         placeholder="請輸入姓名" />
+                </div>
+                <div class="col-5">
+                  <label class="form-label fw-semibold small text-secondary">
+                    性別
+                  </label>
+                  <div class="d-flex gap-3 pt-1">
+                    <label class="form-check-label d-flex align-items-center gap-1">
+                      <input v-model="form.gender" type="radio" value="男" class="form-check-input" /> 男
+                    </label>
+                    <label class="form-check-label d-flex align-items-center gap-1">
+                      <input v-model="form.gender" type="radio" value="女" class="form-check-input" /> 女
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               <div class="mb-2">
                 <label class="form-label fw-semibold small text-secondary">
                   設定帳號
                 </label>
                 <input v-model="form.username" type="text" class="form-control rounded-3"
-                       placeholder="請輸入 6-12 碼英數字" maxlength="12" autocomplete="off" autofocus />
+                       placeholder="請輸入 6-15 碼英數字" maxlength="15" autocomplete="off" autofocus />
               </div>
 
               <div class="mb-2">
@@ -133,7 +225,7 @@ async function handleRegister() {
                 </label>
                 <div class="position-relative">
                   <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
-                         class="form-control rounded-3" placeholder="請輸入 6-12 碼英數字" maxlength="12"
+                         class="form-control rounded-3" placeholder="請輸入 6-15 碼英數字" maxlength="15"
                          autocomplete="new-password" style="padding-right: 48px;" />
                   <button type="button"
                           class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary pe-3"
@@ -163,28 +255,6 @@ async function handleRegister() {
                 </div>
               </div>
 
-              <div class="row mb-2">
-                <div class="col-7">
-                  <label class="form-label fw-semibold small text-secondary">
-                    姓名
-                  </label>
-                  <input v-model="form.fullName" type="text" class="form-control rounded-3"
-                         placeholder="請輸入姓名" />
-                </div>
-                <div class="col-5">
-                  <label class="form-label fw-semibold small text-secondary">
-                    性別
-                  </label>
-                  <div class="d-flex gap-3 pt-1">
-                    <label class="form-check-label d-flex align-items-center gap-1">
-                      <input v-model="form.gender" type="radio" value="男" class="form-check-input" /> 男
-                    </label>
-                    <label class="form-check-label d-flex align-items-center gap-1">
-                      <input v-model="form.gender" type="radio" value="女" class="form-check-input" /> 女
-                    </label>
-                  </div>
-                </div>
-              </div>
 
               <div class="row mb-2">
                 <div class="col-6">
@@ -248,17 +318,6 @@ async function handleRegister() {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.brand-icon-circle {
-  width: 56px;
-  height: 56px;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.5rem;
-}
 
 .form-control:focus {
   border-color: var(--brand-teal);
@@ -305,5 +364,69 @@ input[type="date"]::-webkit-datetime-edit-day-field {
 }
 input[type="date"]::-webkit-datetime-edit-text {
   padding: 0 2px;
+}
+
+/* ============================
+   註冊大頭貼上傳 (虛線背景 + 上傳後有遮罩)
+   ============================ */
+.register-avatar-upload {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  color: #94a3b8;
+}
+.register-avatar-upload:hover {
+  border-color: var(--brand-teal);
+  color: var(--brand-teal);
+}
+.register-avatar-upload .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.empty-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.empty-avatar i {
+  font-size: 1.8rem;
+}
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.avatar-overlay i {
+  font-size: 1.1rem;
+}
+.register-avatar-upload:hover .avatar-overlay {
+  opacity: 1;
 }
 </style>

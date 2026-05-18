@@ -90,7 +90,7 @@ async function handleSubmit() {
 
   if (!verificationCode.value.trim()) { errorMsg.value = '請輸入驗證碼'; return }
   if (!newPassword.value) { errorMsg.value = '請輸入新密碼'; return }
-  if (newPassword.value.length < 6) { errorMsg.value = '新密碼至少需要 6 個字元'; return }
+  if (newPassword.value.length < 6 || newPassword.value.length > 15) { errorMsg.value = '新密碼長度必須為 6-15 個字元'; return }
   if (newPassword.value !== confirmPassword.value) { errorMsg.value = '兩次密碼輸入不一致'; return }
 
   isLoading.value = true
@@ -118,17 +118,17 @@ async function handleSubmit() {
       <div class="row justify-content-center">
         <div class="col-md-5 col-lg-4">
 
-          <div class="reset-card card-rounded shadow-sm p-4">
+          <div class="reset-card card-rounded shadow-sm py-5 px-4">
             <!-- Header -->
-            <div class="text-center mb-4">
-              <div class="brand-icon-circle mx-auto mb-3">
-                <i class="bi" :class="step === 3 ? 'bi-check-lg' : 'bi-key'"></i>
-              </div>
-              <h2 class="fw-bold text-gradient mb-1 fs-4">
+            <div class="text-center mt-1 mb-4">
+              <h2 class="fw-bold text-gradient mb-1">
                 {{ step === 3 ? '重設成功' : '忘記密碼' }}
               </h2>
-              <p class="text-muted small tracking-wider mb-0">
-                {{ step === 1 ? '請輸入帳號與信箱以接收驗證碼' : step === 2 ? '請輸入驗證碼並設定新密碼' : '密碼已更新' }}
+              <p class="text-muted small tracking-wider mb-2">
+                {{ step === 3 ? 'PASSWORD RESET' : 'FORGOT PASSWORD' }}
+              </p>
+              <p v-if="step !== 3" class="small mb-0" style="color: #94a3b8;">
+                {{ step === 1 ? '請輸入帳號與信箱以接收驗證碼' : '請輸入驗證碼並設定新密碼' }}
               </p>
             </div>
 
@@ -170,7 +170,7 @@ async function handleSubmit() {
               <button type="submit" class="btn btn-brand w-100 py-3 fw-bold" :disabled="isLoading">
                 <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
                 <span v-if="isLoading">寄送中...</span>
-                <span v-else><i class="bi bi-send me-2"></i>發送驗證碼</span>
+                <span v-else>發送驗證碼</span>
               </button>
             </form>
 
@@ -195,7 +195,8 @@ async function handleSubmit() {
                 </label>
                 <div class="position-relative">
                   <input v-model="newPassword" :type="showPassword ? 'text' : 'password'"
-                         class="form-control rounded-3" placeholder="請輸入新密碼（至少 6 位）"
+                         class="form-control rounded-3" placeholder="請輸入新密碼 (6-15 碼)"
+                         maxlength="15"
                          style="padding-right: 48px;" />
                   <button type="button"
                           class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary pe-3"
@@ -215,11 +216,11 @@ async function handleSubmit() {
                 <button type="submit" class="btn btn-brand flex-fill py-3 fw-bold" :disabled="isLoading">
                   <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
                   <span v-if="isLoading">處理中...</span>
-                  <span v-else><i class="bi bi-check-lg me-2"></i>確認重設</span>
+                  <span v-else>確認重設</span>
                 </button>
                 <button type="button" class="btn btn-outline-secondary flex-fill py-3 fw-bold rounded-3"
                         @click="step = 1; errorMsg = ''; successMsg = ''">
-                  <i class="bi bi-arrow-left me-2"></i>上一步
+                  上一步
                 </button>
               </div>
             </form>
@@ -231,12 +232,12 @@ async function handleSubmit() {
               </div>
               <p class="text-muted mb-4">您的密碼已重設成功，請使用新密碼登入。</p>
               <RouterLink to="/login" class="btn btn-brand w-100 py-3 fw-bold">
-                <i class="bi bi-box-arrow-in-right me-2"></i>前往登入
+                前往登入
               </RouterLink>
             </div>
 
             <!-- Footer -->
-            <div class="text-center mt-4 pt-3 border-top">
+            <div v-if="step !== 3" class="text-center mt-4 pt-3 border-top">
               <RouterLink to="/login" class="text-muted small text-decoration-none">
                 <i class="bi bi-arrow-left me-1"></i>返回登入頁
               </RouterLink>
@@ -266,17 +267,6 @@ async function handleSubmit() {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.brand-icon-circle {
-  width: 56px;
-  height: 56px;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.5rem;
-}
 
 /* 步驟指示 */
 .step-bar {

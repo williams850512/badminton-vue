@@ -93,12 +93,9 @@ async function handleGoogleLogin(response) {
           <!-- 登入卡片 -->
           <div class="login-card card-rounded shadow-sm py-5 px-4">
             <!-- Header -->
-            <div class="text-center mb-2">
-              <div class="brand-icon-circle mx-auto mb-2">
-                <i class="bi bi-feather"></i>
-              </div>
+            <div class="text-center mt-1 mb-4">
               <h2 class="fw-bold text-gradient mb-1">會員登入</h2>
-              <p class="text-muted small tracking-wider mb-0">BADMINTON MEMBER LOGIN</p>
+              <p class="text-muted small tracking-wider mb-0">MEMBER LOGIN</p>
             </div>
 
             <!-- Error Message -->
@@ -214,17 +211,6 @@ async function handleGoogleLogin(response) {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.brand-icon-circle {
-  width: 56px;
-  height: 56px;
-  border-radius: 1rem;
-  background: linear-gradient(135deg, var(--brand-sky), var(--brand-teal));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.5rem;
-}
 
 .form-control:focus {
   border-color: var(--brand-teal);

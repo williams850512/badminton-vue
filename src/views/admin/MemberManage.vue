@@ -153,12 +153,12 @@ async function saveMember() {
     alert('新增會員時請設定密碼！')
     return
   }
-  if (d.password && (d.password.length < 6 || d.password.length > 12)) {
-    alert('密碼必須為 6-12 個字元！')
+  if (d.password && (d.password.length < 6 || d.password.length > 15)) {
+    alert('密碼必須為 6-15 個字元！')
     return
   }
-  if (!/^[A-Za-z0-9]{6,12}$/.test(d.username)) {
-    alert('帳號必須為 6-12 碼英數字 (不可包含特殊字元)')
+  if (!/^[A-Za-z0-9]{6,15}$/.test(d.username)) {
+    alert('帳號必須為 6-15 碼英數字 (不可包含特殊字元)')
     return
   }
   if (d.birthday > todayDate) {
@@ -445,12 +445,12 @@ function handleExport(format) {
             </td>
             <td>
               <div class="d-flex gap-1">
-                <button class="btn btn-sm action-btn action-btn-edit" title="編輯會員" @click="openEditModal(m.memberId)">
+                <button class="btn btn-sm action-btn action-btn-edit" data-tooltip="編輯" @click="openEditModal(m.memberId)">
                   <i class="bi bi-pencil"></i>
                 </button>
                 <button
                   class="btn btn-sm action-btn action-btn-note"
-                  title="備註"
+                  :data-tooltip="m.note || '備註'"
                   @click="openNoteModal(m.memberId, m.fullName || m.username, m.note)"
                 >
                   <i class="bi bi-sticky"></i>
@@ -459,7 +459,7 @@ function handleExport(format) {
                 <button
                   v-if="isManager"
                   class="btn btn-sm action-btn action-btn-delete"
-                  title="刪除會員"
+                  data-tooltip="刪除"
                   @click="deleteMember(m.memberId, m.username)"
                 >
                   <i class="bi bi-trash3"></i>
@@ -469,10 +469,12 @@ function handleExport(format) {
                 <div v-if="isManager" class="dropdown">
                   <button
                     class="btn btn-sm action-btn action-btn-status dropdown-toggle"
+                    type="button"
                     data-bs-toggle="dropdown"
-                    title="變更狀態"
+                    data-tooltip="編輯帳號狀態"
                   >
                     <i class="bi bi-arrow-repeat"></i>
+                    <i class="bi bi-caret-down-fill ms-1" style="font-size: 0.65rem;"></i>
                   </button>
                   <ul class="dropdown-menu">
                     <li>
@@ -545,8 +547,8 @@ function handleExport(format) {
                 <input
                   v-model="form.username"
                   type="text"
-                  placeholder="6-12 碼英數字"
-                  maxlength="12"
+                  placeholder="6-15 碼英數字"
+                  maxlength="15"
                   :disabled="!!editId"
                 />
               </div>
@@ -555,8 +557,8 @@ function handleExport(format) {
                 <input
                   v-model="form.password"
                   type="password"
-                  :placeholder="editId ? (isManager ? '留空不修改' : '無權限修改') : '6-12 碼密碼'"
-                  maxlength="12"
+                  :placeholder="editId ? (isManager ? '留空不修改' : '無權限修改') : '6-15 碼密碼'"
+                  maxlength="15"
                   :disabled="!!editId && !isManager"
                 />
               </div>
@@ -615,7 +617,7 @@ function handleExport(format) {
           <div class="modal-footer">
             <button class="btn-cancel" @click="showModal = false">取消</button>
             <button class="btn-save" @click="saveMember">
-              <i class="bi bi-check-lg"></i> 儲存
+              儲存
             </button>
           </div>
         </div>
@@ -637,7 +639,7 @@ function handleExport(format) {
           </div>
           <div class="modal-footer">
             <button class="btn-cancel" @click="showNoteModal = false">取消</button>
-            <button class="btn-save" @click="saveNote"><i class="bi bi-check-lg"></i> 儲存</button>
+            <button class="btn-save" @click="saveNote">儲存</button>
           </div>
         </div>
       </div>
@@ -939,6 +941,59 @@ input[type="date"]::-webkit-datetime-edit-day-field {
   border-radius: 0.5rem;
   transition: all 0.2s ease;
   white-space: nowrap;
+  position: relative;
+}
+
+/* Custom Tooltip */
+.action-btn[data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: -5px; /* 向右對齊，避免表格邊緣裁切 */
+  left: auto;
+  transform: scale(0.9);
+  transform-origin: bottom right;
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: normal; /* 允許長備註換行 */
+  width: max-content;
+  max-width: 250px;
+  text-align: left;
+  line-height: 1.4;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.02em;
+}
+
+.action-btn[data-tooltip]::after {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  right: 12px; /* 箭頭對齊按鈕中心偏右 */
+  left: auto;
+  border-width: 5px 5px 0;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+}
+
+.action-btn[data-tooltip]:hover::before,
+.action-btn[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
 }
 .action-btn-edit {
   background: #eef2ff;
