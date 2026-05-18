@@ -55,6 +55,13 @@ const statusMap = {
   PREPARING: { label: '備貨中', badgeClass: 'badge-warning', icon: 'bi-box-seam' },
 }
 
+// 行銷標籤 → 顏色類別（在 <style> 裡對應 .tag-hot / .tag-featured / .tag-promo）
+const tagClassMap = {
+  熱銷: 'tag-hot',
+  精選: 'tag-featured',
+  促銷: 'tag-promo',
+}
+
 // ===================== 計算屬性 =====================
 const filteredProducts = computed(() => {
   return products.value.filter((p) => {
@@ -266,7 +273,7 @@ function onImageError(e) {
             </div>
           </div>
           <!-- 分類篩選 -->
-          <div class="col">
+          <div class="col-6 col-md-auto">
             <label class="form-label small fw-semibold text-secondary">分類</label>
             <select v-model="filterCategory" class="form-select filter-select" @change="onFilterChange">
               <option value="">全部分類</option>
@@ -274,7 +281,7 @@ function onImageError(e) {
             </select>
           </div>
           <!-- 狀態篩選 -->
-          <div class="col">
+          <div class="col-6 col-md-auto">
             <label class="form-label small fw-semibold text-secondary">狀態</label>
             <select v-model="filterStatus" class="form-select filter-select" @change="onFilterChange">
               <option value="">全部狀態</option>
@@ -284,7 +291,7 @@ function onImageError(e) {
             </select>
           </div>
           <!-- 標籤篩選 -->
-          <div class="col">
+          <div class="col-6 col-md-auto">
             <label class="form-label small fw-semibold text-secondary">標籤</label>
             <select v-model="filterTag" class="form-select filter-select" @change="onFilterChange">
               <option value="">全部標籤</option>
@@ -374,7 +381,7 @@ function onImageError(e) {
             <td class="fw-bold product-name-cell">{{ product.productName }}</td>
             <td>
               <div class="d-flex flex-column gap-1">
-                <span v-if="product.marketingTag" class="marketing-badge">{{ product.marketingTag }}</span>
+                <span v-if="product.marketingTag" :class="['marketing-badge', tagClassMap[product.marketingTag]]">{{ product.marketingTag }}</span>
                 <span v-else class="no-tag-badge">無</span>
               </div>
             </td>
@@ -593,10 +600,10 @@ function onImageError(e) {
               <div class="mb-3">
                 <div class="d-flex align-items-center gap-2 mb-2">
                   <span
-                    class="list-status-badge"
-                    :style="{ backgroundColor: statusMap[detailProduct.status]?.bg, color: statusMap[detailProduct.status]?.color }"
+                    class="badge"
+                    :class="statusMap[detailProduct.status]?.badgeClass || 'badge-default'"
                   >{{ statusMap[detailProduct.status]?.label || detailProduct.status }}</span>
-                  <span v-if="detailProduct.marketingTag" class="marketing-badge">{{ detailProduct.marketingTag }}</span>
+                  <span v-if="detailProduct.marketingTag" :class="['marketing-badge', tagClassMap[detailProduct.marketingTag]]">{{ detailProduct.marketingTag }}</span>
                 </div>
                 <h4 class="fw-bold mb-1">{{ detailProduct.productName }}</h4>
                 <p class="text-secondary mb-0" style="font-size:0.85rem">ID：{{ detailProduct.productId }}</p>
@@ -657,11 +664,6 @@ function onImageError(e) {
 }
 .btn-brand-admin {
   border-radius: 0.5rem;
-}
-
-/* ===== 篩選下拉選單寬度（原本欄寬的 0.6） ===== */
-.filter-select {
-  width: 60%;
 }
 
 /* ===== 列表表格 ===== */
@@ -727,21 +729,39 @@ function onImageError(e) {
 
 /* ===== 行銷標籤 ===== */
 .marketing-badge {
-  font-size: 0.72rem;
+  display: inline-block;
+  align-self: flex-start;
+  text-align: center;
+  font-size: 0.85rem;
   font-weight: 700;
-  padding: 0.25rem 0.6rem;
+  padding: 0.3rem 0.7rem;
   border-radius: 9999px;
   background: #FFF7ED;
   color: #EA580C;
   white-space: nowrap;
 }
+/* 三種行銷標籤各自的配色（覆蓋上面的 background/color） */
+.marketing-badge.tag-hot {       /* 熱銷：紅 */
+  background: #FEE2E2;
+  color: #DC2626;
+}
+.marketing-badge.tag-featured {  /* 精選：紫 */
+  background: #EDE9FE;
+  color: #7C3AED;
+}
+.marketing-badge.tag-promo {     /* 促銷：藍 */
+  background: #DBEAFE;
+  color: #2563EB;
+}
 
 /* ===== 狀態標籤 ===== */
 .badge {
   display: inline-block;
+  align-self: flex-start;
+  text-align: center;
   padding: 0.3rem 0.7rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 .badge-active {
@@ -912,9 +932,11 @@ function onImageError(e) {
 }
 .no-tag-badge {
   display: inline-block;
-  font-size: 0.72rem;
+  align-self: flex-start;
+  text-align: center;
+  font-size: 0.85rem;
   font-weight: 700;
-  padding: 0.25rem 0.6rem;
+  padding: 0.3rem 0.7rem;
   border-radius: 9999px;
   background: #F1F5F9;
   color: #94A3B8;

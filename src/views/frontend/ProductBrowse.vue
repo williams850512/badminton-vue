@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { productApi } from '@/api/product'
 import { useCartStore } from '@/stores/cart'
@@ -55,6 +55,29 @@ const filteredProducts = computed(() => {
   if (!filterCategory.value) return products.value
   return products.value.filter((p) => p.category === filterCategory.value)
 })
+
+// ===================== 分頁（比照 ProductManage.vue） =====================
+const currentPage = ref(1)
+const pageSize = 20 // 每頁 20 筆
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredProducts.value.length / pageSize)))
+
+// 換類別時回到第 1 頁
+watch(filterCategory, () => { currentPage.value = 1 })
+
+// 筆數變少導致目前頁碼超出總頁數時，夾回最後一頁，避免卡在空白頁
+watch(totalPages, (tp) => {
+  if (currentPage.value > tp) currentPage.value = tp
+})
+
+const pagedProducts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredProducts.value.slice(start, start + pageSize)
+})
+
+function goToPage(page) {
+  if (page >= 1 && page <= totalPages.value) currentPage.value = page
+}
 
 // ===================== 加入購物車確認 Modal =====================
 const modal = ref({ show: false, product: null, qty: 1 })
@@ -158,6 +181,21 @@ function openCartFromDetail() {
   closeDetailModal()
   openModal(p)
 }
+
+// 商品詳情圖片放大鏡：滑鼠移到圖上，放大中心跟著游標
+const imgZoom = ref({ active: false, x: '50%', y: '50%' })
+
+function onImgZoomMove(e) {
+  const rect = e.currentTarget.getBoundingClientRect()
+  const x = ((e.clientX - rect.left) / rect.width) * 100
+  const y = ((e.clientY - rect.top) / rect.height) * 100
+  imgZoom.value = { active: true, x: `${x}%`, y: `${y}%` }
+}
+
+function onImgZoomLeave() {
+  // 保留游標最後位置，只關掉放大，讓圖片原地平滑縮回（不跳回中心）
+  imgZoom.value = { ...imgZoom.value, active: false }
+}
 </script>
 
 <template>
@@ -213,7 +251,7 @@ function openCartFromDetail() {
       <!-- 商品清單 -->
       <div v-else class="row g-4">
         <div
-          v-for="product in filteredProducts"
+          v-for="product in pagedProducts"
           :key="product.productId"
           class="col-6 col-md-4 col-lg-3"
         >
@@ -269,6 +307,30 @@ function openCartFromDetail() {
           </div>
         </div>
       </div>
+
+      <!-- ====== 分頁（比照 ProductManage.vue） ====== -->
+      <nav v-if="totalPages > 1" class="d-flex justify-content-center mt-4">
+        <ul class="pagination pagination-custom">
+          <li class="page-item" :class="{ disabled: currentPage === 1 }">
+            <button class="page-link" @click="goToPage(currentPage - 1)">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+          </li>
+          <li
+            v-for="page in totalPages"
+            :key="page"
+            class="page-item"
+            :class="{ active: currentPage === page }"
+          >
+            <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+          </li>
+          <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+            <button class="page-link" @click="goToPage(currentPage + 1)">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </li>
+        </ul>
+      </nav>
     </div>
 
     <!-- 購物車已移至全域 CartOffcanvas 元件（由 FrontNavbar 管理） -->
@@ -290,11 +352,17 @@ function openCartFromDetail() {
           <!-- 內容區：左圖 + 右資訊 -->
           <div class="detail-modal-body">
             <!-- 左：商品圖片 -->
-            <div class="detail-modal-img-wrap">
+            <div
+              class="detail-modal-img-wrap"
+              @mousemove="onImgZoomMove"
+              @mouseleave="onImgZoomLeave"
+            >
               <img
                 :src="detailModal.product?.imageUrl || defaultImage"
                 :alt="detailModal.product?.productName"
                 class="detail-modal-img"
+                :class="{ 'is-zoomed': imgZoom.active }"
+                :style="{ transformOrigin: `${imgZoom.x} ${imgZoom.y}` }"
                 @error="onImageError"
               />
             </div>
@@ -937,6 +1005,30 @@ function openCartFromDetail() {
 .mtag-hot { background: #FEF3C7; color: #B45309; }
 .mtag-sale { background: #FEE2E2; color: #DC2626; }
 
+/* ===== 自訂分頁（比照 ProductManage.vue） ===== */
+.pagination-custom .page-link {
+  border: none;
+  color: #64748B;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.5rem;
+  margin: 0 2px;
+  transition: all 0.2s ease;
+}
+.pagination-custom .page-link:hover {
+  background: #F0F9FF;
+  color: var(--brand-sky);
+}
+.pagination-custom .active .page-link {
+  background: var(--brand-sky);
+  color: white;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+}
+.pagination-custom .disabled .page-link {
+  color: #CBD5E1;
+}
+
 /* ===== 商品詳情 Modal ===== */
 .detail-modal {
   background: white;
@@ -972,12 +1064,18 @@ function openCartFromDetail() {
   background: var(--brand-bg);
   border: 1px solid #E2E8F0;
   overflow: hidden;
+  cursor: zoom-in;
 }
 .detail-modal-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   padding: 0.75rem;
+  transition: transform 0.45s ease-out; /* 縮回來：放慢 */
+}
+.detail-modal-img.is-zoomed {
+  transform: scale(2.2);
+  transition: transform 0.15s ease-out; /* 放大進去：保持靈敏跟手 */
 }
 .detail-row-stock {
   position: static;
