@@ -22,6 +22,29 @@ const avatarUrl = ref(null)
 const isUploadingAvatar = ref(false)
 const errorMsg = ref('')
 
+// 自訂提示 Modal
+const modalVisible = ref(false)
+const modalType = ref('success')   // 'success' | 'error' | 'warning' | 'confirm'
+const modalTitle = ref('')
+const modalMessage = ref('')
+const modalCallback = ref(null)
+
+function showModal(type, title, message, callback = null) {
+  modalType.value = type
+  modalTitle.value = title
+  modalMessage.value = message
+  modalCallback.value = callback
+  modalVisible.value = true
+}
+
+function closeModal(confirmed = false) {
+  modalVisible.value = false
+  if (confirmed && modalCallback.value) {
+    modalCallback.value()
+  }
+  modalCallback.value = null
+}
+
 const form = ref({
   fullName: '',
   gender: '',
@@ -42,9 +65,25 @@ const pwdSuccessMsg = ref('')
 const pwdErrorMsg = ref('')
 const isChangingPwd = ref(false)
 
-// 訂單相關
 const orders = ref([])
 const loadingOrders = ref(false)
+
+// 發票捐贈單位對照表
+const getDonationUnit = (code) => {
+  const unitMap = {
+    '919': '財團法人創世社會福利基金會',
+    '25885': '財團法人伊甸社會福利基金會',
+    '13579': '財團法人陽光社會福利基金會',
+    '5678': '財團法人台灣兒童暨家庭扶助基金會',
+    '520': '財團法人罕見疾病基金會',
+    '135': '財團法人董氏基金會',
+    '001': '財團法人羅慧夫顱顏基金會',
+    '888': '財團法人台灣癌症基金會',
+    '999': '財團法人喜憨兒社會福利基金會',
+    '111': '財團法人弘道老人福利基金會'
+  }
+  return unitMap[code] || ''
+}
 
 // 狀態對照 (同步 MyOrders.vue)
 const statusMap = {
@@ -55,9 +94,9 @@ const statusMap = {
   CANCELLED: { label: '已取消', color: '#F43F5E', bg: '#FFE4E6', icon: 'bi-x-circle' },
 }
 const paymentMap = {
-  CASH: '現金',
+  CASH: '現金支付',
   CREDIT_CARD: '信用卡',
-  TRANSFER: '轉帳',
+  TRANSFER: '銀行轉帳',
   LINE_PAY: 'LINE Pay',
 }
 
@@ -95,7 +134,7 @@ function getStepTime(order, step) {
 // 頁籤切換
 const activeTab = ref('profile')
 const menuItems = [
-  { id: 'profile', label: '會員帳號資料', icon: 'bi-person-gear' },
+  { id: 'profile', label: '會員個人資料', icon: 'bi-person-gear' },
   { id: 'bookings', label: '我的預約紀錄', icon: 'bi-calendar-check' },
   { id: 'orders', label: '歷史消費訂單', icon: 'bi-bag-check' },
 ]
@@ -116,9 +155,8 @@ async function fetchOrders() {
     // 確保 data 是陣列，避免 slice 報錯
     orders.value = Array.isArray(data) ? data.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate)) : []
 
-    // 為了顯示代表圖，預抓前 5 筆的明細
-    const prefetchCount = Math.min(orders.value.length, 5)
-    for (let i = 0; i < prefetchCount; i++) {
+    // 預抓所有訂單的明細，以正確顯示圖片與商品件數
+    for (let i = 0; i < orders.value.length; i++) {
       const oid = orders.value[i].orderId
       if (!orderItems.value[oid]) {
         orderApi.findItems(oid).then((items) => {
@@ -155,6 +193,37 @@ function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const date = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
+  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return `${date} ${time}`
+}
+
+function getInvoiceLabel(order) {
+  if (!order.invoiceType) return '未設定'
+  if (order.invoiceType === 'INDIVIDUAL') {
+    if (order.invoiceCarrier) {
+      if (order.invoiceCarrier.startsWith('/')) {
+        return `個人電子發票（手機條碼：${order.invoiceCarrier}）`
+      } else if (/^[A-Za-z]{2}\d{14}$/.test(order.invoiceCarrier)) {
+        return `個人電子發票（自然人憑證：${order.invoiceCarrier}）`
+      }
+      return `個人電子發票（載具：${order.invoiceCarrier}）`
+    }
+    return '個人電子發票（現場取貨時隨貨交付）'
+  }
+  if (order.invoiceType === 'COMPANY') {
+    return `公司發票（統編：${order.invoiceTaxId}）`
+  }
+  if (order.invoiceType === 'DONATION') {
+    const unit = getDonationUnit(order.invoiceCarrier)
+    return unit ? `捐贈發票 — ${unit}（捐贈碼：${order.invoiceCarrier}）` : `捐贈發票（捐贈碼：${order.invoiceCarrier}）`
+  }
+  return '未設定'
 }
 
 // 電話格式化
@@ -258,8 +327,8 @@ async function handleChangePassword() {
     pwdErrorMsg.value = '兩次輸入的新密碼不一致'
     return
   }
-  if (newPassword.length < 6 || newPassword.length > 12) {
-    pwdErrorMsg.value = '新密碼長度必須為 6-12 碼'
+  if (newPassword.length < 6 || newPassword.length > 15) {
+    pwdErrorMsg.value = '新密碼長度必須為 6-15 碼'
     return
   }
 
@@ -327,6 +396,10 @@ async function loadBookings() {
 // 切換到預約紀錄頁籤時載入
 function switchTab(tabId) {
   activeTab.value = tabId
+  
+  // 核心修復：在切換頁籤時，同步更新 URL query 參數，確保「上一頁」能正確返回該頁籤
+  router.replace({ query: { ...route.query, tab: tabId } })
+
   if (tabId === 'bookings') {
     loadBookings()
   }
@@ -353,17 +426,15 @@ function getStatusInfo(booking) {
 
 // 取消預約
 async function cancelBooking(booking) {
-  if (
-    !confirm(`確定要取消 ${booking.bookingDate} ${booking.startTime}~${booking.endTime} 的預約嗎？`)
-  )
-    return
-  try {
-    await bookingApi.cancelBooking(booking.bookingId)
-    alert('預約已取消！')
-    loadBookings() // 重新載入
-  } catch (err) {
-    alert('取消失敗：' + (err.response?.data || err.message))
-  }
+  showModal('confirm', '確認取消', `確定要取消 ${booking.bookingDate} ${booking.startTime}~${booking.endTime} 的預約嗎？`, async () => {
+    try {
+      await bookingApi.cancelBooking(booking.bookingId)
+      showModal('success', '已取消', '預約已成功取消！')
+      loadBookings()
+    } catch (err) {
+      showModal('error', '取消失敗', err.response?.data?.message || err.response?.data || err.message)
+    }
+  })
 }
 
 // 再次預約
@@ -436,7 +507,7 @@ async function handleAvatarUpload(event) {
                   >
                     <img
                       v-if="avatarUrl"
-                      :src="'http://localhost:8080' + avatarUrl"
+                      :src="avatarUrl.startsWith('http') ? avatarUrl : 'http://localhost:8080' + avatarUrl"
                       alt="頭像"
                       class="avatar-img"
                     />
@@ -610,7 +681,8 @@ async function handleAvatarUpload(event) {
                             v-model="pwdForm.newPassword"
                             :type="showNewPwd ? 'text' : 'password'"
                             class="form-control-styled"
-                            placeholder="6-12 碼英數字"
+                            placeholder="6-15 碼英數字"
+                            maxlength="15"
                           />
                           <button
                             type="button"
@@ -790,10 +862,18 @@ async function handleAvatarUpload(event) {
                   <div class="profile-card-base shadow-sm border bg-white p-4">
                     <h6 class="section-title-bar mb-4">歷史消費訂單</h6>
 
-                    <div v-if="loadingOrders" class="text-center py-5">
-                      <div class="spinner-border text-info" role="status"></div>
-                      <p class="text-muted mt-2 small">訂單載入中...</p>
-                    </div>
+                     <div v-if="loadingOrders" class="skeleton-order-list">
+                       <div v-for="i in 3" :key="i" class="skeleton-order-card mb-4 p-4 rounded-4" style="border: 1px solid #e2e8f0; border-radius: 1rem;">
+                         <div class="d-flex justify-content-between align-items-center mb-3">
+                           <div class="skeleton-block" style="width: 140px; height: 24px;"></div>
+                           <div class="skeleton-block" style="width: 80px; height: 20px; border-radius: 10px;"></div>
+                         </div>
+                         <div class="d-flex justify-content-between align-items-center">
+                           <div class="skeleton-block" style="width: 200px; height: 16px;"></div>
+                           <div class="skeleton-block" style="width: 100px; height: 24px;"></div>
+                         </div>
+                       </div>
+                     </div>
 
                     <div v-else-if="orders.length === 0" class="empty-state py-5 text-center">
                       <i class="bi bi-cart-x mb-3 d-block text-light" style="font-size: 4rem"></i>
@@ -823,7 +903,7 @@ async function handleAvatarUpload(event) {
                         <div class="d-flex justify-content-between align-items-center">
                           <div class="d-flex align-items-center gap-4">
                             <div class="fw-bold" style="font-size: 1.25rem; color: #0D9488;">NT$ {{ orders[0].totalAmount.toLocaleString() }}</div>
-                            <router-link :to="'/my-orders?orderId=' + orders[0].orderId" class="btn btn-sm rounded-pill px-3 shadow-sm" style="background: #0D9488; color: white; border: none; font-size: 0.85rem;" @click.stop>訂單詳情</router-link>
+                            <router-link :to="'/my-orders?orderId=' + orders[0].orderId" class="btn btn-sm rounded-pill px-3 shadow-sm" style="background: #0D9488; color: white; border: none; font-size: 0.85rem;" @click.stop>我的訂單</router-link>
                           </div>
                           <i class="bi fs-5" style="color: #0D9488;" :class="expandedId === orders[0].orderId ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                         </div>
@@ -887,48 +967,78 @@ async function handleAvatarUpload(event) {
                             </div>
                           </div>
 
-                          <!-- 商品明细 -->
-                          <div v-if="loadingItems === orders[0].orderId" class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-info"></div>
-                          </div>
-                          <div v-else class="expanded-items-list px-2">
-                            <div
-                              v-for="item in orderItems[orders[0].orderId]"
-                              :key="item.itemId"
-                              class="d-flex align-items-center gap-3 mb-2 py-2 border-bottom-dashed"
-                            >
-                              <img
-                                :src="
-                                  item.product?.imageUrl?.startsWith('/')
-                                    ? item.product.imageUrl
-                                    : '/' + item.product.imageUrl
-                                "
-                                class="rounded-2"
-                                style="
-                                  width: 54px;
-                                  height: 54px;
-                                  object-fit: scale-down;
-                                  background: #fff;
-                                  border: 1.5px solid #f1f5f9;
-                                  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-                                "
-                              />
-                              <div class="flex-grow-1">
-                                <div class="fw-semibold" style="font-size: 0.88rem; color: #1E293B;">
-                                  {{ item.product?.productName }}
-                                </div>
-                                <div class="text-muted" style="font-size: 0.75rem">
-                                  NT$ {{ item.unitPrice.toLocaleString() }} x {{ item.quantity }}
+                          <!-- 訂單資訊卡（同步後台資訊） -->
+                          <div class="order-info-card mb-3">
+                            <div class="order-info-grid">
+                              <div class="order-info-item">
+                                <div class="order-info-label"><i class="bi bi-calendar3 me-1"></i>訂購日期</div>
+                                <div class="order-info-value">{{ formatDateTime(orders[0].orderDate) }}</div>
+                              </div>
+                              <div class="order-info-item">
+                                <div class="order-info-label"><i class="bi bi-credit-card me-1"></i>付款方式</div>
+                                <div class="order-info-value">
+                                  <span class="payment-badge">{{ paymentMap[orders[0].paymentType] || '未設定' }}</span>
                                 </div>
                               </div>
-                              <div
-                                class="fw-bold"
-                                style="font-size: 0.88rem; color: var(--brand-dark)"
-                              >
-                                NT$ {{ (item.unitPrice * item.quantity).toLocaleString() }}
+                              <div class="order-info-item">
+                                <div class="order-info-label"><i class="bi bi-geo-alt me-1"></i>取貨方式</div>
+                                <div class="order-info-value">球館自取</div>
+                                <div class="order-info-sub">羽過天晴羽球館</div>
+                              </div>
+                              <div class="order-info-item">
+                                <div class="order-info-label"><i class="bi bi-receipt me-1"></i>電子發票</div>
+                                <div class="order-info-value" style="font-size: 0.8rem; line-height: 1.4;">{{ getInvoiceLabel(orders[0]) }}</div>
+                                <div class="order-info-sub fw-bold" style="color: var(--brand-teal); margin-top: 0.15rem; font-size: 0.75rem;">發票號碼：XY-{{ String(orders[0].orderId || '').padStart(8, '0') }}</div>
                               </div>
                             </div>
                           </div>
+
+                          <!-- 商品明细 -->
+                          <div v-if="loadingItems === orders[0].orderId" class="skeleton-items-grid px-1 py-2">
+                            <div class="order-items-grid">
+                              <div v-for="j in 1" :key="j" class="order-item-card d-flex align-items-center gap-3 p-2 border rounded-3 mb-2" style="border: 1px solid #f1f5f9; border-radius: 0.5rem;">
+                                <div class="item-img-wrap skeleton-img" style="width: 60px; height: 60px; border-radius: 0.5rem; flex-shrink: 0;"></div>
+                                <div class="item-details gap-2 flex-grow-1">
+                                  <div class="skeleton-block" style="width: 80%; height: 16px;"></div>
+                                  <div class="skeleton-block" style="width: 40%; height: 12px;"></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div v-else class="expanded-items-list px-1">
+                            <div class="order-items-grid">
+                              <div
+                                v-for="item in orderItems[orders[0].orderId]"
+                                :key="item.itemId"
+                                class="order-item-card"
+                              >
+                                <div class="item-img-wrap">
+                                  <img
+                                    :src="
+                                      item.product?.imageUrl?.startsWith('/')
+                                        ? item.product.imageUrl
+                                        : '/' + item.product.imageUrl
+                                    "
+                                    alt="product"
+                                  />
+                                </div>
+                                <div class="item-details">
+                                  <div class="item-name" :title="item.product?.productName">
+                                    {{ item.product?.productName }}
+                                  </div>
+                                  <div class="item-meta">
+                                    <span class="item-price">NT$ {{ item.unitPrice.toLocaleString() }}</span>
+                                    <span class="item-qty">x {{ item.quantity }}</span>
+                                  </div>
+                                  <div class="item-subtotal">
+                                    NT$ {{ (item.unitPrice * item.quantity).toLocaleString() }}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+
                         </div>
                       </div>
 
@@ -991,7 +1101,7 @@ async function handleAvatarUpload(event) {
                             </div>
                             <div class="mt-2 d-flex justify-content-between align-items-end">
                               <div class="order-summary-text text-secondary small">
-                                共 {{ orderItems[order.orderId]?.length || '...' }} 項商品 ·
+                                共 {{ orderItems[order.orderId]?.length || '...' }} 項商品，共 {{ orderItems[order.orderId]?.reduce((sum, item) => sum + item.quantity, 0) || '...' }} 件 ·
                                 {{ paymentMap[order.paymentType] }}
                               </div>
                               <div
@@ -1071,48 +1181,78 @@ async function handleAvatarUpload(event) {
                             </div>
                           </div>
 
-                          <!-- 商品明细 -->
-                          <div v-if="loadingItems === order.orderId" class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-info"></div>
-                          </div>
-                          <div v-else class="expanded-items-list px-2">
-                            <div
-                              v-for="item in orderItems[order.orderId]"
-                              :key="item.itemId"
-                              class="d-flex align-items-center gap-3 mb-2 py-2 border-bottom-dashed"
-                            >
-                              <img
-                                :src="
-                                  item.product?.imageUrl?.startsWith('/')
-                                    ? item.product.imageUrl
-                                    : '/' + item.product.imageUrl
-                                "
-                                class="rounded-2"
-                                style="
-                                  width: 54px;
-                                  height: 54px;
-                                  object-fit: scale-down;
-                                  background: #fff;
-                                  border: 1.5px solid #f1f5f9;
-                                  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-                                "
-                              />
-                              <div class="flex-grow-1">
-                                <div class="fw-semibold" style="font-size: 0.88rem">
-                                  {{ item.product?.productName }}
-                                </div>
-                                <div class="text-muted" style="font-size: 0.75rem">
-                                  NT$ {{ item.unitPrice.toLocaleString() }} x {{ item.quantity }}
+                          <!-- 訂單資訊卡（同步後台資訊） -->
+                          <div class="order-info-card mb-3">
+                            <div class="order-info-grid">
+                              <div class="order-info-item">
+                                <div class="order-info-label"><i class="bi bi-calendar3 me-1"></i>訂購日期</div>
+                                <div class="order-info-value">{{ formatDateTime(order.orderDate) }}</div>
+                              </div>
+                              <div class="order-info-item">
+                                <div class="order-info-label"><i class="bi bi-credit-card me-1"></i>付款方式</div>
+                                <div class="order-info-value">
+                                  <span class="payment-badge">{{ paymentMap[order.paymentType] || '未設定' }}</span>
                                 </div>
                               </div>
-                              <div
-                                class="fw-bold"
-                                style="font-size: 0.88rem; color: var(--brand-dark)"
-                              >
-                                NT$ {{ (item.unitPrice * item.quantity).toLocaleString() }}
+                              <div class="order-info-item">
+                                <div class="order-info-label"><i class="bi bi-geo-alt me-1"></i>取貨方式</div>
+                                <div class="order-info-value">球館自取</div>
+                                <div class="order-info-sub">羽過天晴羽球館</div>
+                              </div>
+                              <div class="order-info-item">
+                                <div class="order-info-label"><i class="bi bi-receipt me-1"></i>電子發票</div>
+                                <div class="order-info-value" style="font-size: 0.8rem; line-height: 1.4;">{{ getInvoiceLabel(order) }}</div>
+                                <div class="order-info-sub fw-bold" style="color: var(--brand-teal); margin-top: 0.15rem; font-size: 0.75rem;">發票號碼：XY-{{ String(order.orderId || '').padStart(8, '0') }}</div>
                               </div>
                             </div>
                           </div>
+
+                          <!-- 商品明细 -->
+                          <div v-if="loadingItems === order.orderId" class="skeleton-items-grid px-1 py-2">
+                            <div class="order-items-grid">
+                              <div v-for="j in 1" :key="j" class="order-item-card d-flex align-items-center gap-3 p-2 border rounded-3 mb-2" style="border: 1px solid #f1f5f9; border-radius: 0.5rem;">
+                                <div class="item-img-wrap skeleton-img" style="width: 60px; height: 60px; border-radius: 0.5rem; flex-shrink: 0;"></div>
+                                <div class="item-details gap-2 flex-grow-1">
+                                  <div class="skeleton-block" style="width: 80%; height: 16px;"></div>
+                                  <div class="skeleton-block" style="width: 40%; height: 12px;"></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div v-else class="expanded-items-list px-1">
+                            <div class="order-items-grid">
+                              <div
+                                v-for="item in orderItems[order.orderId]"
+                                :key="item.itemId"
+                                class="order-item-card"
+                              >
+                                <div class="item-img-wrap">
+                                  <img
+                                    :src="
+                                      item.product?.imageUrl?.startsWith('/')
+                                        ? item.product.imageUrl
+                                        : '/' + item.product.imageUrl
+                                    "
+                                    alt="product"
+                                  />
+                                </div>
+                                <div class="item-details">
+                                  <div class="item-name" :title="item.product?.productName">
+                                    {{ item.product?.productName }}
+                                  </div>
+                                  <div class="item-meta">
+                                    <span class="item-price">NT$ {{ item.unitPrice.toLocaleString() }}</span>
+                                    <span class="item-qty">x {{ item.quantity }}</span>
+                                  </div>
+                                  <div class="item-subtotal">
+                                    NT$ {{ (item.unitPrice * item.quantity).toLocaleString() }}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+
                         </div>
                       </div>
                     </div>
@@ -1125,16 +1265,67 @@ async function handleAvatarUpload(event) {
       </div>
     </div>
   </div>
+
+    <!-- 自訂提示 Modal -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="modalVisible" class="custom-modal-overlay" @click.self="closeModal(false)">
+          <div class="custom-modal-card">
+            <div class="modal-icon" :class="modalType">
+              <i v-if="modalType === 'success'" class="bi bi-check-lg"></i>
+              <i v-else-if="modalType === 'error'" class="bi bi-x-lg"></i>
+              <i v-else-if="modalType === 'confirm'" class="bi bi-question-lg"></i>
+              <i v-else class="bi bi-exclamation-lg"></i>
+            </div>
+            <h4 class="modal-title-custom">{{ modalTitle }}</h4>
+            <p class="modal-message">{{ modalMessage }}</p>
+            <div v-if="modalType === 'confirm'" class="d-flex gap-3 justify-content-center">
+              <button class="btn-modal-cancel" @click="closeModal(false)">再想想</button>
+              <button class="btn-modal-confirm confirm" @click="closeModal(true)">確定取消</button>
+            </div>
+            <button v-else class="btn-modal-confirm" :class="modalType" @click="closeModal(true)">
+              {{ modalType === 'success' ? '太棒了' : '我知道了' }}
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 </template>
 
 <style scoped>
 .profile-page {
-  background-color: #f4f7f9;
-  min-height: calc(100vh - 120px);
+  min-height: 100vh;
+  position: relative;
+  background-image: url('@/assets/images/login-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+.profile-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.4);
+  z-index: 0;
+}
+
+.profile-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .profile-card-base {
   border-radius: 1rem;
+  background-color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(27, 176, 193, 0.12) !important;
+  border: 1px solid rgba(84, 218, 213, 0.2) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.profile-card-base:hover {
+  box-shadow: 0 12px 32px rgba(27, 176, 193, 0.18) !important;
+  transform: translateY(-2px);
 }
 
 /* 標題圖示藍綠色漸層圓圈 */
@@ -1283,6 +1474,13 @@ async function handleAvatarUpload(event) {
   min-height: 600px;
   display: flex;
   flex-direction: column;
+  background-color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(27, 176, 193, 0.12) !important;
+  border: 1px solid rgba(84, 218, 213, 0.2) !important;
+  transition: box-shadow 0.3s ease;
+}
+.member-sidebar:hover {
+  box-shadow: 0 12px 32px rgba(27, 176, 193, 0.18) !important;
 }
 .sidebar-avatar {
   width: 80px;
@@ -1492,7 +1690,8 @@ async function handleAvatarUpload(event) {
 .order-repr-img {
   width: 100%;
   height: 100%;
-  object-fit: scale-down;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast; /* 提升縮放後的圖片解析度與銳利度 */
 }
 .order-repr-placeholder {
   width: 100%;
@@ -1596,4 +1795,300 @@ async function handleAvatarUpload(event) {
 .progress-step-mini.active .step-time {
   color: var(--brand-dark);
 }
+
+/* ===== 訂單資訊卡（同步後台資訊） ===== */
+.order-info-card {
+  background: #f8fafb;
+  border: 1px solid #e8f0f6;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.order-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem 1.5rem;
+}
+
+.order-info-item {
+  min-width: 0;
+}
+
+.order-info-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.2rem;
+}
+
+.order-info-label i {
+  color: #0D9488;
+}
+
+.order-info-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+  word-break: break-all;
+}
+
+.order-info-sub {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 0.1rem;
+}
+
+.payment-badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  background: #e2e8f0;
+  border-radius: 6px;
+}
+
+@media (max-width: 480px) {
+  .order-info-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+}
+
+/* ===== 展開商品卡片式排版 ===== */
+.expanded-items-list {
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+/* 現代精緻滾動條 */
+.expanded-items-list::-webkit-scrollbar {
+  width: 4px;
+}
+.expanded-items-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.expanded-items-list::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 99px;
+}
+.expanded-items-list::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+.order-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.order-item-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.order-item-card:hover {
+  border-color: #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.item-img-wrap {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  border: 1px solid #f1f5f9;
+  background: #ffffff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.item-details {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.15rem;
+}
+
+.item-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.item-price {
+  font-weight: 500;
+}
+
+.item-qty {
+  background: #f1f5f9;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.68rem;
+  color: #475569;
+}
+
+.item-subtotal {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--brand-dark);
+  margin-top: 0.2rem;
+  text-align: right;
+}
+
+/* ===== 骨架屏載入效果 (Skeleton Loading) ===== */
+.skeleton-order-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.skeleton-block {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 6px;
+  content: "";
+}
+
+.skeleton-img {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+</style>
+
+<style scoped>
+/* ===== 自訂提示 Modal ===== */
+.custom-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-modal-card {
+  background: white;
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem 2rem;
+  text-align: center;
+  width: 90%;
+  max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  animation: modalBounceIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalBounceIn {
+  from { opacity: 0; transform: scale(0.85) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  font-size: 2rem;
+}
+.modal-icon.success { background: #ECFDF5; color: #10B981; border: 3px solid #A7F3D0; }
+.modal-icon.error   { background: #FEF2F2; color: #EF4444; border: 3px solid #FECACA; }
+.modal-icon.warning  { background: #FFFBEB; color: #F59E0B; border: 3px solid #FDE68A; }
+.modal-icon.confirm  { background: #FFF7ED; color: #F97316; border: 3px solid #FED7AA; }
+
+.modal-title-custom {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 0.5rem;
+}
+
+.modal-message {
+  font-size: 0.95rem;
+  color: #64748B;
+  margin-bottom: 1.75rem;
+  line-height: 1.6;
+}
+
+.btn-modal-confirm {
+  display: inline-block;
+  padding: 0.65rem 2.5rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-modal-confirm.success { background: linear-gradient(135deg, #10B981, #34D399); color: white; }
+.btn-modal-confirm.error   { background: linear-gradient(135deg, #EF4444, #F87171); color: white; }
+.btn-modal-confirm.confirm { background: linear-gradient(135deg, #EF4444, #F87171); color: white; }
+.btn-modal-confirm:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
+.btn-modal-cancel {
+  display: inline-block;
+  padding: 0.65rem 2.5rem;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: white;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-modal-cancel:hover { background: #F8FAFC; border-color: #94A3B8; }
+
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.25s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 </style>
