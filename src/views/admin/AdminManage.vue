@@ -139,6 +139,20 @@ function openCreateModal() {
   showModal.value = true
 }
 
+// ===== 一鍵帶入測試資料 =====
+function fillDemoData() {
+  form.value = {
+    username: 'staff88',
+    password: 'pass123',
+    fullName: '王小明',
+    role: 'STAFF',
+    gender: '男',
+    birthday: '1996-03-12',
+    phone: '0912-888-999',
+    email: 'staff88@gmail.com',
+  }
+}
+
 // ===== 編輯 Modal =====
 async function openEditModal(id) {
   try {
@@ -479,7 +493,7 @@ function handleExport(format) {
                     class="btn btn-sm action-btn action-btn-status dropdown-toggle"
                     type="button"
                     data-bs-toggle="dropdown"
-                    data-tooltip="編輯帳號狀態"
+                    data-tooltip="編輯狀態"
                     :class="{ 'btn-disabled': isSelf(a.adminId) }"
                     :disabled="isSelf(a.adminId)"
                   >
@@ -613,6 +627,17 @@ function handleExport(format) {
               <div class="form-col-third">
                 <label>Email</label>
                 <input v-model="form.email" type="email" placeholder="abc@mail.com" />
+                <!-- 一鍵帶入 (僅限新增職員) -->
+                <div v-if="!editId" class="text-end mt-1">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary px-2 py-0.5 small fw-bold"
+                    style="border-style: dashed; font-size: 0.72rem; border-color: #cbd5e1; color: #64748b;"
+                    @click="fillDemoData"
+                  >
+                    <i class="bi bi-lightning-fill text-warning me-1"></i>一鍵帶入
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1110,7 +1135,7 @@ input[type="date"]::-webkit-datetime-edit-day-field {
   color: #475569;
 }
 .modal-body {
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem 0.6rem;
 }
 .modal-footer {
   display: flex;
@@ -1124,6 +1149,9 @@ input[type="date"]::-webkit-datetime-edit-day-field {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+.form-row:last-child {
+  margin-bottom: 0;
 }
 .form-col {
   flex: 1;
@@ -1241,5 +1269,9 @@ input[type="date"]::-webkit-datetime-edit-day-field {
   .search-box input {
     width: 150px;
   }
+}
+:deep(.dropdown-menu), :deep(.dropdown-item) {
+  font-family: 'Inter', 'Noto Sans TC', sans-serif !important;
+  font-size: 0.88rem !important;
 }
 </style>

@@ -3,7 +3,7 @@
  * 操作日誌管理頁面
  * 顯示系統操作紀錄，支援篩選（操作類型、日期）和關鍵字搜尋
  */
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { systemLogApi } from '@/api/systemLog'
 import { useExport } from '@/composables/useExport'
 import { Bar, Pie } from 'vue-chartjs'
@@ -66,6 +66,7 @@ const filterStartDate = ref('')
 const filterEndDate = ref('')
 const searchKeyword = ref('')
 const showStats = ref(false)
+const showExportMenu = ref(false)
 
 // ===== 分頁狀態 =====
 const currentPage = ref(1)
@@ -161,7 +162,11 @@ const chartData = computed(() => {
       const d = new Date(log.createdAt)
       const day = d.getDay()
       const diff = d.getDate() - day + (day === 0 ? -6 : 1) // 調整到週一
-      const monday = new Date(d.setDate(diff)).toISOString().split('T')[0]
+      d.setDate(diff)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const date = String(d.getDate()).padStart(2, '0')
+      const monday = `${year}-${month}-${date}`
       regByWeek[monday] = (regByWeek[monday] || 0) + 1
 
       // 來源統計
@@ -334,8 +339,17 @@ function handleExport(format) {
   exportData(getExportData(), format, '操作日誌')
 }
 
+function closeExportMenu() {
+  showExportMenu.value = false
+}
+
 onMounted(() => {
   loadLogs()
+  document.addEventListener('click', closeExportMenu)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeExportMenu)
 })
 </script>
 
@@ -349,7 +363,7 @@ onMounted(() => {
     </div>
 
     <!-- 搜尋與篩選工具列 -->
-    <div class="card card-rounded shadow-sm border-0 mb-4">
+    <div class="card card-rounded shadow-sm border-0 mb-4" style="overflow: visible;">
       <div class="card-body p-3">
         <div class="row g-3 align-items-end">
           <!-- 關鍵字搜尋 (自動加寬) -->
@@ -424,7 +438,7 @@ onMounted(() => {
             <!-- 匯出 (下拉選單) -->
             <div class="dropdown">
               <button
-                class="btn-soft btn-soft-sky px-2 dropdown-toggle hide-caret"
+                class="btn btn-soft btn-soft-sky px-2 dropdown-toggle hide-caret"
                 type="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
@@ -434,7 +448,7 @@ onMounted(() => {
                 <span>匯出</span>
                 <i class="bi bi-chevron-down small ms-1" style="font-size: 0.65rem;"></i>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2 p-2" style="border-radius: 12px;">
+              <ul class="dropdown-menu shadow-sm border-0 mt-2 p-2" style="border-radius: 12px;">
                 <li>
                   <button class="dropdown-item d-flex align-items-center gap-2 rounded-2 py-2" @click="handleExport('EXCEL')">
                     <i class="bi bi-file-earmark-excel text-success"></i> 匯出 Excel

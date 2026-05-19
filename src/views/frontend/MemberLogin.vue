@@ -22,9 +22,10 @@ const successMsg = ref('')
 const showPassword = ref(false)
 
 // 一鍵登入帶入測試帳號
-function quickFill() {
+async function quickFill() {
   username.value = 'chen.weijie'
   password.value = 'pass123'
+  await handleLogin()
 }
 
 onMounted(() => {
@@ -74,7 +75,7 @@ async function handleGoogleLogin(response) {
     localStorage.setItem('memberToken', res.token)
     localStorage.setItem('memberInfo', JSON.stringify(res.member))
     memberStore.login(res.token, res.member)
-    router.push('/')
+    router.push('/profile')
   } catch (err) {
     console.error('Google 登入失敗:', err)
     errorMsg.value = err.response?.data?.message || 'Google 登入失敗，請稍後再試'
@@ -157,7 +158,7 @@ async function handleGoogleLogin(response) {
               </button>
 
               <button type="button" class="btn btn-outline-secondary w-100 mt-2 py-1 fw-semibold border-dashed" @click="quickFill">
-                <i class="bi bi-lightning-fill text-warning me-1"></i>測試帳號
+                <i class="bi bi-lightning-fill text-warning me-1"></i>一鍵登入
               </button>
             </form>
 
@@ -196,9 +197,27 @@ async function handleGoogleLogin(response) {
 
 <style scoped>
 .login-page {
-  min-height: auto;
+  min-height: 100vh;
   display: flex;
   align-items: center;
+  background-image: url('@/assets/images/login-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+.login-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.4);
+  z-index: 0;
+}
+
+.login-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .login-card {

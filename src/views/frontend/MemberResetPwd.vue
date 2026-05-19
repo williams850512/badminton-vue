@@ -22,12 +22,23 @@ const newPassword = ref('')
 const confirmPassword = ref('')
 const showPassword = ref(false)
 
+// 一鍵帶入 Demo 資料 (正式發表用)
+function fillDemoData() {
+  if (step.value === 1) {
+    username.value = 'hsuanhsu'
+    email.value = 'starry1470@gmail.com'
+  } else if (step.value === 2) {
+    newPassword.value = 'pass123'
+    confirmPassword.value = 'pass123'
+  }
+}
+
 // 倒數計時（防止重複寄送）
 const countdown = ref(0)
 let countdownTimer = null
 
 function startCountdown() {
-  countdown.value = 60
+  countdown.value = 120
   countdownTimer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
@@ -195,7 +206,7 @@ async function handleSubmit() {
                 </label>
                 <div class="position-relative">
                   <input v-model="newPassword" :type="showPassword ? 'text' : 'password'"
-                         class="form-control rounded-3" placeholder="請輸入新密碼 (6-15 碼)"
+                         class="form-control rounded-3" placeholder="請輸入新密碼 6-15 碼"
                          maxlength="15"
                          style="padding-right: 48px;" />
                   <button type="button"
@@ -238,9 +249,16 @@ async function handleSubmit() {
 
             <!-- Footer -->
             <div v-if="step !== 3" class="text-center mt-4 pt-3 border-top">
-              <RouterLink to="/login" class="text-muted small text-decoration-none">
-                <i class="bi bi-arrow-left me-1"></i>返回登入頁
-              </RouterLink>
+              <div class="mb-2">
+                <RouterLink to="/login" class="text-muted small text-decoration-none">
+                  <i class="bi bi-arrow-left me-1"></i>返回登入頁
+                </RouterLink>
+              </div>
+              <div v-if="step !== 3">
+                <button type="button" class="btn btn-sm p-0 mt-1 small fw-bold" style="color: #48b4e0; text-decoration: none;" @click="fillDemoData">
+                  一鍵帶入
+                </button>
+              </div>
             </div>
           </div>
 
@@ -252,9 +270,27 @@ async function handleSubmit() {
 
 <style scoped>
 .reset-page {
-  min-height: calc(100vh - 160px);
+  min-height: 100vh;
   display: flex;
   align-items: center;
+  background-image: url('@/assets/images/login-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+.reset-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.4);
+  z-index: 0;
+}
+
+.reset-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .reset-card {

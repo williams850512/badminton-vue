@@ -1130,8 +1130,26 @@ async function handleAvatarUpload(event) {
 
 <style scoped>
 .profile-page {
-  background-color: #f9fdfd;
-  min-height: calc(100vh - 120px);
+  min-height: 100vh;
+  position: relative;
+  background-image: url('@/assets/images/login-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+.profile-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.4);
+  z-index: 0;
+}
+
+.profile-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .profile-card-base {
