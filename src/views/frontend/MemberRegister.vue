@@ -222,11 +222,9 @@ async function handleRegister() {
 
 <template>
   <div class="register-page">
-    <div class="container py-4">
-      <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-
-          <div class="register-card card-rounded shadow-sm px-4 pt-4 pb-3">
+    <div class="container py-4 d-flex justify-content-center">
+      <!-- 註冊卡片 -->
+      <div class="register-card card-rounded shadow-sm">
             <!-- Header -->
             <div class="text-center mb-2 position-relative">
               <h2 class="fw-bold text-gradient mb-0 fs-3">
@@ -444,12 +442,9 @@ async function handleRegister() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
-    </div>
-  </div>
-</template>
+    </template>
 
 <style scoped>
 .register-page {
@@ -477,8 +472,11 @@ async function handleRegister() {
 }
 
 .register-card {
+  width: 100%;
+  max-width: 480px;
   background: white;
   animation: fadeUp 0.4s ease;
+  padding: 3rem 2.8rem 2.5rem;
 }
 
 @keyframes fadeUp {

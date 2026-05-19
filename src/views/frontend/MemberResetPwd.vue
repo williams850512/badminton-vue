@@ -125,11 +125,9 @@ async function handleSubmit() {
 
 <template>
   <div class="reset-page">
-    <div class="container py-5">
-      <div class="row justify-content-center">
-        <div class="col-md-5 col-lg-4">
-
-          <div class="reset-card card-rounded shadow-sm py-5 px-4">
+    <div class="container py-4 d-flex justify-content-center">
+      <!-- 重設密碼卡片 -->
+      <div class="reset-card card-rounded shadow-sm">
             <!-- Header -->
             <div class="text-center mt-1 mb-4">
               <h2 class="fw-bold text-gradient mb-1">
@@ -261,12 +259,9 @@ async function handleSubmit() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
-    </div>
-  </div>
-</template>
+    </template>
 
 <style scoped>
 .reset-page {
@@ -294,8 +289,11 @@ async function handleSubmit() {
 }
 
 .reset-card {
+  width: 100%;
+  max-width: 480px;
   background: white;
   animation: fadeUp 0.4s ease;
+  padding: 2rem 2.8rem 1.5rem;
 }
 
 @keyframes fadeUp {

@@ -87,20 +87,17 @@ async function handleGoogleLogin(response) {
 
 <template>
   <div class="login-page">
-    <div class="container py-4"> <!-- 上下間距設為相同 -->
-      <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-
-          <!-- 登入卡片 -->
-          <div class="login-card card-rounded shadow-sm py-5 px-4">
+    <div class="container py-4 d-flex justify-content-center">
+      <!-- 登入卡片 -->
+      <div class="login-card card-rounded shadow-sm">
             <!-- Header -->
-            <div class="text-center mt-1 mb-4">
+            <div class="text-center mt-0 mb-4">
               <h2 class="fw-bold text-gradient mb-1">會員登入</h2>
               <p class="text-muted small tracking-wider mb-0">MEMBER LOGIN</p>
             </div>
 
             <!-- Error Message -->
-            <div v-if="errorMsg" class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 rounded-3" role="alert">
+            <div v-if="errorMsg" class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 rounded-3 mb-4" role="alert">
               <i class="bi bi-exclamation-triangle-fill"></i>
               <span class="small">{{ errorMsg }}</span>
             </div>
@@ -113,36 +110,33 @@ async function handleGoogleLogin(response) {
 
             <!-- Login Form -->
             <form @submit.prevent="handleLogin">
-              <div class="mb-2">
-                <label class="form-label fw-semibold small text-secondary">
-                  帳號
-                </label>
-                <input
-                  v-model="username"
-                  type="text"
-                  class="form-control rounded-3"
-                  placeholder="請輸入您的帳號"
-                  autocomplete="off"
-                  autofocus
-                />
+              <!-- 帳號 -->
+              <div class="mb-3">
+                <div class="input-wrapper">
+                  <i class="bi bi-person input-icon"></i>
+                  <input
+                    v-model="username"
+                    type="text"
+                    placeholder="帳號"
+                    autocomplete="username"
+                    autofocus
+                  />
+                </div>
               </div>
 
+              <!-- 密碼 -->
               <div class="mb-3">
-                <label class="form-label fw-semibold small text-secondary">
-                  密碼
-                </label>
-                <div class="position-relative">
+                <div class="input-wrapper">
+                  <i class="bi bi-lock input-icon"></i>
                   <input
                     v-model="password"
                     :type="showPassword ? 'text' : 'password'"
-                    class="form-control rounded-3"
-                    placeholder="請輸入您的密碼"
+                    placeholder="密碼"
                     autocomplete="current-password"
-                    style="padding-right: 48px;"
                   />
                   <button
                     type="button"
-                    class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary pe-3"
+                    class="toggle-pwd"
                     @click="showPassword = !showPassword"
                     tabindex="-1"
                   >
@@ -151,45 +145,42 @@ async function handleGoogleLogin(response) {
                 </div>
               </div>
 
-              <button type="submit" class="btn btn-brand w-100 py-2 fw-bold" :disabled="isLoading">
+              <button type="submit" class="btn btn-brand w-100 py-2 fw-bold mt-1" :disabled="isLoading">
                 <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
                 <span v-if="isLoading">登入中...</span>
                 <span v-else><i class="bi bi-box-arrow-in-right me-2"></i>登入</span>
               </button>
 
-              <button type="button" class="btn btn-outline-secondary w-100 mt-2 py-1 fw-semibold border-dashed" @click="quickFill">
+              <button type="button" class="btn btn-outline-secondary w-100 py-1 fw-semibold border-dashed" @click="quickFill" style="margin-top: 6px;">
                 <i class="bi bi-lightning-fill text-warning me-1"></i>一鍵登入
               </button>
             </form>
 
-            <div class="d-flex align-items-center my-2">
+            <div class="d-flex align-items-center my-3">
               <hr class="flex-grow-1 text-muted">
               <span class="mx-2 text-muted small">或</span>
               <hr class="flex-grow-1 text-muted">
             </div>
 
             <!-- Google Login Button -->
-            <div class="d-flex justify-content-center">
+            <div class="d-flex justify-content-center mb-1">
               <GoogleLogin :callback="handleGoogleLogin" prompt />
             </div>
 
             <!-- 忘記密碼 -->
-            <div class="text-center mt-3">
+            <div class="text-center mt-3" style="margin-top: 15px;">
               <RouterLink to="/reset-password" class="forgot-link small text-decoration-none">
                 忘記密碼？
               </RouterLink>
             </div>
 
             <!-- Footer -->
-            <div class="text-center mt-2 pt-2 border-top">
+            <div class="text-center mt-3 pt-2 border-top" style="margin-top: 15px !important;">
               <span class="text-muted small">還不是會員？</span>
               <RouterLink to="/register" class="register-link fw-bold small text-decoration-none ms-1">
                 立即註冊
               </RouterLink>
             </div>
-          </div>
-
-        </div>
       </div>
     </div>
   </div>
@@ -221,8 +212,11 @@ async function handleGoogleLogin(response) {
 }
 
 .login-card {
+  width: 100%;
+  max-width: 480px;
   background: white;
   animation: fadeUp 0.4s ease;
+  padding: 2.8rem 2.8rem 3.2rem;
 }
 
 @keyframes fadeUp {
@@ -271,5 +265,63 @@ async function handleGoogleLogin(response) {
   opacity: 0.7;
   color: var(--brand-teal);
   text-decoration: none !important;
+}
+
+/* ----- 表單欄位與包裝器（對齊高質感管理員登入） ----- */
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 1.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  font-size: 0.95rem;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 0.78rem 1rem 0.78rem 2.6rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.65rem;
+  font-size: 0.92rem;
+  color: #1E293B;
+  background: #F1F5F9;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-wrapper input::placeholder {
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.input-wrapper input:focus {
+  border-color: #93C5FD;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.18);
+}
+
+.toggle-pwd {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+  z-index: 5;
+}
+
+.toggle-pwd:hover {
+  color: #64748B;
 }
 </style>
