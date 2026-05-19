@@ -70,25 +70,25 @@ const isButtonDisabled = computed(() => {
 // ============================
 // 💰 動態費用計算邏輯
 // ============================
-const calculatedFeePerPerson = computed(() => {
-  if (!game.value || !game.value.startTime || !game.value.endTime || !game.value.maxPlayers) return 0
+// const calculatedFeePerPerson = computed(() => {
+//   if (!game.value || !game.value.startTime || !game.value.endTime || !game.value.maxPlayers) return 0
 
-  // 將 "14:00" 轉成數字 14.0
-  const parseTime = (timeStr) => {
-    const [hours, minutes] = timeStr.split(':').map(Number)
-    return hours + (minutes / 60)
-  }
+//   // 將 "14:00" 轉成數字 14.0
+//   const parseTime = (timeStr) => {
+//     const [hours, minutes] = timeStr.split(':').map(Number)
+//     return hours + (minutes / 60)
+//   }
 
-  const startHours = parseTime(game.value.startTime)
-  const endHours = parseTime(game.value.endTime)
-  const duration = Math.max(0, endHours - startHours)
+//   const startHours = parseTime(game.value.startTime)
+//   const endHours = parseTime(game.value.endTime)
+//   const duration = Math.max(0, endHours - startHours)
 
-  // 總場地費：每小時 300 元
-  const totalCost = duration * 300
+//   // 總場地費：每小時 300 元
+//   const totalCost = duration * 300
 
-  // 每人單價：總費用 / 人數上限 (使用 Math.ceil 無條件進位)
-  return Math.ceil(totalCost / (game.value.currentPlayers || 1))
-})
+//   // 每人單價：總費用 / 人數上限 (使用 Math.ceil 無條件進位)
+//   return Math.ceil(totalCost / (game.value.currentPlayers || 1))
+// })
 
 // ============================
 // 🎯 視覺處理：報名名單顯示標籤
@@ -437,7 +437,7 @@ const handleKick = async (signupId, memberName) => {
 }
 
 /* ============================
-   🎨 森系色彩定義 
+   🎨 森系色彩定義
    ============================ */
 .text-mori-teal { color: #457B9D !important; }
 .text-mori-teal-light { color: #A8DADC !important; }

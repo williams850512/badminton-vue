@@ -20,6 +20,40 @@ const manageModalRef = ref(null)
 const managedGame = ref(null)
 const loggedInMemberId = ref(null)
 
+// 🪶 羽毛背景隨機資料（格線分區，確保均勻分散）
+const cols = 4
+const rows = 4
+// 🪶 羽毛背景（固定位置，看起來自然分散）
+const feathers = [
+  { x: 3,  y: 2,  size: 200, opacity: 0.30, rotate: 25  },
+  { x: 28, y: 8,  size: 170, opacity: 0.30, rotate: 140 },
+  { x: 55, y: 5,  size: 190, opacity: 0.30, rotate: 200 },
+  { x: 80, y: 3,  size: 160, opacity: 0.30, rotate: 310 },
+  { x: 8,  y: 25, size: 180, opacity: 0.30, rotate: 75  },
+  { x: 42, y: 22, size: 220, opacity: 0.30, rotate: 160 },
+  { x: 70, y: 28, size: 190, opacity: 0.30, rotate: 240 },
+  { x: 88, y: 24, size: 160, opacity: 0.30, rotate: 50  },
+  { x: 15, y: 55, size: 200, opacity: 0.30, rotate: 120 },
+  { x: 50, y: 60, size: 175, opacity: 0.30, rotate: 280 },
+  { x: 75, y: 65, size: 210, opacity: 0.30, rotate: 15  },
+  { x: 92, y: 70, size: 165, opacity: 0.30, rotate: 190 },
+  { x: 5,  y: 75, size: 195, opacity: 0.30, rotate: 55  },
+  { x: 35, y: 80, size: 180, opacity: 0.30, rotate: 170 },
+  { x: 62, y: 78, size: 205, opacity: 0.30, rotate: 320 },
+  { x: 85, y: 85, size: 170, opacity: 0.30, rotate: 95  },
+]
+for (let row = 0; row < rows; row++) {
+  for (let col = 0; col < cols; col++) {
+    feathers.push({
+      x: (col / cols) * 95 + Math.random() * (95 / cols),
+      y: (row / rows) * 60 + Math.random() * (60 / rows),  // 限制在前60%高度
+      size: 70 + Math.random() * 70,
+      opacity: 0.08 + Math.random() * 0.05,
+      rotate: Math.random() * 360
+    })
+  }
+}
+
 // 進階篩選變數
 const advancedFilters = ref({
   levels: [], // 'BEGINNER', 'INTERMEDIATE', 'ADVANCED'
@@ -198,29 +232,29 @@ const qvSkillLabel = computed(() => {
   return skillMap[quickViewGame.value.skillLevel] || '不限'
 })
 // Quick View 專用：動態計算單人費用
-const qvCalculatedFee = computed(() => {
-  if (!quickViewGame.value || !quickViewGame.value.startTime || !quickViewGame.value.endTime) return 0
+// const qvCalculatedFee = computed(() => {
+//   if (!quickViewGame.value || !quickViewGame.value.startTime || !quickViewGame.value.endTime) return 0
 
-  const parseTime = (timeStr) => {
-    const [hours, minutes] = timeStr.split(':').map(Number)
-    return hours + (minutes / 60)
-  }
+//   const parseTime = (timeStr) => {
+//     const [hours, minutes] = timeStr.split(':').map(Number)
+//     return hours + (minutes / 60)
+//   }
 
-  const startHours = parseTime(quickViewGame.value.startTime)
-  const endHours = parseTime(quickViewGame.value.endTime)
-  const duration = Math.max(0, endHours - startHours)
+//   const startHours = parseTime(quickViewGame.value.startTime)
+//   const endHours = parseTime(quickViewGame.value.endTime)
+//   const duration = Math.max(0, endHours - startHours)
 
-  const totalCost = duration * 300
+//   const totalCost = duration * 300
 
-  // 判斷當前使用者是否已經報名
-  const isJoined = isQuickViewRegistered.value
-  // 如果還沒報名，就算入他自己 (分母 +1)；如果已經報名，就直接用當前人數
-  const divisor = isJoined
-    ? (quickViewGame.value.currentPlayers || 1)
-    : (quickViewGame.value.currentPlayers + 1)
+//   // 判斷當前使用者是否已經報名
+//   const isJoined = isQuickViewRegistered.value
+//   // 如果還沒報名，就算入他自己 (分母 +1)；如果已經報名，就直接用當前人數
+//   const divisor = isJoined
+//     ? (quickViewGame.value.currentPlayers || 1)
+//     : (quickViewGame.value.currentPlayers + 1)
 
-  return Math.ceil(totalCost / divisor)
-})
+//   return Math.ceil(totalCost / divisor)
+// })
 
 const qvGenderBadge = computed(() => {
   if (!quickViewGame.value) return null
@@ -407,10 +441,28 @@ const handleManageGame = (game) => {
 <template>
   <div class="container py-5 mt-5">
 
-    <div class="mb-5">
-      <h2 class="fw-bold text-dark">羽球臨打活動</h2>
-      <p class="text-secondary">尋找適合你的場次，隨時加入熱血對決</p>
-    </div>
+  <!-- 🪶 羽毛背景層 -->
+  <div class="feather-bg" aria-hidden="true">
+    <img
+      v-for="(f, i) in feathers"
+      :key="i"
+      src="@/assets/images/feathers_watermark.png"
+      class="feather-item"
+      :style="{
+        left: f.x + '%',
+        top: f.y + '%',
+        width: f.size + 'px',
+        opacity: f.opacity,
+        transform: `rotate(${f.rotate}deg)`
+      }"
+    />
+  </div>
+
+  <div class="mb-5">
+    <h2 class="fw-bold text-dark mb-2">羽球臨打活動</h2>
+    <p class="text-secondary mb-0">尋找適合你的場次，隨時加入熱血對決</p>
+  </div>
+
 
  <div class="d-flex align-items-center gap-3 mb-5 mt-3">
 
@@ -748,6 +800,7 @@ const handleManageGame = (game) => {
   <ManageMatchModal ref="manageModalRef" :game="managedGame" @refresh-list="fetchGames" />
 </template>
 <style scoped>
+
 /* ============================================================
    🎨 森系清新風 (Mori-kei Fresh Style) 核心樣式
    ============================================================ */
@@ -800,6 +853,46 @@ input:focus {
   outline: none;
   box-shadow: none;
 }
+
+/* ============================================================
+   🍃 森系清新風 - 全景背景羽毛編織壓紋
+   ============================================================ */
+
+.container {
+  position: relative;
+}
+
+.feather-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+
+.feather-item {
+  position: absolute;
+  user-select: none;
+
+}
+
+
+
+
+/* 3. 確保主要元件在背景紋理之上 */
+.pickup-card,
+.rounded-pill.p-1.bg-light,
+.bg-white.shadow-sm,
+button,
+nav {
+  position: relative;
+  z-index: 1;                  /* 確保在紋理上面 */
+}
+
 
 /* ============================
    🌟 Quick View Modal 樣式
