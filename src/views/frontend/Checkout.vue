@@ -127,7 +127,8 @@ async function handleSubmit() {
     return
   }
 
-  // 其他付款方式直接建立訂單
+  // 其他付款方式直接建立訂單（立即可鎖定防止重複提交）
+  isSubmitting.value = true
   await processOrder()
 }
 

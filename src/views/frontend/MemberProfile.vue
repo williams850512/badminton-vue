@@ -183,7 +183,15 @@ function formatDateTime(dateStr) {
 function getInvoiceLabel(order) {
   if (!order.invoiceType) return '未設定'
   if (order.invoiceType === 'INDIVIDUAL') {
-    return order.invoiceCarrier ? `個人電子發票（載具：${order.invoiceCarrier}）` : '個人電子發票（現場取貨時隨貨交付）'
+    if (order.invoiceCarrier) {
+      if (order.invoiceCarrier.startsWith('/')) {
+        return `個人電子發票（手機條碼：${order.invoiceCarrier}）`
+      } else if (/^[A-Za-z]{2}\d{14}$/.test(order.invoiceCarrier)) {
+        return `個人電子發票（自然人憑證：${order.invoiceCarrier}）`
+      }
+      return `個人電子發票（載具：${order.invoiceCarrier}）`
+    }
+    return '個人電子發票（現場取貨時隨貨交付）'
   }
   if (order.invoiceType === 'COMPANY') {
     return `公司發票（統編：${order.invoiceTaxId}）`
@@ -832,10 +840,18 @@ async function handleAvatarUpload(event) {
                   <div class="profile-card-base shadow-sm border bg-white p-4">
                     <h6 class="section-title-bar mb-4">歷史消費訂單</h6>
 
-                    <div v-if="loadingOrders" class="text-center py-5">
-                      <div class="spinner-border text-info" role="status"></div>
-                      <p class="text-muted mt-2 small">訂單載入中...</p>
-                    </div>
+                     <div v-if="loadingOrders" class="skeleton-order-list">
+                       <div v-for="i in 3" :key="i" class="skeleton-order-card mb-4 p-4 rounded-4" style="border: 1px solid #e2e8f0; border-radius: 1rem;">
+                         <div class="d-flex justify-content-between align-items-center mb-3">
+                           <div class="skeleton-block" style="width: 140px; height: 24px;"></div>
+                           <div class="skeleton-block" style="width: 80px; height: 20px; border-radius: 10px;"></div>
+                         </div>
+                         <div class="d-flex justify-content-between align-items-center">
+                           <div class="skeleton-block" style="width: 200px; height: 16px;"></div>
+                           <div class="skeleton-block" style="width: 100px; height: 24px;"></div>
+                         </div>
+                       </div>
+                     </div>
 
                     <div v-else-if="orders.length === 0" class="empty-state py-5 text-center">
                       <i class="bi bi-cart-x mb-3 d-block text-light" style="font-size: 4rem"></i>
@@ -956,8 +972,16 @@ async function handleAvatarUpload(event) {
                           </div>
 
                           <!-- 商品明细 -->
-                          <div v-if="loadingItems === orders[0].orderId" class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-info"></div>
+                          <div v-if="loadingItems === orders[0].orderId" class="skeleton-items-grid px-1 py-2">
+                            <div class="order-items-grid">
+                              <div v-for="j in 1" :key="j" class="order-item-card d-flex align-items-center gap-3 p-2 border rounded-3 mb-2" style="border: 1px solid #f1f5f9; border-radius: 0.5rem;">
+                                <div class="item-img-wrap skeleton-img" style="width: 60px; height: 60px; border-radius: 0.5rem; flex-shrink: 0;"></div>
+                                <div class="item-details gap-2 flex-grow-1">
+                                  <div class="skeleton-block" style="width: 80%; height: 16px;"></div>
+                                  <div class="skeleton-block" style="width: 40%; height: 12px;"></div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <div v-else class="expanded-items-list px-1">
                             <div class="order-items-grid">
@@ -1162,8 +1186,16 @@ async function handleAvatarUpload(event) {
                           </div>
 
                           <!-- 商品明细 -->
-                          <div v-if="loadingItems === order.orderId" class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-info"></div>
+                          <div v-if="loadingItems === order.orderId" class="skeleton-items-grid px-1 py-2">
+                            <div class="order-items-grid">
+                              <div v-for="j in 1" :key="j" class="order-item-card d-flex align-items-center gap-3 p-2 border rounded-3 mb-2" style="border: 1px solid #f1f5f9; border-radius: 0.5rem;">
+                                <div class="item-img-wrap skeleton-img" style="width: 60px; height: 60px; border-radius: 0.5rem; flex-shrink: 0;"></div>
+                                <div class="item-details gap-2 flex-grow-1">
+                                  <div class="skeleton-block" style="width: 80%; height: 16px;"></div>
+                                  <div class="skeleton-block" style="width: 40%; height: 12px;"></div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <div v-else class="expanded-items-list px-1">
                             <div class="order-items-grid">
@@ -1578,7 +1610,8 @@ async function handleAvatarUpload(event) {
 .order-repr-img {
   width: 100%;
   height: 100%;
-  object-fit: scale-down;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast; /* 提升縮放後的圖片解析度與銳利度 */
 }
 .order-repr-placeholder {
   width: 100%;
@@ -1806,9 +1839,10 @@ async function handleAvatarUpload(event) {
 }
 
 .item-img-wrap img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: scale-down;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .item-details {
@@ -1855,5 +1889,35 @@ async function handleAvatarUpload(event) {
   color: var(--brand-dark);
   margin-top: 0.2rem;
   text-align: right;
+}
+
+/* ===== 骨架屏載入效果 (Skeleton Loading) ===== */
+.skeleton-order-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.skeleton-block {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 6px;
+  content: "";
+}
+
+.skeleton-img {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 </style>
