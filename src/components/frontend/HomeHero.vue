@@ -25,8 +25,6 @@ function scrollToContent() {
 
     <!-- 文字內容 -->
     <div class="hero-content">
-      
-
       <h1 class="hero-heading">揮灑汗水，盡享羽球<span class="hero-accent">樂趣</span></h1>
 
       <p class="hero-subtitle">
@@ -123,18 +121,9 @@ function scrollToContent() {
       transparent 82%
     ),
     /* 底部微暗，讓滾動提示更清晰 */
-    linear-gradient(
-      to top,
-      rgba(5, 12, 24, 0.35) 0%,
-      rgba(5, 12, 24, 0.10) 12%,
-      transparent 30%
-    ),
+    linear-gradient(to top, rgba(5, 12, 24, 0.35) 0%, rgba(5, 12, 24, 0.1) 12%, transparent 30%),
     /* 頂部微暗，與 navbar 銜接 */
-    linear-gradient(
-      to bottom,
-      rgba(5, 12, 24, 0.25) 0%,
-      transparent 15%
-    );
+    linear-gradient(to bottom, rgba(5, 12, 24, 0.25) 0%, transparent 15%);
   pointer-events: none;
 }
 
@@ -195,7 +184,7 @@ function scrollToContent() {
 
 /* 標題 */
 .hero-heading {
-  font-size: 4rem;
+  font-size: 4.5rem;
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: 0.02em;
@@ -214,7 +203,7 @@ function scrollToContent() {
 .hero-subtitle {
   color: rgba(255, 255, 255, 0.75);
   line-height: 2;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   margin-bottom: 2rem;
 }
 
@@ -233,7 +222,7 @@ function scrollToContent() {
 }
 
 .stat-number {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 800;
   background: linear-gradient(135deg, #5eead4, #38bdf8);
   -webkit-background-clip: text;
@@ -243,7 +232,7 @@ function scrollToContent() {
 }
 
 .stat-label {
-  font-size: 0.85rem;
+  font-size: 1.2rem;
   color: rgba(255, 255, 255, 0.5);
   margin-top: 0.25rem;
 }

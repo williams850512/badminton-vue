@@ -578,6 +578,11 @@ const today = computed(() => {
   border-radius: 0.75rem !important;
 }
 
+/* ===== 表格儲存格垂直置中 ===== */
+.table tbody td {
+  vertical-align: middle;
+}
+
 /* ===== 表格表頭 ===== */
 .table thead th {
   background: #1b4767;
