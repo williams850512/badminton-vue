@@ -233,7 +233,7 @@ const handleKick = async (signupId, memberName) => {
   <div class="page-bg">
 
     <div v-if="!isLoaded" class="vh-100 d-flex align-items-center justify-content-center">
-      <div class="spinner-border text-sky-blue" role="status">
+      <div class="spinner-border text-mori-teal" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
     </div>
@@ -247,7 +247,7 @@ const handleKick = async (signupId, memberName) => {
     <div v-else class="content-wrapper pb-5">
 
       <div class="hero-banner position-relative" style="background-image: url('/banner_c.jpg'); background-size: cover; background-position: center; height: 350px;">
-        <div class="position-absolute w-100 h-100 top-0 start-0" style="background: linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 70%);"></div>
+        <div class="position-absolute w-100 h-100 top-0 start-0" style="background: linear-gradient(to right, rgba(30, 60, 80, 0.85) 0%, rgba(30, 60, 80, 0.2) 100%); backdrop-filter: blur(3px);"></div>
 
         <div class="container position-relative h-100 d-flex align-items-center">
           <div class="w-100 text-white z-3">
@@ -261,9 +261,9 @@ const handleKick = async (signupId, memberName) => {
             </div>
             <h1 class="fw-bold display-4 mb-3">{{ game.court?.venue?.venueName || '羽過天晴' }} 臨打團</h1>
             <div class="d-flex flex-wrap gap-4 text-light opacity-75">
-              <div class="d-flex align-items-center fs-5"><i class="bi bi-calendar-event me-2 text-sky-blue"></i> {{ game.gameDate }}</div>
-              <div class="d-flex align-items-center fs-5"><i class="bi bi-clock me-2 text-sky-blue"></i> {{ game.startTime }} - {{ game.endTime }}</div>
-              <div class="d-flex align-items-center fs-5"><i class="bi bi-geo-alt-fill me-2 text-sky-blue"></i> {{ game.court?.venue?.venueName || '羽球館' }} - {{ game.court?.courtName }}</div>
+              <div class="d-flex align-items-center fs-5"><i class="bi bi-calendar-event me-2 text-mori-teal-light"></i> {{ game.gameDate }}</div>
+              <div class="d-flex align-items-center fs-5"><i class="bi bi-clock me-2 text-mori-teal-light"></i> {{ game.startTime }} - {{ game.endTime }}</div>
+              <div class="d-flex align-items-center fs-5"><i class="bi bi-geo-alt-fill me-2 text-mori-teal-light"></i> {{ game.court?.venue?.venueName || '羽球館' }} - {{ game.court?.courtName }}</div>
             </div>
           </div>
         </div>
@@ -276,7 +276,7 @@ const handleKick = async (signupId, memberName) => {
 
             <div class="card border-0 shadow-sm rounded-4 mb-4">
               <div class="card-body p-4 p-md-5 d-flex align-items-start position-relative overflow-hidden">
-                <div class="host-badge position-absolute top-0 end-0 bg-sky-blue text-white px-3 py-1 fw-bold rounded-bottom-start shadow-sm">
+                <div class="host-badge position-absolute top-0 end-0 bg-mori-teal text-white px-3 py-1 fw-bold rounded-bottom-start shadow-sm">
                   主揪發起
                 </div>
                 <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center me-4 flex-shrink-0 shadow-sm" style="width: 75px; height: 75px; font-size: 2rem;">
@@ -295,7 +295,7 @@ const handleKick = async (signupId, memberName) => {
             <div class="card border-0 shadow-sm rounded-4 mb-4">
               <div class="card-body p-4 p-md-5">
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-                  <h4 class="fw-bold mb-0"><i class="bi bi-people-fill text-sky-blue me-2"></i>已報名隊友</h4>
+                  <h4 class="fw-bold mb-0"><i class="bi bi-people-fill text-mori-teal me-2"></i>已報名隊友</h4>
                   <span class="badge bg-light text-secondary border fs-6 rounded-pill px-3 py-2">{{ game.currentPlayers }} / {{ game.maxPlayers }} 人</span>
                 </div>
 
@@ -304,20 +304,20 @@ const handleKick = async (signupId, memberName) => {
                     <button
                       v-if="isCurrentUserHost && s.displayTag !== '主揪' && game.status !== 'CANCELLED' && new Date(`${game.gameDate}T${game.endTime}`) >= new Date()"
                       @click="handleKick(s.signupId, s.member?.fullName)"
-                      class="btn btn-danger btn-sm rounded-circle position-absolute shadow kick-btn"
+                      class="btn btn-mori-coral btn-sm rounded-circle position-absolute shadow kick-btn text-white"
                       title="踢除此成員"
                     >
                       <i class="bi bi-x"></i>
                     </button>
 
                     <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold mx-auto mb-2 position-relative shadow-sm player-avatar"
-                         :class="s.displayTag === '主揪' ? 'bg-sky-blue' : 'bg-secondary'">
+                         :class="s.displayTag === '主揪' ? 'bg-mori-teal' : 'bg-secondary'">
                       {{ s.member?.fullName?.charAt(0) || '無' }}
-                      <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-2 border-white rounded-circle" style="margin-bottom: 2px; margin-right: 2px;"></span>
+                      <span class="position-absolute bottom-0 end-0 p-1 bg-mori-success border border-2 border-white rounded-circle" style="margin-bottom: 2px; margin-right: 2px;"></span>
                     </div>
 
                     <div class="small fw-bold text-truncate w-100 text-dark">{{ s.member?.fullName }}</div>
-                    <div v-if="s.displayTag" class="small text-sky-blue fw-medium" style="font-size: 0.75rem;">{{ s.displayTag }}</div>
+                    <div v-if="s.displayTag" class="small text-mori-teal fw-medium" style="font-size: 0.75rem;">{{ s.displayTag }}</div>
 
                     <div v-if="isCurrentUserHost" class="text-secondary mt-1 px-1 rounded bg-light border" style="font-size: 0.65rem;">
                       {{ s.member?.phone || '無電話' }}
@@ -325,10 +325,10 @@ const handleKick = async (signupId, memberName) => {
                   </div>
 
                   <div v-for="i in Math.max(0, game.maxPlayers - game.currentPlayers)" :key="'empty'+i" class="text-center empty-slot-wrapper" style="width: 80px;">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-light mx-auto mb-2 empty-slot position-relative">
-                      <i class="bi bi-plus-lg text-secondary fs-4"></i>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 empty-slot position-relative">
+                      <i class="bi bi-plus-lg text-secondary fs-4 opacity-50"></i>
                     </div>
-                    <div class="small text-muted fw-medium mt-1">空位</div>
+                    <div class="small text-muted fw-medium mt-1 opacity-75">空位</div>
                   </div>
                 </div>
               </div>
@@ -336,11 +336,11 @@ const handleKick = async (signupId, memberName) => {
 
             <div class="card border-0 shadow-sm rounded-4 mb-4">
               <div class="card-body p-4 p-md-5">
-                <h4 class="fw-bold mb-4 pb-2 border-bottom"><i class="bi bi-ui-checks-grid text-sky-blue me-2"></i>活動細則與規格</h4>
+                <h4 class="fw-bold mb-4 pb-2 border-bottom"><i class="bi bi-ui-checks-grid text-mori-teal me-2"></i>活動細則與規格</h4>
                 <div class="row g-3 pt-2">
                   <div class="col-md-4">
                     <div class="feature-tile rounded-4 p-4 text-center h-100 transition-all">
-                      <div class="tile-icon bg-sky-blue bg-opacity-10 text-sky-blue rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                      <div class="tile-icon bg-mori-teal bg-opacity-10 text-mori-teal rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
                         <i class="bi bi-vinyl-fill fs-3"></i>
                       </div>
                       <div class="small text-secondary mb-1">提供用球</div>
@@ -349,7 +349,7 @@ const handleKick = async (signupId, memberName) => {
                   </div>
                   <div class="col-md-4">
                     <div class="feature-tile rounded-4 p-4 text-center h-100 transition-all">
-                      <div class="tile-icon bg-warning bg-opacity-10 text-warning rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                      <div class="tile-icon bg-mori-warning bg-opacity-10 text-mori-warning rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
                         <i class="bi bi-grid-3x3 fs-3"></i>
                       </div>
                       <div class="small text-secondary mb-1">場地數量</div>
@@ -358,7 +358,7 @@ const handleKick = async (signupId, memberName) => {
                   </div>
                   <div class="col-md-4">
                     <div class="feature-tile rounded-4 p-4 text-center h-100 transition-all">
-                      <div class="tile-icon bg-success bg-opacity-10 text-success rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
+                      <div class="tile-icon bg-mori-success bg-opacity-10 text-mori-success rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 54px; height: 54px;">
                         <i class="bi bi-people-fill fs-3"></i>
                       </div>
                       <div class="small text-secondary mb-1">人數上限</div>
@@ -371,7 +371,7 @@ const handleKick = async (signupId, memberName) => {
 
             <div class="card border-0 shadow-sm rounded-4 mb-5">
               <div class="card-body p-4 p-md-5">
-                <h4 class="fw-bold mb-4 pb-2 border-bottom"><i class="bi bi-geo-alt-fill text-sky-blue me-2"></i>場館位置</h4>
+                <h4 class="fw-bold mb-4 pb-2 border-bottom"><i class="bi bi-geo-alt-fill text-mori-teal me-2"></i>場館位置</h4>
                 <GoogleMap address="聖德基督學院" height="350px" />
               </div>
             </div>
@@ -383,20 +383,20 @@ const handleKick = async (signupId, memberName) => {
 
               <template v-if="isCurrentUserHost">
                 <div class="card border-0 shadow-sm rounded-4 p-4 text-start bg-white">
-                  <div class="badge bg-warning text-dark rounded-pill px-3 py-1 mb-3 fw-bold align-self-start" style="font-size: 0.78rem;">
+                  <div class="badge bg-mori-warning text-white rounded-pill px-3 py-1 mb-3 fw-bold align-self-start" style="font-size: 0.78rem;">
                     👑 您是此場活動主揪
                   </div>
                  <div class="mb-4">
-  <div class="text-secondary small fw-medium">經費收支說明</div>
-  <div class="text-secondary mt-2 p-3 bg-light rounded" style="font-size: 0.85rem;">
-    <i class="bi bi-info-circle me-1"></i> 平台已完成場館預約扣款，請記得於現場向球友收取分攤費用喔！
-  </div>
-</div>
+                  <div class="text-secondary small fw-medium">經費收支說明</div>
+                  <div class="text-secondary mt-2 p-3 bg-light rounded" style="font-size: 0.85rem;">
+                    <i class="bi bi-info-circle me-1"></i> 平台已完成場館預約扣款，請記得於現場向球友收取分攤費用喔！
+                  </div>
+                </div>
 
                   <hr class="border-light opacity-50 my-3">
 
                   <button
-                    class="btn btn-mori-blue w-100 rounded-pill fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2 mb-2"
+                    class="btn btn-mori-teal text-white w-100 rounded-pill fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2 mb-2"
                     @click="router.push('/pickup')">
                     <i class="bi bi-collection-play-fill"></i> 回大廳進行點名管理
                   </button>
@@ -432,28 +432,36 @@ const handleKick = async (signupId, memberName) => {
 <style scoped>
 /* 全域底色 */
 .page-bg {
-  background-color: #f1f5f9;
+  background-color: #F8FAFC;
   min-height: 100vh;
 }
 
-/* 品牌色與森系字色 */
-.text-sky-blue { color: #0ea5e9 !important; }
-.bg-sky-blue { background-color: #0ea5e9 !important; }
-.text-mori-blue { color: #4A90E2 !important; }
+/* ============================
+   🎨 森系色彩定義 
+   ============================ */
+.text-mori-teal { color: #457B9D !important; }
+.text-mori-teal-light { color: #A8DADC !important; }
+.bg-mori-teal { background-color: #457B9D !important; }
 
-/* 專屬主揪管理按鈕 */
-.btn-mori-blue {
-  background-color: #F0F7FF !important;
-  color: #4A90E2 !important;
+.bg-mori-coral { background-color: #E07A5F !important; }
+.bg-mori-warning { background-color: #F4A261 !important; }
+.text-mori-warning { color: #F4A261 !important; }
+.bg-mori-success { background-color: #2A9D8F !important; }
+.text-mori-success { color: #2A9D8F !important; }
+
+/* 專屬主揪管理按鈕 (補上預設狀態) */
+.btn-mori-teal {
+  background-color: #457B9D !important; /* 預設的森藍綠底色 */
+  color: #ffffff !important;            /* 白字 */
   border: none;
   transition: all 0.2s ease;
 }
-.btn-mori-blue:hover {
-  background-color: #E1F0FF !important;
-  color: #2C73C4 !important;
+
+.btn-mori-teal:hover {
+  background-color: #386785 !important; /* 懸停時稍微變深 */
+  color: #ffffff !important;
   transform: translateY(-1px);
 }
-
 /* Banner 特效 */
 .glass-badge {
   background: rgba(255, 255, 255, 0.15);
@@ -474,18 +482,17 @@ const handleKick = async (signupId, memberName) => {
 }
 .player-avatar-wrapper:hover .player-avatar {
   transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 10px 15px -3px rgba(69, 123, 157, 0.15) !important;
 }
 
-/* 空位佔位符號動畫 */
+/* 🌟 空位佔位符號 (柔和虛線) */
 .empty-slot {
   width: 65px;
   height: 65px;
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed #E2E8F0;
+  background-color: #F8FAFC !important;
   transition: all 0.3s ease;
-  background-color: transparent !important;
 }
-
 
 /* 踢除按鈕 */
 .kick-btn {
@@ -506,7 +513,7 @@ const handleKick = async (signupId, memberName) => {
   transform: scale(1);
 }
 .kick-btn:hover {
-  background-color: #b91c1c !important;
+  background-color: #C92A2A !important;
 }
 
 /* 特色小卡 */
@@ -515,8 +522,8 @@ const handleKick = async (signupId, memberName) => {
   border: 1px solid #e2e8f0;
 }
 .feature-tile:hover {
-  border-color: #bae6fd;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  border-color: #457B9D;
+  box-shadow: 0 10px 15px -3px rgba(69, 123, 157, 0.08);
   transform: translateY(-4px);
 }
 .transition-all {
