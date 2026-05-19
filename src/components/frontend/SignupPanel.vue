@@ -12,7 +12,7 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  // 外部傳入：按鈕的主要文字 (用來支援「我要報名」/「再幫朋友卡一位」等動態文字)
+  // 外部傳入：按鈕的主要文字
   buttonText: {
     type: String,
     default: '確認報名 (現場繳費)'
@@ -21,11 +21,16 @@ const props = defineProps({
   isDisabledByLogic: {
     type: Boolean,
     default: false
+  },
+  // 🌟 新增：外部傳入，判斷是否為「已報名的普通成員」
+  isAlreadyJoined: {
+    type: Boolean,
+    default: false
   }
 })
 
-// 定義向外傳遞的事件
-const emit = defineEmits(['submit-signup'])
+// 🌟 新增 'cancel-signup' 事件
+const emit = defineEmits(['submit-signup', 'cancel-signup'])
 
 // 表單狀態
 const agreeRules = ref(false)
@@ -36,16 +41,16 @@ const selectedLevel = ref('初級') // 視覺用選項
 // ============================
 const totalFee = computed(() => {
   if (!props.game || !props.game.startTime || !props.game.endTime) return 0
-  
+
   const parseTime = (timeStr) => {
     const [hours, minutes] = timeStr.split(':').map(Number)
     return hours + (minutes / 60)
   }
-  
+
   const startHours = parseTime(props.game.startTime)
   const endHours = parseTime(props.game.endTime)
   const duration = Math.max(0, endHours - startHours)
-  
+
   // 每小時 300 元
   const totalCost = duration * 300
   return Math.ceil(totalCost / (props.game.currentPlayers || 1))
@@ -62,14 +67,14 @@ const isButtonDisabled = computed(() => {
 })
 
 const finalButtonText = computed(() => {
-  if (props.isDisabledByLogic) return props.buttonText 
+  if (props.isDisabledByLogic) return props.buttonText
   if (!agreeRules.value) return '請先同意規範'
-  return props.buttonText 
+  return props.buttonText
 })
 
 const handleSubmit = () => {
   if (isButtonDisabled.value) return
-  
+
   const requiredLevel = props.game.skillLevel || 'ALL'
   const levelMapReverse = {
     '初級': 'BEGINNER',
@@ -103,7 +108,7 @@ const progressPercent = computed(() => {
 <template>
   <div class="card border-0 shadow-sm rounded-4 sticky-top signup-panel">
     <div class="card-body p-4 p-lg-5">
-      
+
       <div class="mb-4">
         <div class="text-secondary small fw-medium">費用與報名</div>
         <div class="text-secondary mt-2 p-3 bg-light rounded" style="font-size: 0.85rem;">
@@ -117,64 +122,82 @@ const progressPercent = computed(() => {
           <span class="text-mori-teal">{{ game?.currentPlayers }} / {{ game?.maxPlayers }} 人</span>
         </div>
         <div class="progress rounded-pill bg-light" style="height: 8px;">
-          <div 
-            class="progress-bar bg-mori-teal rounded-pill" 
-            role="progressbar" 
-            :style="{ width: `${progressPercent}%` }" 
-            :aria-valuenow="progressPercent" 
-            aria-valuemin="0" 
+          <div
+            class="progress-bar bg-mori-teal rounded-pill"
+            role="progressbar"
+            :style="{ width: `${progressPercent}%` }"
+            :aria-valuenow="progressPercent"
+            aria-valuemin="0"
             aria-valuemax="100"
           ></div>
         </div>
       </div>
 
-      <div class="mb-4">
-        <label class="fw-bold mb-3 d-block text-dark">請選擇您的程度</label>
-        <div class="d-flex flex-column gap-2">
-          
-          <label class="form-check-label level-card border rounded-3 p-3 mb-0 text-center" :class="{'active-card': selectedLevel === '初級'}">
-            <input class="form-check-input" type="radio" v-model="selectedLevel" value="初級">
-            <span class="fw-bold d-block">初級 (Beginner)</span>
-          </label>
-
-          <label class="form-check-label level-card border rounded-3 p-3 mb-0 text-center" :class="{'active-card': selectedLevel === '中級'}">
-            <input class="form-check-input" type="radio" v-model="selectedLevel" value="中級">
-            <span class="fw-bold d-block">中級 (Intermediate)</span>
-          </label>
-
-          <label class="form-check-label level-card border rounded-3 p-3 mb-0 text-center" :class="{'active-card': selectedLevel === '高級'}">
-            <input class="form-check-input" type="radio" v-model="selectedLevel" value="高級">
-            <span class="fw-bold d-block">高級 (Advanced)</span>
-          </label>
-          
+      <template v-if="props.isAlreadyJoined">
+        <hr class="text-secondary opacity-25 my-4">
+        <div class="alert alert-success d-flex align-items-center mb-4 py-2 px-3 fw-bold" role="alert" style="background-color: #E6F5F3; border-color: #2A9D8F; color: #2A9D8F;">
+          <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+          <div>🎉 報名成功！您已在名單中</div>
         </div>
-      </div>
 
-      <div class="form-check mb-4 d-flex align-items-start bg-light p-3 rounded-3 border-0">
-        <input class="form-check-input-checkbox shadow-none mt-1 ms-1 me-3" type="checkbox" id="agreeRules" v-model="agreeRules" style="width: 18px; height: 18px;">
-        <label class="form-check-label-text small text-secondary fw-medium" for="agreeRules" style="line-height: 1.6; cursor: pointer;">
-          我同意遵守本團長的臨打規範與球館安全規定。
-        </label>
-      </div>
+        <button
+          class="btn btn-outline-danger w-100 rounded-pill fw-bold shadow-sm"
+          style="padding: 12px 0; border-width: 2px;"
+          @click="emit('cancel-signup')"
+        >
+          <i class="bi bi-box-arrow-right me-1"></i> 退出揪團
+        </button>
+      </template>
 
-      <button 
-        class="btn w-100 fw-bold py-3 shadow-sm rounded-pill btn-cta"
-        :class="{
-          'btn-mori-success-disabled': props.isDisabledByLogic,
-          'disabled-btn': !props.isDisabledByLogic && isButtonDisabled
-        }"
-        :disabled="isButtonDisabled"
-        @click="handleSubmit"
-      >
-        <span v-if="props.isJoining" class="spinner-border spinner-border-sm me-2"></span>
-        <i v-else-if="props.isDisabledByLogic && buttonText === '您已報名'" class="bi bi-check2-circle me-1 fs-5 align-middle"></i>
-        <i v-else-if="!isButtonDisabled && !props.isDisabledByLogic" class="bi bi-check-circle-fill me-1"></i>
-        {{ finalButtonText }}
-      </button>
+      <template v-else>
+        <div class="mb-4">
+          <label class="fw-bold mb-3 d-block text-dark">請選擇您的程度</label>
+          <div class="d-flex flex-column gap-2">
 
-      <div v-if="props.isDisabledByLogic && buttonText !== '您已報名'" class="text-center text-mori-coral small mt-3 fw-bold">
-        <i class="bi bi-exclamation-circle-fill me-1"></i>一般會員無法重複卡位
-      </div>
+            <label class="form-check-label level-card border rounded-3 p-3 mb-0 text-center" :class="{'active-card': selectedLevel === '初級'}">
+              <input class="form-check-input" type="radio" v-model="selectedLevel" value="初級">
+              <span class="fw-bold d-block">初級 (Beginner)</span>
+            </label>
+
+            <label class="form-check-label level-card border rounded-3 p-3 mb-0 text-center" :class="{'active-card': selectedLevel === '中級'}">
+              <input class="form-check-input" type="radio" v-model="selectedLevel" value="中級">
+              <span class="fw-bold d-block">中級 (Intermediate)</span>
+            </label>
+
+            <label class="form-check-label level-card border rounded-3 p-3 mb-0 text-center" :class="{'active-card': selectedLevel === '高級'}">
+              <input class="form-check-input" type="radio" v-model="selectedLevel" value="高級">
+              <span class="fw-bold d-block">高級 (Advanced)</span>
+            </label>
+
+          </div>
+        </div>
+
+        <div class="form-check mb-4 d-flex align-items-start bg-light p-3 rounded-3 border-0">
+          <input class="form-check-input-checkbox shadow-none mt-1 ms-1 me-3" type="checkbox" id="agreeRules" v-model="agreeRules" style="width: 18px; height: 18px;">
+          <label class="form-check-label-text small text-secondary fw-medium" for="agreeRules" style="line-height: 1.6; cursor: pointer;">
+            我同意遵守本團長的臨打規範與球館安全規定。
+          </label>
+        </div>
+
+        <button
+          class="btn w-100 fw-bold py-3 shadow-sm rounded-pill btn-cta"
+          :class="{
+            'btn-mori-success-disabled': props.isDisabledByLogic && buttonText === '您已報名',
+            'disabled-btn': (!props.isDisabledByLogic && isButtonDisabled) || (props.isDisabledByLogic && buttonText !== '您已報名')
+          }"
+          :disabled="isButtonDisabled"
+          @click="handleSubmit"
+        >
+          <span v-if="props.isJoining" class="spinner-border spinner-border-sm me-2"></span>
+          <i v-else-if="props.isDisabledByLogic && buttonText === '您已報名'" class="bi bi-check2-circle me-1 fs-5 align-middle"></i>
+          <i v-else-if="!isButtonDisabled && !props.isDisabledByLogic" class="bi bi-check-circle-fill me-1"></i>
+          {{ finalButtonText }}
+        </button>
+
+        <div v-if="props.isDisabledByLogic && buttonText !== '您已報名'" class="text-center text-mori-coral small mt-3 fw-bold">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>一般會員無法重複卡位
+        </div>
+      </template>
 
     </div>
   </div>
@@ -255,7 +278,7 @@ const progressPercent = computed(() => {
   background-color: #E6F5F3 !important;
   color: #2A9D8F !important;
   border: 1px solid #2A9D8F !important;
-  opacity: 1 !important; 
+  opacity: 1 !important;
   font-weight: 700;
   cursor: default;
   box-shadow: none !important;

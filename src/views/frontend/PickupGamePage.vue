@@ -41,7 +41,14 @@ const feathers = [
   { x: 35, y: 80, size: 180, opacity: 0.30, rotate: 170 },
   { x: 62, y: 78, size: 205, opacity: 0.30, rotate: 320 },
   { x: 85, y: 85, size: 170, opacity: 0.30, rotate: 95  },
+  // 🌟 補中間區域
+  { x: 30, y: 42, size: 185, opacity: 0.30, rotate: 210 },
+  { x: 55, y: 48, size: 195, opacity: 0.30, rotate: 330 },
+  { x: 45, y: 68, size: 175, opacity: 0.30, rotate: 80  },
+  { x: 68, y: 50, size: 200, opacity: 0.30, rotate: 145 },
 ]
+
+
 for (let row = 0; row < rows; row++) {
   for (let col = 0; col < cols; col++) {
     feathers.push({
@@ -858,20 +865,19 @@ input:focus {
    🍃 森系清新風 - 全景背景羽毛編織壓紋
    ============================================================ */
 
+
 .container {
   position: relative;
+  overflow: hidden;     /* 1：裁切掉超出邊界的羽毛，絕對不讓它蓋到 Footer */
+  min-height: 85vh;     /* 2：給頁面基本高度 (畫面高度的 85%)，把 Footer 往下推 */
 }
+
 
 .feather-bg {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  min-height: 100%;
+  top: 0; left: 0; right: 0; bottom: 0;
   pointer-events: none;
   z-index: 0;
-  overflow: visible;
 }
 
 .feather-item {

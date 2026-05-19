@@ -110,7 +110,7 @@ const formatPhone = (phone) => {
 // ============================
 const isOpen = computed({
   get: () => props.game?.status === 'OPEN',
-  set: () => {} 
+  set: () => {}
 })
 
 const toggleStatus = async () => {
@@ -323,7 +323,7 @@ const sendBroadcast = async () => {
                 <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>目前還沒有人報名
               </div>
 
-              <ul v-else class="list-group list-group-flush">
+             <ul v-else class="list-group list-group-flush">
                 <li v-for="(signup, idx) in roster" :key="signup.signupId"
                     class="list-group-item participant-item px-2 py-3 d-flex align-items-center justify-content-between">
                   <div class="d-flex align-items-center gap-3">
@@ -346,6 +346,15 @@ const sendBroadcast = async () => {
                         {{ signup.paid ? '已付款' : '未付款' }}
                       </label>
                     </div>
+
+                    <button
+                      class="btn btn-sm btn-outline-danger rounded-circle d-flex align-items-center justify-content-center shadow-sm kick-btn"
+                      style="width: 32px; height: 32px; border-width: 1.5px;"
+                      title="踢除此成員"
+                      @click="removePlayer(signup)"
+                    >
+                      <i class="bi bi-person-x-fill"></i>
+                    </button>
                   </div>
                 </li>
               </ul>
@@ -397,15 +406,15 @@ const sendBroadcast = async () => {
           </div>
 
           <div class="d-flex justify-content-center pt-4 mt-4">
-            <button 
+            <button
               type="button"
-              class="btn rounded-pill px-5 fw-bold btn-detail-mori shadow-sm" 
+              class="btn rounded-pill px-5 fw-bold btn-detail-mori shadow-sm"
               @click="goToDetailPage">
               <i class="bi bi-arrow-up-right-square-fill me-2 text-mori-teal"></i> 查看本團完整詳情頁面
             </button>
           </div>
 
-        </div> 
+        </div>
       </div>
     </div>
   </div>
@@ -457,9 +466,9 @@ const sendBroadcast = async () => {
 
 /* 底部跳轉按鈕 (棉麻米白) */
 .btn-detail-mori {
-  border: 1px solid #E2E8F0; 
-  font-size: 0.95rem; 
-  background-color: #ffffff !important; 
+  border: 1px solid #E2E8F0;
+  font-size: 0.95rem;
+  background-color: #ffffff !important;
   color: #475569 !important;
   transition: all 0.2s ease;
 }
@@ -523,5 +532,18 @@ const sendBroadcast = async () => {
 .btn-mori-primary:hover:not(:disabled) {
   background-color: #386785;
   transform: translateY(-1px);
+}
+/* 🌟 踢除按鈕特效 */
+.kick-btn {
+  color: #E07A5F;
+  border-color: #F4D3C9;
+  background-color: #FFF;
+  transition: all 0.2s ease;
+}
+.kick-btn:hover {
+  background-color: #E07A5F;
+  color: #FFF;
+  border-color: #E07A5F;
+  transform: scale(1.05);
 }
 </style>

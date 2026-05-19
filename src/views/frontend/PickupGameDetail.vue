@@ -15,6 +15,45 @@ const { pickupGames, fetchGames, signupsMap, fetchSignups, joinPickupGame, remov
 const isLoaded = ref(false)
 const isJoining = ref(false)
 
+// 🪶 羽毛背景隨機資料
+const cols = 4
+const rows = 4
+const feathers = [
+  { x: 3,  y: 2,  size: 200, opacity: 0.30, rotate: 25  },
+  { x: 28, y: 8,  size: 170, opacity: 0.30, rotate: 140 },
+  { x: 55, y: 5,  size: 190, opacity: 0.30, rotate: 200 },
+  { x: 80, y: 3,  size: 160, opacity: 0.30, rotate: 310 },
+  { x: 8,  y: 25, size: 180, opacity: 0.30, rotate: 75  },
+  { x: 42, y: 22, size: 220, opacity: 0.30, rotate: 160 },
+  { x: 70, y: 28, size: 190, opacity: 0.30, rotate: 240 },
+  { x: 88, y: 24, size: 160, opacity: 0.30, rotate: 50  },
+  { x: 15, y: 55, size: 200, opacity: 0.30, rotate: 120 },
+  { x: 50, y: 60, size: 175, opacity: 0.30, rotate: 280 },
+  { x: 75, y: 65, size: 210, opacity: 0.30, rotate: 15  },
+  { x: 92, y: 70, size: 165, opacity: 0.30, rotate: 190 },
+  { x: 5,  y: 75, size: 195, opacity: 0.30, rotate: 55  },
+  { x: 35, y: 80, size: 180, opacity: 0.30, rotate: 170 },
+  { x: 62, y: 78, size: 205, opacity: 0.30, rotate: 320 },
+  { x: 85, y: 85, size: 170, opacity: 0.30, rotate: 95  },
+  { x: 30, y: 42, size: 185, opacity: 0.30, rotate: 210 },
+  { x: 55, y: 48, size: 195, opacity: 0.30, rotate: 330 },
+  { x: 45, y: 68, size: 175, opacity: 0.30, rotate: 80  },
+  { x: 68, y: 50, size: 200, opacity: 0.30, rotate: 145 },
+]
+
+for (let row = 0; row < rows; row++) {
+  for (let col = 0; col < cols; col++) {
+    feathers.push({
+      x: (col / cols) * 95 + Math.random() * (95 / cols),
+      y: (row / rows) * 60 + Math.random() * (60 / rows),
+      size: 70 + Math.random() * 70,
+      opacity: 0.08 + Math.random() * 0.05,
+      rotate: Math.random() * 360
+    })
+  }
+}
+
+
 const skillMap = {
   ALL: '不限',
   BEGINNER: '初級',
@@ -66,6 +105,47 @@ const isButtonDisabled = computed(() => {
   if (mySignupCount.value > 0 && !isCurrentUserHost.value) return true
   return false
 })
+// 1. 新增一個判斷：當前使用者是否為「已報名的普通成員」（排除主揪）
+const isAlreadyJoined = computed(() => {
+  return mySignupCount.value > 0 && !isCurrentUserHost.value
+})
+
+// 2. 新增退出揪團的方法
+const onCancelGame = async () => {
+  // 從名單中找出自己的報名紀錄 ID
+  const mySignup = signups.value.find(s => String(s.member?.memberId) === String(currentMemberId))
+  if (!mySignup) return
+
+  // 彈出 SweetAlert 再次確認，避免誤點
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: '確定要退出揪團嗎？',
+    text: '退出後若想再次參加，需要重新報名喔！',
+    showCancelButton: true,
+    confirmButtonText: '確定退出',
+    cancelButtonText: '暫不退出',
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+  })
+
+  if (result.isConfirmed) {
+    // 這裡我們直接呼叫你原本寫好的 removeSignup API (與踢除成員共用同一支後端)
+    await removeSignup(mySignup.signupId, gameId, mySignup.member?.fullName)
+
+    // 重新抓取資料更新畫面
+    await Promise.all([
+      fetchGames(),
+      fetchSignups(gameId)
+    ])
+
+    Swal.fire({
+      icon: 'success',
+      title: '已退出揪團',
+      text: '期待您下次再一起打球！',
+      confirmButtonColor: '#457B9D'
+    })
+  }
+}
 
 // ============================
 // 💰 動態費用計算邏輯
@@ -187,6 +267,43 @@ const displaySignups = computed(() => {
     })
     return
   }
+  // 🪶 羽毛背景隨機資料（從列表頁搬過來）
+const cols = 4
+const rows = 4
+const feathers = [
+  { x: 3,  y: 2,  size: 200, opacity: 0.30, rotate: 25  },
+  { x: 28, y: 8,  size: 170, opacity: 0.30, rotate: 140 },
+  { x: 55, y: 5,  size: 190, opacity: 0.30, rotate: 200 },
+  { x: 80, y: 3,  size: 160, opacity: 0.30, rotate: 310 },
+  { x: 8,  y: 25, size: 180, opacity: 0.30, rotate: 75  },
+  { x: 42, y: 22, size: 220, opacity: 0.30, rotate: 160 },
+  { x: 70, y: 28, size: 190, opacity: 0.30, rotate: 240 },
+  { x: 88, y: 24, size: 160, opacity: 0.30, rotate: 50  },
+  { x: 15, y: 55, size: 200, opacity: 0.30, rotate: 120 },
+  { x: 50, y: 60, size: 175, opacity: 0.30, rotate: 280 },
+  { x: 75, y: 65, size: 210, opacity: 0.30, rotate: 15  },
+  { x: 92, y: 70, size: 165, opacity: 0.30, rotate: 190 },
+  { x: 5,  y: 75, size: 195, opacity: 0.30, rotate: 55  },
+  { x: 35, y: 80, size: 180, opacity: 0.30, rotate: 170 },
+  { x: 62, y: 78, size: 205, opacity: 0.30, rotate: 320 },
+  { x: 85, y: 85, size: 170, opacity: 0.30, rotate: 95  },
+  { x: 30, y: 42, size: 185, opacity: 0.30, rotate: 210 },
+  { x: 55, y: 48, size: 195, opacity: 0.30, rotate: 330 },
+  { x: 45, y: 68, size: 175, opacity: 0.30, rotate: 80  },
+  { x: 68, y: 50, size: 200, opacity: 0.30, rotate: 145 },
+]
+
+for (let row = 0; row < rows; row++) {
+  for (let col = 0; col < cols; col++) {
+    feathers.push({
+      x: (col / cols) * 95 + Math.random() * (95 / cols),
+      y: (row / rows) * 60 + Math.random() * (60 / rows),
+      size: 70 + Math.random() * 70,
+      opacity: 0.08 + Math.random() * 0.05,
+      rotate: Math.random() * 360
+    })
+  }
+}
 
   // 程度防呆
   const levelRank = { '初級': 1, '中級': 2, '高級': 3 }
@@ -230,7 +347,21 @@ const handleKick = async (signupId, memberName) => {
 </script>
 
 <template>
-  <div class="page-bg">
+  <div class="page-bg position-relative overflow-hidden"> <div class="feather-bg" aria-hidden="true">
+      <img
+        v-for="(f, i) in feathers"
+        :key="i"
+        src="@/assets/images/feathers_watermark.png"
+        class="feather-item"
+        :style="{
+          left: f.x + '%',
+          top: f.y + '%',
+          width: f.size + 'px',
+          opacity: f.opacity,
+          transform: `rotate(${f.rotate}deg)`
+        }"
+      />
+    </div>
 
     <div v-if="!isLoaded" class="vh-100 d-flex align-items-center justify-content-center">
       <div class="spinner-border text-mori-teal" role="status">
@@ -283,7 +414,16 @@ const handleKick = async (signupId, memberName) => {
                   {{ game.host?.fullName?.charAt(0) }}
                 </div>
                 <div class="pe-4">
-                  <h5 class="fw-bold mb-2">{{ game.host?.fullName }}</h5>
+                  <h5 class="fw-bold mb-2 d-flex align-items-center">
+  {{ game.host?.fullName }}
+
+  <a v-if="isAlreadyJoined && game.host?.phone"
+     :href="`tel:${game.host?.phone}`"
+     class="ms-3 badge bg-mori-success text-white text-decoration-none px-2 py-1 shadow-sm transition-all"
+     style="font-size: 0.85rem; letter-spacing: 0.5px;">
+    <i class="bi bi-telephone-fill me-1"></i> {{ game.host?.phone }}
+  </a>
+</h5>
                   <p class="text-secondary mb-0" style="line-height: 1.8;">
                     哈囉！我是這場臨打的主揪。本次揪團程度要求為「<strong class="text-dark">{{ skillMap[game.skillLevel] }}</strong>」。
                     我們準備了高品質的比賽用球，現場氣氛輕鬆愉快，歡迎熱愛羽球的球友報名參加，一起流汗！
@@ -415,8 +555,8 @@ const handleKick = async (signupId, memberName) => {
                   :is-joining="isJoining"
                   :button-text="signupButtonText"
                   :is-disabled-by-logic="isButtonDisabled"
-                  @submit-signup="onJoinGame"
-                />
+                  :is-already-joined="isAlreadyJoined"    @submit-signup="onJoinGame"
+                  @cancel-signup="onCancelGame"           />
               </template>
 
             </div>
@@ -430,6 +570,26 @@ const handleKick = async (signupId, memberName) => {
 </template>
 
 <style scoped>
+
+/* 🪶 羽毛背景樣式 */
+.feather-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none; /* 確保滑鼠穿透不干擾點擊 */
+  z-index: 0;
+}
+
+.feather-item {
+  position: absolute;
+  user-select: none;
+}
+
+/* 確保詳情頁主要內容浮在羽毛之上 */
+.content-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
 /* 全域底色 */
 .page-bg {
   background-color: #F8FAFC;
@@ -448,6 +608,25 @@ const handleKick = async (signupId, memberName) => {
 .text-mori-warning { color: #F4A261 !important; }
 .bg-mori-success { background-color: #2A9D8F !important; }
 .text-mori-success { color: #2A9D8F !important; }
+
+/* 🪶 羽毛背景樣式 */
+.feather-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none; /* 確保滑鼠穿透不干擾點擊 */
+  z-index: 0;
+}
+
+.feather-item {
+  position: absolute;
+  user-select: none;
+}
+
+/* 確保詳情頁主要內容浮在羽毛之上 */
+.content-wrapper {
+  position: relative;
+  z-index: 1;
+}
 
 /* 專屬主揪管理按鈕 (補上預設狀態) */
 .btn-mori-teal {
