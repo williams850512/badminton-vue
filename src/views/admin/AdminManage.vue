@@ -576,7 +576,7 @@ function handleExport(format) {
                 <input
                   v-model="form.username"
                   type="text"
-                  placeholder="登入帳號"
+                  placeholder="請輸入帳號6-15碼"
                   :disabled="!!editId"
                 />
               </div>

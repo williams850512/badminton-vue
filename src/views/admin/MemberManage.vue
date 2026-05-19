@@ -171,8 +171,9 @@ async function saveMember() {
     alert('密碼必須為 6-15 個字元！')
     return
   }
-  if (!/^[A-Za-z0-9]{6,15}$/.test(d.username)) {
-    alert('帳號必須為 6-15 碼英數字 (不可包含特殊字元)')
+  // 帳號格式驗證：僅在新增會員時進行驗證（編輯時帳號已唯讀且不可修改），並允許點 . 或底線 _
+  if (!editId.value && !/^[A-Za-z0-9._]{6,20}$/.test(d.username)) {
+    alert('帳號必須為 6-20 碼英數字 (可包含點 . 或底線 _，不可包含其他特殊字元)')
     return
   }
   if (d.birthday > todayDate) {
@@ -561,7 +562,7 @@ function handleExport(format) {
                 <input
                   v-model="form.username"
                   type="text"
-                  placeholder="6-15 碼英數字"
+                  placeholder="請輸入帳號6-15碼"
                   maxlength="15"
                   :disabled="!!editId"
                 />
@@ -571,7 +572,7 @@ function handleExport(format) {
                 <input
                   v-model="form.password"
                   type="password"
-                  :placeholder="editId ? (isManager ? '留空不修改' : '無權限修改') : '6-15 碼密碼'"
+                  :placeholder="editId ? (isManager ? '留空不修改' : '無權限修改') : '請設定密碼'"
                   maxlength="15"
                   :disabled="!!editId && !isManager"
                 />

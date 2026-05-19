@@ -376,7 +376,7 @@ async function handleRegister() {
                 v-model="registerForm.username"
                 type="text"
                 class="form-control rounded-3"
-                placeholder="請輸入 6-15 碼英數字"
+                placeholder="請輸入 6-15 碼"
                 maxlength="15"
                 autocomplete="off"
               />
@@ -389,7 +389,7 @@ async function handleRegister() {
                   v-model="registerForm.password"
                   :type="showPassword ? 'text' : 'password'"
                   class="form-control rounded-3"
-                  placeholder="請輸入 6-15 碼英數字"
+                  placeholder="請輸入 6-15 碼"
                   maxlength="15"
                   autocomplete="new-password"
                   style="padding-right: 48px;"

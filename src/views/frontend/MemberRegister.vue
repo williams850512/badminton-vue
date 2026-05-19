@@ -110,11 +110,11 @@ async function handleNextStep() {
   }
   
   if (!/^[A-Za-z0-9]{6,15}$/.test(d.username)) {
-    errorMsg.value = '帳號必須為 6-15 碼英數字 (不可包含特殊字元)'
+    errorMsg.value = '帳號必須為 6-15 碼'
     return
   }
   if (d.password.length < 6 || d.password.length > 15) {
-    errorMsg.value = '密碼必須為 6-15 碼英數字'
+    errorMsg.value = '密碼必須為 6-15 碼'
     return
   }
   if (d.password !== d.confirmPassword) {
@@ -308,7 +308,7 @@ async function handleRegister() {
                   設定帳號
                 </label>
                 <input v-model="form.username" type="text" class="form-control rounded-3"
-                       placeholder="請輸入 6-15 碼英數字" maxlength="15" autocomplete="off" autofocus />
+                       placeholder="請輸入 6-15 碼" maxlength="15" autocomplete="off" autofocus />
               </div>
 
               <div class="mb-2">
@@ -317,7 +317,7 @@ async function handleRegister() {
                 </label>
                 <div class="position-relative">
                   <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
-                         class="form-control rounded-3" placeholder="請輸入 6-15 碼英數字" maxlength="15"
+                         class="form-control rounded-3" placeholder="請輸入 6-15 碼" maxlength="15"
                          autocomplete="new-password" style="padding-right: 48px;" />
                   <button type="button"
                           class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary pe-3"
